@@ -525,37 +525,54 @@ function clearHighlights() {
                 return false; // Deny move
             }
             // If cursed and movesThisTurn is 0, allow the move (and increment counter below)
-            addToLog(`Cursed ${vampire.id} making its move for the turn.`);
+            addToLog(`Cursed ${vampire.id} attempting its move for the turn.`);
         }
 
         // Target & Path Checks
         const expectedTarget = getAdjacentCoord(vampire.coord, vampire.facing);
         if (targetCoord !== expectedTarget) { addToLog(`Invalid move target. Must move 1 square forward (${vampire.facing}).`); return false; }
-        const pieceAtTarget = findPieceAtCoord(targetCoord);
+        const pieceAtTarget = findPieceAtCoord(targetCoord); // Check what's currently at the destination
         if (pieceAtTarget && (pieceAtTarget.type === 'vampire' || pieceAtTarget.type === 'bloodwell' || (pieceAtTarget.type === 'hazard' && pieceAtTarget.piece.type === 'Carcass'))) { addToLog(`Cannot move onto occupied square ${targetCoord}.`); return false; }
         // --- End Validation ---
 
         saveStateToHistory(); // Save state *before* the move
 
-        // Update state
+        // --- Update State ---
         const oldCoord = vampire.coord;
-        vampire.coord = targetCoord;
-        currentGameState.currentAP -= AP_COST.MOVE;
-        // ** ADDED: Increment move counter **
-        vampire.movesThisTurn = (vampire.movesThisTurn || 0) + 1; // Increment move counter for this vamp
+        vampire.coord = targetCoord; // Move the vampire
+        currentGameState.currentAP -= AP_COST.MOVE; // Deduct AP
+
+        // Increment move counter *after* successful move validation and state save
+        vampire.movesThisTurn = (vampire.movesThisTurn || 0) + 1;
 
         addToLog(`${vampire.id} moved ${oldCoord} -> ${targetCoord}. (${currentGameState.currentAP} AP left)`);
 
-        // Landing effects (Grave Dust / Bloodbath)
-        if (pieceAtTarget?.type === 'hazard' && pieceAtTarget.piece.type === 'Grave Dust' && !vampire.cursed) { vampire.cursed = true; addToLog(`${vampire.id} landed on Grave Dust & CURSED!`); }
-        const landedOnBW = findPieceAtCoord(targetCoord)?.type === 'bloodwell';
-        const isHazardAlsoPresent = currentGameState.board.hazards.some(h => h.coord === targetCoord); // Check if *any* hazard is on the BW square
-        if (vampire.cursed && landedOnBW && !isHazardAlsoPresent && findPieceAtCoord(targetCoord).piece.player === vampire.player) { vampire.cursed = false; addToLog(`${vampire.id} performed Bloodbath at ${targetCoord} and is CURED!`); }
+        // --- Check Landing Effects ---
+        // 1. Landing on Grave Dust (re-check pieceAtTarget BEFORE move happened)
+        if (pieceAtTarget?.type === 'hazard' && pieceAtTarget.piece.type === 'Grave Dust' && !vampire.cursed) {
+            vampire.cursed = true;
+            addToLog(`${vampire.id} landed on Grave Dust and is now CURSED!`);
+        }
+
+        // 2. Bloodbath Cure Check (AFTER move is complete)
+        if (vampire.cursed) { // Only check if the vampire was cursed when it moved
+            const landedOnPieceInfo = findPieceAtCoord(targetCoord); // What is on the square NOW (includes the moved vampire)
+            const landedOnBW = currentGameState.board.bloodwells.find(bw => bw.coord === targetCoord); // Check specifically for a bloodwell here
+            const isHazardAlsoPresent = currentGameState.board.hazards.some(h => h.coord === targetCoord); // Check if ANY hazard is here
+
+            // Conditions: Landed on own Bloodwell AND no hazard is present
+            if (landedOnBW && landedOnBW.player === vampire.player && !isHazardAlsoPresent) {
+                vampire.cursed = false; // Lift the curse!
+                vampire.movesThisTurn = 0; // Reset move counter immediately upon cure? Optional, but allows normal action after cure.
+                addToLog(`${vampire.id} performed Bloodbath at ${targetCoord} and is CURED!`);
+            }
+        }
+        // --- End Landing Effects ---
 
         // Update UI
         renderBoard(currentGameState);
         updateUI();
-        return true; // Indicate success
+        return true; // Indicate move success
     }
 
     function executePivot(vampire, newFacing) {
