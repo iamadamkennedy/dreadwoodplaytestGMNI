@@ -521,17 +521,37 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnThrow.addEventListener('click', () => {
-         const selectedVamp = findVampireById(currentGameState.selectedVampireId);
-         if (!selectedVamp) { addToLog("Select a Vampire first."); return; }
-         if (selectedVamp.cursed) { addToLog("Cursed vampires cannot throw hazards."); return; }
-         if (currentGameState.currentAP < AP_COST.THROW_HAZARD) { addToLog("Not enough AP to throw."); return; } // Check base cost
+    console.log("--- Throw Button Clicked ---"); // <-- ADD THIS LINE
 
-         // Show Hazard Picker
-         populateHazardPicker();
-         hazardPickerPopup.style.display = 'flex'; // Show the picker popup
-         currentGameState.actionState.pendingAction = 'throw-select-hazard';
-         addToLog("Select a hazard type to throw.");
-    });
+    const selectedVamp = findVampireById(currentGameState.selectedVampireId);
+    if (!selectedVamp) {
+        addToLog("Select a Vampire first.");
+        console.log("Throw aborted: No vampire selected."); // <-- ADD THIS LINE
+        return;
+    }
+    if (selectedVamp.cursed) {
+        addToLog("Cursed vampires cannot throw hazards.");
+         console.log("Throw aborted: Vampire cursed."); // <-- ADD THIS LINE
+        return;
+    }
+    if (currentGameState.currentAP < AP_COST.THROW_HAZARD) {
+        addToLog("Not enough AP to throw.");
+         console.log("Throw aborted: Not enough AP."); // <-- ADD THIS LINE
+        return;
+    }
+
+    console.log("Checks passed, proceeding to show picker..."); // <-- ADD THIS LINE
+    console.log("Current Game State Before Populate:", currentGameState); // <-- ADD THIS LINE (Check state)
+
+    // Show Hazard Picker
+    populateHazardPicker(); // Call the function to create buttons
+    console.log("Hazard Picker Popup Element:", hazardPickerPopup); // <-- ADD THIS LINE (Check element)
+    hazardPickerPopup.style.display = 'flex'; // Show the picker popup
+    console.log("Set hazardPickerPopup display to flex."); // <-- ADD THIS LINE
+
+    currentGameState.actionState.pendingAction = 'throw-select-hazard';
+    addToLog("Select a hazard type to throw.");
+});
 
     btnCancelThrow.addEventListener('click', () => {
          hazardPickerPopup.style.display = 'none';
