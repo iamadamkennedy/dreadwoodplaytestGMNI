@@ -4,10 +4,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPlayerSetupIndex = 0; // 0-based index for player being set up
     let playerData = []; // Array to hold { name: 'P1', class: null } objects
     let selectedClasses = []; // Keep track of classes chosen so far in setup
-    // --- Game State (will be populated in initializeGame) ---
+    // --- Game State (Main object holding all game info) ---
     let currentGameState = {};
+    // --- History for Undo ---
+    let gameHistory = []; // Stores previous game states for Undo
 
     // --- DOM Element References ---
+    // (Screens, Popups, Setup Elements)
     const screens = {
         playerCount: document.getElementById('screen-player-count'),
         playerSetup: document.getElementById('screen-player-setup'),
@@ -17,11 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
        elimination: document.getElementById('popup-elimination'), // For later
        victory: document.getElementById('popup-victory'), // For later
     }
-
-    // Player Count Screen Elements
     const playerCountButtons = screens.playerCount.querySelectorAll('button[data-count]');
-
-    // Player Setup Screen Elements
     const playerSetupTitle = document.getElementById('player-setup-title');
     const playerNameLabel = document.getElementById('player-name-label');
     const playerNameInput = document.getElementById('input-player-name');
@@ -33,9 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const classDetailsContainer = document.getElementById('class-details-container');
     const btnBack = document.getElementById('btn-back');
     const btnNext = document.getElementById('btn-next');
-
-    // Gameplay Screen Elements
-    const gameplayScreen = screens.gameplay; // Alias for clarity
+    // (Gameplay Elements)
+    const gameplayScreen = screens.gameplay;
     const actionBar = document.getElementById('action-bar');
     const gameBoard = document.getElementById('game-board');
     const playerInfoDisplay = document.getElementById('player-info');
@@ -53,44 +51,77 @@ document.addEventListener('DOMContentLoaded', () => {
     const logList = document.getElementById('log-list');
     const btnBackToSetup = document.getElementById('btn-back-to-setup'); // Temp button
 
-    // --- Class Data (Includes Descriptions) ---
+    // --- Class Data (Includes Narrative Descriptions & Colors) ---
     const CLASS_DATA = {
         "Sheriff": {
             color: "color-sheriff",
             description: "A faction of Vampires enforcing order in a chaotic frontier.",
             abilities: [
-                { name: "Under My Protection (Passive)", description: "Bloodwells adjacent (in 3x3 grid) to a Sheriff are immune to regular shots (but not Hand Cannon)." },
-                { name: "Swift Justice (Passive)", description: "At the end of your turn, may move one non-cursed Vampire 1 square forward (0 AP)." },
-                { name: "Order Restored (Active, 1/game)", description: "(3 AP) Revive one eliminated Sheriff adjacent to one of your remaining Vampires or Bloodwells. Discard card." }
+                { name: "Under My Protection (Passive)", description: "The Sheriff shields nearby Bloodwells with an unholy vigilance, making them difficult targets." },
+                { name: "Swift Justice (Passive)", description: "Justice waits for no dawn; one Sheriff presses forward relentlessly at the end of each turn." },
+                { name: "Order Restored (Active, 1/game)", description: "(3 AP) Even death cannot stop the Sheriff's law; call back a fallen comrade from the abyss for one last stand." }
             ]
         },
         "Vigilante": {
             color: "color-vigilante",
             description: "A faction of Vampires seeking justice, using teamwork to punish wrongdoers.",
             abilities: [
-                { name: "Side by Side (Passive)", description: "AP is shared between both Vampires; either can use AP from the pool on their turn." },
-                { name: "Blood Brothers (Passive)", description: "If both Vampires are within a 3x3 grid at the start of the turn, gain +1 AP (if both spend at least 1 AP)." },
-                { name: "Vengeance is Mine (Active, 1/game)", description: "(0 AP) If an opponent shoots one of your Bloodwells or Vampires, gain 7 AP *next* turn. Discard card." }
+                { name: "Side by Side (Passive)", description: "These Blood Brothers act as one, seamlessly sharing their actions and energy throughout the turn." },
+                { name: "Blood Brothers (Passive)", description: "When fighting close together, their shared resolve grants them unnatural speed and an extra surge of action." },
+                { name: "Vengeance is Mine (Active, 1/game)", description: "(0 AP) Harm my kin, feel my wrath! An attack fuels an overwhelming counter-assault next turn." }
             ]
         },
         "Outlaw": {
             color: "color-outlaw",
             description: "A faction of Vampires thriving on chaos, disrupting and escaping with speed.",
             abilities: [
-                { name: "Daring Escape (Passive)", description: "Once per turn, after shooting a Bloodwell, pivot any direction and move up to 2 squares (0 AP)." },
-                { name: "Hand Cannon (Active, 1/game)", description: "(5 AP) Fire piercing shot up to 5 spaces, ignoring Hazards (unless Sheriff-protected). Destroys Bloodwells/Hazards hit. Discard card." },
-                { name: "Rampage (Active, 1/game)", description: "(2 AP) Shoot simultaneously left and right of facing direction (two normal shots). Discard card." }
+                { name: "Daring Escape (Passive)", description: "Shoot, grin, and vanish! After hitting a Bloodwell, the Outlaw makes a swift, spectral getaway." },
+                { name: "Hand Cannon (Active, 1/game)", description: "(5 AP) Unleash hellfire from a cursed Hand Cannon, tearing through foes and obstacles alike in a devastating line." },
+                { name: "Rampage (Active, 1/game)", description: "(2 AP) A whirlwind of lead flies left and right as the Outlaw cuts loose!" }
             ]
         },
         "Bounty Hunter": {
             color: "color-bounty-hunter",
             description: "A faction of Vampires hunting for profit, using precision to eliminate targets.",
             abilities: [
-                { name: "Sharpshooter (Passive)", description: "Your shots ignore Tombstones in the line of fire." },
-                { name: "Marked Man (Passive)", description: "Shots hitting enemy Vampires inflict Curse (Move 1 square/turn, Cannot Shoot/Throw)." },
-                { name: "Contract Payoff (Active, 1/game)", description: "(3 AP) Shoot any Bloodwell; if successful, gain +3 AP (2P) or +5 AP (3P/4P) *next* turn. Discard card." }
+                { name: "Sharpshooter (Passive)", description: "No cover is safe; the Hunter's cursed bullets find paths through solid stone." },
+                { name: "Marked Man (Passive)", description: "Every bullet carries a hex, leaving wounded Vampires crippled with a debilitating curse." },
+                { name: "Contract Payoff (Active, 1/game)", description: "(3 AP) Collecting the blood-price for a destroyed Bloodwell brings a surge of energy for the next hunt." }
             ]
         }
+    };
+
+    // --- Layout Data (Example Layouts - Add all 26 per count later!) ---
+    const LAYOUT_DATA = {
+        '2': [ // 2 Player Layouts
+            { // Layout 2P-1 (Example from rules)
+                vampires: [ { player: 0, coord: 'A2', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'C4', facing: 'S', id: 'P1V2' }, { player: 1, coord: 'A7', facing: 'N', id: 'P2V1' }, { player: 1, coord: 'C9', facing: 'N', id: 'P2V2' } ],
+                bloodwells: [ { player: 0, coord: 'B1', id: 'P1BW1' }, { player: 0, coord: 'D3', id: 'P1BW2' }, { player: 0, coord: 'F2', id: 'P1BW3' }, { player: 1, coord: 'B6', id: 'P2BW1' }, { player: 1, coord: 'D8', id: 'P2BW2' }, { player: 1, coord: 'F7', id: 'P2BW3' } ],
+                hazards: [ { type: 'Tombstone', coord: 'E5' }, { type: 'Carcass', coord: 'D5' }, { type: 'Grave Dust', coord: 'F5' }, { type: 'Tombstone', coord: 'G5' }, { type: 'Carcass', coord: 'E4' }, { type: 'Grave Dust', coord: 'E6' } ]
+            },
+            // Add more 2P layouts here...
+        ],
+        '3': [ // 3 Player Layouts
+             { // Layout 3P-1 (Example from rules)
+                 vampires: [ { player: 0, coord: 'A2', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'C4', facing: 'S', id: 'P1V2' }, { player: 1, coord: 'F2', facing: 'S', id: 'P2V1' }, { player: 1, coord: 'H4', facing: 'S', id: 'P2V2' }, { player: 2, coord: 'D8', facing: 'N', id: 'P3V1' }, { player: 2, coord: 'F9', facing: 'N', id: 'P3V2' } ],
+                 bloodwells: [ { player: 0, coord: 'B1', id: 'P1BW1' }, { player: 0, coord: 'D3', id: 'P1BW2' }, { player: 0, coord: 'A5', id: 'P1BW3' }, { player: 1, coord: 'G1', id: 'P2BW1' }, { player: 1, coord: 'I3', id: 'P2BW2' }, { player: 1, coord: 'G5', id: 'P2BW3' }, { player: 2, coord: 'C7', id: 'P3BW1' }, { player: 2, coord: 'E6', id: 'P3BW2' }, { player: 2, coord: 'G8', id: 'P3BW3' } ],
+                 hazards: [ { type: 'Tombstone', coord: 'E5' }, { type: 'Carcass', coord: 'D5' }, { type: 'Grave Dust', coord: 'F5' }, { type: 'Tombstone', coord: 'G5' }, { type: 'Carcass', coord: 'H5' }, { type: 'Grave Dust', coord: 'B7' } ]
+             },
+            // Add more 3P layouts here...
+        ],
+        '4': [ // 4 Player Layouts
+             { // Layout 4P-1 (Example from rules)
+                 vampires: [ { player: 0, coord: 'A2', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'C4', facing: 'S', id: 'P1V2' }, { player: 1, coord: 'F2', facing: 'S', id: 'P2V1' }, { player: 1, coord: 'H4', facing: 'S', id: 'P2V2' }, { player: 2, coord: 'A7', facing: 'N', id: 'P3V1' }, { player: 2, coord: 'C9', facing: 'N', id: 'P3V2' }, { player: 3, coord: 'F7', facing: 'N', id: 'P4V1' }, { player: 3, coord: 'H9', facing: 'N', id: 'P4V2' } ],
+                 bloodwells: [ { player: 0, coord: 'B1', id: 'P1BW1' }, { player: 0, coord: 'D3', id: 'P1BW2' }, { player: 0, coord: 'A3', id: 'P1BW3' }, { player: 1, coord: 'G1', id: 'P2BW1' }, { player: 1, coord: 'I3', id: 'P2BW2' }, { player: 1, coord: 'F3', id: 'P2BW3' }, { player: 2, coord: 'B6', id: 'P3BW1' }, { player: 2, coord: 'D8', id: 'P3BW2' }, { player: 2, coord: 'A8', id: 'P3BW3' }, { player: 3, coord: 'G6', id: 'P4BW1' }, { player: 3, coord: 'I8', id: 'P4BW2' }, { player: 3, coord: 'F8', id: 'P4BW3' } ],
+                 hazards: [ { type: 'Tombstone', coord: 'E5' }, { type: 'Carcass', coord: 'D5' }, { type: 'Grave Dust', coord: 'F5' }, { type: 'Tombstone', coord: 'G5' }, { type: 'Carcass', coord: 'E4' }, { type: 'Grave Dust', coord: 'E6' } ]
+            },
+            // Layout R1 from simulation
+             {
+                 vampires: [ { player: 0, coord: 'A2', facing: 'S', id: 'S1' }, { player: 0, coord: 'C3', facing: 'S', id: 'S2' }, { player: 1, coord: 'G2', facing: 'S', id: 'V1' }, { player: 1, coord: 'I3', facing: 'S', id: 'V2' }, { player: 2, coord: 'B8', facing: 'N', id: 'O1' }, { player: 2, coord: 'D7', facing: 'N', id: 'O2' }, { player: 3, coord: 'F8', facing: 'N', id: 'B1' }, { player: 3, coord: 'H7', facing: 'N', id: 'B2' } ],
+                 bloodwells: [ { player: 0, coord: 'B1', id: 'SBW1' }, { player: 0, coord: 'D2', id: 'SBW2' }, { player: 0, coord: 'A4', id: 'SBW3' }, { player: 1, coord: 'H1', id: 'VBW1' }, { player: 1, coord: 'F2', id: 'VBW2' }, { player: 1, coord: 'I4', id: 'VBW3' }, { player: 2, coord: 'C9', id: 'OBW1' }, { player: 2, coord: 'A7', id: 'OBW2' }, { player: 2, coord: 'D9', id: 'OBW3' }, { player: 3, coord: 'G9', id: 'BBW1' }, { player: 3, coord: 'I7', id: 'BBW2' }, { player: 3, coord: 'F9', id: 'BBW3' } ],
+                 hazards: [ { type: 'Tombstone', coord: 'D5' }, { type: 'Tombstone', coord: 'F5' }, { type: 'Carcass', coord: 'E4' }, { type: 'Carcass', coord: 'E6' }, { type: 'Grave Dust', coord: 'D4' }, { type: 'Grave Dust', coord: 'F6' } ]
+             }
+        ]
     };
 
     // --- Helper Functions ---
@@ -98,27 +129,26 @@ document.addEventListener('DOMContentLoaded', () => {
     // Switches the visible screen
     function showScreen(screenId) {
         Object.values(screens).forEach(screen => screen.classList.remove('active'));
-        screens[screenId].classList.add('active');
+        if (screens[screenId]) {
+            screens[screenId].classList.add('active');
+        }
         console.log(`Showing screen: ${screenId}`);
     }
 
-    // Displays details (including ability descriptions) for a selected class during setup
+    // Displays details (including narrative ability descriptions) for setup
     function displayClassDetails(className) {
         const data = CLASS_DATA[className];
         if (data) {
             classDetailsName.innerHTML = `<strong>Class:</strong> ${className}`;
             classDetailsDescription.textContent = data.description;
             classDetailsAbilities.innerHTML = ''; // Clear previous abilities
-            // Now iterate through the objects in the abilities array
             data.abilities.forEach(ability => {
                 const li = document.createElement('li');
-                // Use innerHTML to add bolding for the name
                 li.innerHTML = `<strong>${ability.name}:</strong> ${ability.description}`;
                 classDetailsAbilities.appendChild(li);
             });
-            classDetailsContainer.style.display = 'block'; // Show details
+            classDetailsContainer.style.display = 'block';
         } else {
-            // Reset if no class name provided
             classDetailsName.innerHTML = `<strong>Class:</strong> ---`;
             classDetailsDescription.textContent = 'Select a class above to see details.';
             classDetailsAbilities.innerHTML = '<li>---</li>';
@@ -128,47 +158,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // Updates the player setup screen UI for the correct player
     function updatePlayerSetupScreen(playerIndex) {
         const playerNum = playerIndex + 1;
-        currentPlayerSetupIndex = playerIndex; // Update global state tracker
+        currentPlayerSetupIndex = playerIndex;
 
         console.log(`Setting up screen for Player ${playerNum}`);
 
-        // Reset temporary selections for the new player
-        // Initialize player data slot if it doesn't exist or reset class
         if (!playerData[playerIndex]) {
              playerData[playerIndex] = { name: `P${playerNum}`, class: null };
         } else {
-            playerData[playerIndex].class = null; // Reset class selection when revisiting
+            playerData[playerIndex].class = null;
         }
-
-        playerNameInput.value = ''; // Clear previous name input
+        playerNameInput.value = playerData[playerIndex].name !== `P${playerNum}` ? playerData[playerIndex].name : ''; // Show saved name or empty
         playerNameInput.placeholder = `P${playerNum} Name (Optional)`;
-
-        // Update titles and labels
         playerSetupTitle.textContent = `Player ${playerNum} Setup`;
         playerNameLabel.textContent = `Player ${playerNum} Name:`;
 
-        // Reset and update class buttons status (selected and enabled/disabled)
         let previouslySelectedButton = classSelectionContainer.querySelector('.selected');
         if (previouslySelectedButton) {
             previouslySelectedButton.classList.remove('selected');
         }
         classButtons.forEach(button => {
             const className = button.dataset.class;
-            // Disable button if class was selected by a *previous* player
-            if (selectedClasses.includes(className)) {
-                button.disabled = true;
-                button.style.opacity = '0.5';
-            } else {
-                button.disabled = false;
-                button.style.opacity = '1';
-            }
+            button.disabled = selectedClasses.includes(className);
+            button.style.opacity = button.disabled ? '0.5' : '1';
         });
 
-        // Reset class details display
         displayClassDetails(null);
 
-        // Update navigation buttons
-        btnBack.style.display = (playerIndex === 0) ? 'none' : 'inline-block'; // Hide Back for P1
+        btnBack.style.display = (playerIndex === 0) ? 'none' : 'inline-block';
         btnNext.textContent = (playerIndex === numberOfPlayers - 1) ? 'Start Game' : 'Next';
     }
 
@@ -178,71 +194,117 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let r = 1; r <= 9; r++) {
             for (let c = 1; c <= 9; c++) {
                 const square = document.createElement('div');
-                const colLetter = String.fromCharCode(64 + c); // A=65, B=66 etc.
+                const colLetter = String.fromCharCode(64 + c);
                 const coord = `${colLetter}${r}`;
                 square.classList.add('grid-square');
-                square.dataset.coord = coord; // Store coordinate like "A1", "I9"
-                // square.textContent = coord; // Optional: Display coordinate in square
+                square.dataset.coord = coord;
                 gameBoard.appendChild(square);
             }
         }
         console.log("Generated 9x9 grid.");
-        // TODO: Add grid click listener(s) here later for selecting squares/pieces
     }
 
-    // Renders pieces on the board based on game state (Placeholder)
+    // Gets the CSS color class for a player index
+    function getPlayerColorClass(playerIndex) {
+        const player = currentGameState.players[playerIndex];
+        return player ? (CLASS_DATA[player.class]?.color || '') : '';
+    }
+
+    // Renders pieces on the board based on game state
     function renderBoard(gameState) {
-        console.log("Rendering board state (placeholder)...", gameState);
-        // 1. Clear existing pieces from the board
+        console.log("Rendering board state...");
+        // 1. Clear existing pieces (Vampires, Bloodwells, Hazards)
         document.querySelectorAll('.piece').forEach(p => p.remove());
 
-        // 2. TODO: Iterate through gameState.layout.vampires, .bloodwells, .hazards
-        // 3. For each piece, create a div element with appropriate classes
-        //    (e.g., 'piece', 'vampire', 'color-sheriff', 'cursed' if applicable)
-        // 4. Add content (icon/text) or ::before/::after styles for appearance
-        // 5. Add facing indicator (e.g., data-facing attribute or a rotated arrow)
-        // 6. Append the piece div to the correct .grid-square div based on coordinates
-
-        // --- Example Placeholder Rendering ---
-        if (gameState && gameState.layout) {
-             // Example: Place first Sheriff vampire if layout exists
-             if (gameState.layout.vampires && gameState.layout.vampires.length > 0) {
-                  const firstVamp = gameState.layout.vampires[0];
-                  const targetSquare = gameBoard.querySelector(`[data-coord="${firstVamp.coord}"]`);
-                  if(targetSquare) {
-                     const vampElement = document.createElement('div');
-                     const playerClass = playerData[firstVamp.player].class; // Get class name
-                     const classColor = CLASS_DATA[playerClass]?.color || ''; // Get color class
-                     vampElement.classList.add('piece', 'vampire', classColor);
-                     vampElement.textContent = '♟'; // Placeholder icon
-                     // TODO: Add facing indicator, cursed status etc. based on full game state
-                     targetSquare.appendChild(vampElement);
-                  }
-             }
-             // Example: Place first hazard
-             if (gameState.layout.hazards && gameState.layout.hazards.length > 0) {
-                 const firstHazard = gameState.layout.hazards[0];
-                 const targetSquare = gameBoard.querySelector(`[data-coord="${firstHazard.coord}"]`);
-                 if (targetSquare) {
-                     const hazardElement = document.createElement('div');
-                     hazardElement.classList.add('piece', 'hazard');
-                     // Add specific hazard type class for styling
-                     hazardElement.classList.add(`hazard-${firstHazard.type.toLowerCase().replace(' ','-')}`);
-                     // Add icon based on type
-                     let icon = '?';
-                     if (firstHazard.type === 'Tombstone') icon = '🪦';
-                     else if (firstHazard.type === 'Carcass') icon = '💀';
-                     else if (firstHazard.type === 'Grave Dust') icon = '💩';
-                     else if (firstHazard.type === 'Dynamite') icon = '💥';
-                     hazardElement.textContent = icon;
-                     targetSquare.appendChild(hazardElement);
-                 }
-             }
+        if (!gameState || !gameState.board) {
+            console.error("Cannot render board: Invalid game state provided.");
+            return;
         }
+
+        // 2. Render Vampires
+        gameState.board.vampires?.forEach(vamp => {
+            const targetSquare = gameBoard.querySelector(`[data-coord="${vamp.coord}"]`);
+            if (targetSquare) {
+                const vampElement = document.createElement('div');
+                const playerClass = gameState.players[vamp.player]?.class;
+                const classColor = CLASS_DATA[playerClass]?.color || '';
+                vampElement.classList.add('piece', 'vampire', classColor);
+                vampElement.dataset.id = vamp.id;
+                vampElement.dataset.player = vamp.player;
+                vampElement.dataset.facing = vamp.facing;
+
+                let arrow = ''; // Use CSS ::before for arrows now
+                // if (vamp.facing === 'N') arrow = '↑';
+                // else if (vamp.facing === 'S') arrow = '↓';
+                // else if (vamp.facing === 'E') arrow = '→';
+                // else if (vamp.facing === 'W') arrow = '←';
+                // vampElement.textContent = arrow; // Removed text content
+
+                if (vamp.id === gameState.selectedVampireId) {
+                    vampElement.classList.add('selected');
+                }
+                if (vamp.cursed) {
+                    vampElement.classList.add('cursed');
+                }
+                targetSquare.appendChild(vampElement);
+            } else {
+                console.warn(`Square not found for vampire ${vamp.id} at ${vamp.coord}`);
+            }
+        });
+
+        // 3. Render Bloodwells
+        gameState.board.bloodwells?.forEach(bw => {
+            const targetSquare = gameBoard.querySelector(`[data-coord="${bw.coord}"]`);
+            if (targetSquare) {
+                const bwElement = document.createElement('div');
+                const playerClass = gameState.players[bw.player]?.class;
+                const classColor = CLASS_DATA[playerClass]?.color || '';
+                bwElement.classList.add('piece', 'bloodwell', classColor);
+                bwElement.dataset.id = bw.id;
+                bwElement.dataset.player = bw.player;
+                bwElement.textContent = '🩸';
+                targetSquare.appendChild(bwElement);
+            } else {
+                 console.warn(`Square not found for bloodwell ${bw.id} at ${bw.coord}`);
+            }
+        });
+
+        // 4. Render Hazards
+        gameState.board.hazards?.forEach(hazard => {
+            const targetSquare = gameBoard.querySelector(`[data-coord="${hazard.coord}"]`);
+            if (targetSquare) {
+                const hazardElement = document.createElement('div');
+                hazardElement.classList.add('piece', 'hazard');
+                const typeClass = `hazard-${hazard.type.toLowerCase().replace(' ','-')}`;
+                hazardElement.classList.add(typeClass);
+
+                let icon = '?';
+                if (hazard.type === 'Tombstone') icon = '🪦';
+                else if (hazard.type === 'Carcass') icon = '💀';
+                else if (hazard.type === 'Grave Dust') icon = '💩';
+                else if (hazard.type === 'Dynamite') icon = '💥';
+                hazardElement.textContent = icon;
+                targetSquare.appendChild(hazardElement);
+            } else {
+                 console.warn(`Square not found for hazard at ${hazard.coord}`);
+            }
+        });
     }
 
     // Updates the player info panel during gameplay
-    function updatePlayerInfoPanel(player, turn, currentAP) {
+    function updatePlayerInfoPanel(player, turn, currentAP, resources) {
+        if (!player || !resources) {
+             console.error("Cannot update info panel: Invalid player or resource data.");
+             // Display default state?
+             statusBarPlayer.textContent = 'Error';
+             statusBarAP.textContent = '??';
+             statusBarTurn.textContent = '??';
+             currentClassDetailsName.innerHTML = `<strong>Class:</strong> Error`;
+             currentClassDescription.textContent = 'Could not load player data.';
+             currentClassAbilitiesList.innerHTML = '';
+             infoSilverBullet.textContent = "Unknown";
+             return;
+        }
          console.log(`Updating info panel for ${player.name}, Turn ${turn}, AP: ${currentAP}`);
         const data = CLASS_DATA[player.class];
         if (data) {
@@ -251,129 +313,230 @@ document.addEventListener('DOMContentLoaded', () => {
             currentClassAbilitiesList.innerHTML = ''; // Clear previous abilities
             data.abilities.forEach(ability => {
                 const li = document.createElement('li');
-                // Display ability name and description from the object
+                const isUsed = resources.abilitiesUsed.includes(ability.name);
                 li.innerHTML = `<strong>${ability.name}:</strong> ${ability.description}`;
-                // TODO: Add check if ability used (from game state), add click listeners for actives
+                if (isUsed) {
+                    li.style.opacity = '0.5';
+                    li.style.textDecoration = 'line-through';
+                }
                 currentClassAbilitiesList.appendChild(li);
             });
         }
-        // TODO: Update silver bullet status based on game state
-        infoSilverBullet.textContent = "Available"; // Placeholder
+        infoSilverBullet.textContent = resources.silverBullet > 0 ? `Available (${resources.silverBullet})` : "Used";
 
         statusBarPlayer.textContent = player.name;
-        statusBarAP.textContent = currentAP; // Use provided AP
+        statusBarAP.textContent = currentAP;
         statusBarTurn.textContent = turn;
 
-        // TODO: Enable/disable action buttons based on AP, selection, etc.
+        // Update Action Button States (Example logic)
+        const canAffordShoot = currentAP >= 3;
+        const canAffordThrow = currentAP >= 1; // Dynamite costs 2, but check happens later
+        const canAffordSilver = currentAP >= 3 && resources.silverBullet > 0;
+        const isVampSelected = !!currentGameState.selectedVampireId; // Check if truthy
+
+        document.getElementById('action-shoot').disabled = !isVampSelected || !canAffordShoot;
+        document.getElementById('action-throw').disabled = !isVampSelected || !canAffordThrow;
+        document.getElementById('action-silver-bullet').disabled = !isVampSelected || !canAffordSilver;
+        // TODO: Enable/disable other action buttons (Dispel, Class abilities) based on game state
     }
 
     // Adds a message to the game log panel
     function addToLog(message) {
         const li = document.createElement('li');
-        // Optional: Add timestamp?
-        // const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        // li.textContent = `[${time}] ${message}`;
         li.textContent = message;
         // Keep only a certain number of log entries?
         while (logList.children.length > 50) { // Keep last 50 entries
              logList.removeChild(logList.firstChild);
         }
         logList.appendChild(li);
-        // Auto-scroll to bottom
         gameLog.scrollTop = gameLog.scrollHeight;
         console.log("Log:", message);
     }
 
-     // Main function to set up and start the actual game
-     function initializeGame() {
+    // --- Game Logic Functions (Placeholders/Core) ---
+
+    // Saves a deep copy of the current state to history
+    function saveStateToHistory() {
+        try {
+            gameHistory.push(JSON.parse(JSON.stringify(currentGameState)));
+            // Limit history size? e.g., gameHistory = gameHistory.slice(-10);
+            btnUndo.disabled = false; // Enable undo
+            console.log("State saved. History length:", gameHistory.length);
+        } catch (error) {
+            console.error("Error saving game state:", error);
+            // Handle potential circular references or unserializable data if state becomes complex
+        }
+    }
+
+    // Restores the previous game state from history
+    function undoLastAction() {
+        if (gameHistory.length > 0) {
+            console.log("Undoing last action...");
+            try {
+                currentGameState = JSON.parse(JSON.stringify(gameHistory.pop()));
+
+                // Re-render everything based on the restored state
+                renderBoard(currentGameState);
+                const currentPlayer = currentGameState.players[currentGameState.currentPlayerIndex];
+                const currentResources = currentGameState.playerResources[currentGameState.currentPlayerIndex];
+                 if (!currentPlayer) { // Safety check if player data is missing in undone state
+                     console.error("Player data missing in undone state for index", currentGameState.currentPlayerIndex);
+                     return;
+                 }
+                 updatePlayerInfoPanel(currentPlayer, currentGameState.turn, currentGameState.currentAP, currentResources);
+                addToLog("--- Last Action Undone ---");
+
+                // Disable undo if history is now empty
+                btnUndo.disabled = gameHistory.length === 0;
+            } catch (error) {
+                console.error("Error restoring game state:", error);
+            }
+        } else {
+            console.log("No actions in history to undo.");
+            btnUndo.disabled = true;
+        }
+    }
+
+    // Handles clicks on the game board (for selecting/deselecting vampires)
+    function handleBoardClick(event) {
+        const clickedSquare = event.target.closest('.grid-square');
+        if (!clickedSquare) return; // Click wasn't inside a square
+
+        const clickedVampireElement = event.target.closest('.vampire');
+
+        if (clickedVampireElement) {
+            // Clicked on a vampire piece
+            const vampireId = clickedVampireElement.dataset.id;
+            const ownerIndex = parseInt(clickedVampireElement.dataset.player);
+
+            if (ownerIndex === currentGameState.currentPlayerIndex) {
+                // Clicked own vampire - select it
+                if (currentGameState.selectedVampireId !== vampireId) {
+                    console.log(`Selected vampire ${vampireId}`);
+                    currentGameState.selectedVampireId = vampireId;
+                    // Re-render needed to update selection visual & button states
+                    renderBoard(currentGameState);
+                    const currentPlayer = currentGameState.players[currentGameState.currentPlayerIndex];
+                    const currentResources = currentGameState.playerResources[currentGameState.currentPlayerIndex];
+                    updatePlayerInfoPanel(currentPlayer, currentGameState.turn, currentGameState.currentAP, currentResources);
+                }
+                // If already selected, do nothing (or maybe cycle selection if needed later)
+
+            } else {
+                // Clicked opponent's vampire - show message, deselect maybe?
+                addToLog("Cannot select opponent's vampire.");
+                // Deselect if one was selected?
+                 if (currentGameState.selectedVampireId) {
+                     currentGameState.selectedVampireId = null;
+                     renderBoard(currentGameState);
+                      const currentPlayer = currentGameState.players[currentGameState.currentPlayerIndex];
+                     const currentResources = currentGameState.playerResources[currentGameState.currentPlayerIndex];
+                     updatePlayerInfoPanel(currentPlayer, currentGameState.turn, currentGameState.currentAP, currentResources);
+                 }
+            }
+        } else {
+            // Clicked on an empty square (or hazard/BW) - deselect current vampire
+            if (currentGameState.selectedVampireId) {
+                console.log("Deselecting vampire.");
+                currentGameState.selectedVampireId = null;
+                renderBoard(currentGameState); // Re-render to remove highlight
+                const currentPlayer = currentGameState.players[currentGameState.currentPlayerIndex];
+                const currentResources = currentGameState.playerResources[currentGameState.currentPlayerIndex];
+                updatePlayerInfoPanel(currentPlayer, currentGameState.turn, currentGameState.currentAP, currentResources);
+            }
+            // TODO: Handle targeting clicks after an action (like Throw) is selected
+        }
+    }
+
+    // --- Initialization ---
+    // Main function to set up and start the actual game
+    function initializeGame() {
         console.log("Initializing game...");
         console.log("Final Player Data:", playerData);
+        gameHistory = []; // Clear history for new game
 
-        // --- TODO: Replace with actual game state setup ---
-        // 1. Select Layout: Randomly select a layout based on numberOfPlayers
-        //    (Need layout data structure containing multiple layouts per player count)
-         const initialLayout = { // Using Layout R1 as placeholder
-             vampires: [ // player index, starting coord, facing, unique ID, cursed status
-                 { player: 0, coord: 'A2', facing: 'S', id: 'S1', cursed: false }, { player: 0, coord: 'C3', facing: 'S', id: 'S2', cursed: false },
-                 { player: 1, coord: 'G2', facing: 'S', id: 'V1', cursed: false }, { player: 1, coord: 'I3', facing: 'S', id: 'V2', cursed: false },
-                 { player: 2, coord: 'B8', facing: 'N', id: 'O1', cursed: false }, { player: 2, coord: 'D7', facing: 'N', id: 'O2', cursed: false },
-                 { player: 3, coord: 'F8', facing: 'N', id: 'B1', cursed: false }, { player: 3, coord: 'H7', facing: 'N', id: 'B2', cursed: false }
-             ],
-             bloodwells: [ // player index, starting coord, unique ID
-                 { player: 0, coord: 'B1', id: 'SBW1' }, { player: 0, coord: 'D2', id: 'SBW2' }, { player: 0, coord: 'A4', id: 'SBW3' },
-                 { player: 1, coord: 'H1', id: 'VBW1' }, { player: 1, coord: 'F2', id: 'VBW2' }, { player: 1, coord: 'I4', id: 'VBW3' },
-                 { player: 2, coord: 'C9', id: 'OBW1' }, { player: 2, coord: 'A7', id: 'OBW2' }, { player: 2, coord: 'D9', id: 'OBW3' },
-                 { player: 3, coord: 'G9', id: 'BBW1' }, { player: 3, coord: 'I7', id: 'BBW2' }, { player: 3, coord: 'F9', id: 'BBW3' }
-             ],
-             hazards: [ // Hazards currently on board
-                 { type: 'Tombstone', coord: 'D5' }, { type: 'Tombstone', coord: 'F5' },
-                 { type: 'Carcass', coord: 'E4' }, { type: 'Carcass', coord: 'E6' },
-                 { type: 'Grave Dust', coord: 'D4' }, { type: 'Grave Dust', coord: 'F6' }
-             ]
-         };
-         // This needs to represent the *entire* state needed to run/undo the game
-         currentGameState = {
-             players: playerData.map(p => ({ name: p.name, class: p.class, eliminated: false })), // Add elimination status
-             layout: JSON.parse(JSON.stringify(initialLayout)), // DEEP COPY of layout pieces on board
-             hazardPool: { // Hazards available to THROW
-                 'Tombstone': 4 - initialLayout.hazards.filter(h => h.type === 'Tombstone').length,
-                 'Carcass': 4 - initialLayout.hazards.filter(h => h.type === 'Carcass').length,
-                 'Grave Dust': 4 - initialLayout.hazards.filter(h => h.type === 'Grave Dust').length,
-                 'Dynamite': 3 // Starts at full count
+        // 1. Select Layout
+        const layoutsForPlayerCount = LAYOUT_DATA[numberOfPlayers];
+        if (!layoutsForPlayerCount || layoutsForPlayerCount.length === 0) {
+            alert(`Error: No layouts defined for ${numberOfPlayers} players! Using default.`);
+             // Provide a fallback or stop? For now, log error and maybe use a default 4P.
+             console.error(`No layouts found for ${numberOfPlayers} players!`);
+             showScreen('playerCount'); // Go back to setup
+             return;
+        }
+        const layoutIndex = Math.floor(Math.random() * layoutsForPlayerCount.length);
+        const selectedLayout = layoutsForPlayerCount[layoutIndex];
+        addToLog(`Selected Layout: ${numberOfPlayers}P Layout #${layoutIndex + 1}`);
+
+        // 2. Set up initial game state structure
+        currentGameState = {
+            players: playerData.map(p => ({ name: p.name, class: p.class, eliminated: false })),
+            board: {
+                 vampires: JSON.parse(JSON.stringify(selectedLayout.vampires.map(v => ({...v, cursed: false})))),
+                 bloodwells: JSON.parse(JSON.stringify(selectedLayout.bloodwells)),
+                 hazards: JSON.parse(JSON.stringify(selectedLayout.hazards))
+            },
+            hazardPool: {
+                 'Tombstone': 4 - selectedLayout.hazards.filter(h => h.type === 'Tombstone').length,
+                 'Carcass': 4 - selectedLayout.hazards.filter(h => h.type === 'Carcass').length,
+                 'Grave Dust': 4 - selectedLayout.hazards.filter(h => h.type === 'Grave Dust').length,
+                 'Dynamite': 3
              },
-             playerResources: playerData.map(() => ({ // Per-player resources
-                 silverBullet: 1,
-                 abilitiesUsed: [] // Track used 'once per game' active abilities like 'Order Restored'
-             })),
-             turn: 1,
-             currentPlayerIndex: 0,
-             currentAP: 0, // Will be set below based on turn/player count
-             selectedVampireId: null, // ID of the currently selected vampire piece
-             history: [], // For Undo functionality (stores previous game states)
-         };
+            playerResources: playerData.map(() => ({
+                silverBullet: 1,
+                abilitiesUsed: []
+            })),
+            turn: 1,
+            currentPlayerIndex: 0,
+            currentAP: 0,
+            selectedVampireId: null,
+            actionState: {
+                 pendingAction: null,
+                 selectedHazardType: null
+            }
+            // History managed separately by saveStateToHistory
+        };
 
-         // Set initial AP based on rules
-         // AP: P1 gets 4, P2 gets 5, P3 gets 6, P4 gets 8. Standard 5 AP after that.
-         const playerIndex = currentGameState.currentPlayerIndex;
+        // 3. Set Initial AP
+        const playerIndex = currentGameState.currentPlayerIndex;
          if (currentGameState.turn === 1) {
              if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][playerIndex];
-             else if (numberOfPlayers === 3) currentGameState.currentAP = [6, 6, 6][playerIndex]; // Rule was 6AP per player
-             else if (numberOfPlayers === 2) currentGameState.currentAP = [5, 5][playerIndex]; // Rule was 5AP per player
+             else if (numberOfPlayers === 3) currentGameState.currentAP = 6; // Rule was 6AP per player for 3P
+             else if (numberOfPlayers === 2) currentGameState.currentAP = 5; // Rule was 5AP per player for 2P
          } else {
-             currentGameState.currentAP = 5; // Standard AP
+             currentGameState.currentAP = 5; // Standard AP after turn 1
          }
-         // AP Adjustment based on user feedback later: P1=4, P2=5, P3=6, P4=8 for 4P R1.
-         if (currentGameState.turn === 1 && numberOfPlayers === 4) {
-            currentGameState.currentAP = [4, 5, 6, 8][playerIndex];
-         } else if (currentGameState.turn === 1 && numberOfPlayers === 3) {
-             currentGameState.currentAP = [6, 6, 6][playerIndex]; // Stick to original 3P rule? Or scale like 4P? Let's use original rule.
-         } else if (currentGameState.turn === 1 && numberOfPlayers === 2) {
-            currentGameState.currentAP = [5, 5][playerIndex]; // Stick to original 2P rule
-         } else {
-             currentGameState.currentAP = 5; // Standard AP
-         }
-        // -------------------------------------------------
 
-        generateGrid(); // Create the grid squares
-        renderBoard(currentGameState); // Render initial pieces based on chosen layout
-        updatePlayerInfoPanel(playerData[currentGameState.currentPlayerIndex], currentGameState.turn, currentGameState.currentAP); // Update for P1
-        logList.innerHTML = '<li>Game Started...</li>'; // Reset log
+        // 4. Initial Render & UI Update
+        generateGrid();
+        renderBoard(currentGameState);
+        const currentPlayer = currentGameState.players[currentGameState.currentPlayerIndex];
+        if (!currentPlayer) { // Safety check
+            console.error("Error: Could not get current player data during initialization.");
+            return;
+        }
+        const currentResources = currentGameState.playerResources[currentGameState.currentPlayerIndex];
+        updatePlayerInfoPanel(currentPlayer, currentGameState.turn, currentGameState.currentAP, currentResources);
+
+        logList.innerHTML = `<li>Game Started with Layout ${numberOfPlayers}P Layout #${layoutIndex + 1}</li>`;
         gameLog.scrollTop = 0;
-        btnUndo.disabled = true; // Can't undo at start of turn
+        btnUndo.disabled = true;
 
-        // TODO: Add Gameplay Event Listeners
-        // - Action Bar buttons (#action-shoot, #action-throw, etc.)
-        // - Grid squares/pieces (event delegation on #game-board)
-        // - #btn-undo, #btn-end-turn
+        // 5. Add Gameplay Event Listeners
+        gameBoard.removeEventListener('click', handleBoardClick); // Remove old listener if any
+        gameBoard.addEventListener('click', handleBoardClick);
+        btnUndo.removeEventListener('click', undoLastAction); // Remove old listener if any
+        btnUndo.addEventListener('click', undoLastAction);
+        // TODO: Add listeners for Action Bar buttons (#action-shoot, etc.)
+        // TODO: Add listener for #btn-end-turn
 
+        // 6. Show Gameplay Screen
         showScreen('gameplay');
-        addToLog(`Game started with ${numberOfPlayers} players. Player 1 (${playerData[0].name})'s turn.`);
+        addToLog(`Turn ${currentGameState.turn} - ${currentPlayer.name}'s turn (${currentPlayer.class}). AP: ${currentGameState.currentAP}`);
     }
 
 
-    // --- Event Listeners ---
-
-    // Player Count Selection
+    // --- Event Listeners --- (Setup listeners remain the same)
     playerCountButtons.forEach(button => {
         button.addEventListener('click', () => {
             numberOfPlayers = parseInt(button.dataset.count);
@@ -384,114 +547,58 @@ document.addEventListener('DOMContentLoaded', () => {
             showScreen('playerSetup');
         });
     });
-
-    // Class Selection Buttons
     classButtons.forEach(button => {
         button.addEventListener('click', () => {
             if (button.disabled) return;
-
             let currentlySelected = classSelectionContainer.querySelector('.selected');
-            if (currentlySelected) {
-                currentlySelected.classList.remove('selected');
-            }
-
+            if (currentlySelected) currentlySelected.classList.remove('selected');
             button.classList.add('selected');
             const selectedClass = button.dataset.class;
-            if (playerData[currentPlayerSetupIndex]) {
-                 playerData[currentPlayerSetupIndex].class = selectedClass;
-            }
+            if (playerData[currentPlayerSetupIndex]) playerData[currentPlayerSetupIndex].class = selectedClass;
             console.log(`Player ${currentPlayerSetupIndex + 1} selected class: ${selectedClass}`);
             displayClassDetails(selectedClass);
         });
     });
-
-     // Player Name Input (update state on change)
-     playerNameInput.addEventListener('input', () => {
+    playerNameInput.addEventListener('input', () => {
          if(playerData[currentPlayerSetupIndex]){
-             // Use placeholder if input is empty, otherwise use input value
             playerData[currentPlayerSetupIndex].name = playerNameInput.value.trim() || `P${currentPlayerSetupIndex + 1}`;
             console.log(`Player ${currentPlayerSetupIndex + 1} name set to: ${playerData[currentPlayerSetupIndex].name}`);
          }
      });
-
-
-    // Back Button (Player Setup)
     btnBack.addEventListener('click', () => {
-        console.log("Back button clicked");
-        // Remove the class selected by the *current* player from the list before going back
-         const currentClassSelection = playerData[currentPlayerSetupIndex]?.class; // Use optional chaining
+         const currentClassSelection = playerData[currentPlayerSetupIndex]?.class;
          if(currentClassSelection) {
              const classIndex = selectedClasses.indexOf(currentClassSelection);
-             if (classIndex > -1) {
-                 selectedClasses.splice(classIndex, 1);
-                 console.log("Removed class from selected list:", currentClassSelection, selectedClasses);
-             }
+             if (classIndex > -1) selectedClasses.splice(classIndex, 1);
          }
-
         if (currentPlayerSetupIndex > 0) {
-            // Go back to previous player's setup
             updatePlayerSetupScreen(currentPlayerSetupIndex - 1);
         } else {
-            // Go back to player count selection
              selectedClasses = [];
              playerData = [];
             showScreen('playerCount');
         }
     });
-
-    // Next / Start Game Button
     btnNext.addEventListener('click', () => {
-        console.log("Next/Start Game button clicked");
         const currentPlayerData = playerData[currentPlayerSetupIndex];
-
-        if (!currentPlayerData) {
-             console.error("Error: Player data not initialized for index", currentPlayerSetupIndex);
-             return; // Should not happen if logic is correct
-        }
-
-        // Validate: Class must be selected
-        if (!currentPlayerData.class) {
+        if (!currentPlayerData || !currentPlayerData.class) {
             alert(`Please select a class for Player ${currentPlayerSetupIndex + 1}!`);
             return;
         }
-
-         // Ensure name is set (even if default)
-         if (!currentPlayerData.name) {
-             currentPlayerData.name = playerNameInput.placeholder || `P${currentPlayerSetupIndex + 1}`;
-         }
-
-        // Add selected class to the list to prevent reuse by others
-        if (!selectedClasses.includes(currentPlayerData.class)) {
-             selectedClasses.push(currentPlayerData.class);
-             console.log("Added class to selected list:", currentPlayerData.class, selectedClasses);
-        }
-
-        // Check if more players need setup
+        if (!currentPlayerData.name) currentPlayerData.name = `P${currentPlayerSetupIndex + 1}`;
+        if (!selectedClasses.includes(currentPlayerData.class)) selectedClasses.push(currentPlayerData.class);
         if (currentPlayerSetupIndex < numberOfPlayers - 1) {
             updatePlayerSetupScreen(currentPlayerSetupIndex + 1);
         } else {
              initializeGame();
         }
     });
-
-     // Game Log Toggle
-    btnToggleLog.addEventListener('click', () => {
-        gameLog.classList.toggle('log-hidden');
-    });
-
-    // Temporary Back button from Gameplay screen
+    btnToggleLog.addEventListener('click', () => { gameLog.classList.toggle('log-hidden'); });
     btnBackToSetup.addEventListener('click', () => {
-        // NOTE: This currently loses all game progress!
-        // Reset state variables
-         numberOfPlayers = 0;
-         currentPlayerSetupIndex = 0;
-         playerData = [];
-         selectedClasses = [];
-         currentGameState = {}; // Clear game state
+         numberOfPlayers = 0; currentPlayerSetupIndex = 0; playerData = []; selectedClasses = []; currentGameState = {}; gameHistory = [];
          console.log("Returning to setup - game state cleared.");
          showScreen('playerCount');
      });
-
 
     // --- Initial Setup ---
     showScreen('playerCount'); // Start with the player count screen
