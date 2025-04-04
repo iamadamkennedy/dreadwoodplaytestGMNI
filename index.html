@@ -55,19 +55,26 @@
 
         <div id="screen-gameplay" class="screen">
             <h2>Dreadwood - Gameplay</h2>
-        
+
             <div id="action-bar" class="button-container action-buttons">
                 <button id="action-shoot" title="Shoot (3 AP)">🔫 Shoot</button>
                 <button id="action-throw" title="Throw Hazard (1/2 AP)">✋ Throw</button>
                 <button id="action-silver-bullet" title="Silver Bullet Shot (3 AP)">💎 Silver</button>
-                <button id="action-dispel" title="Dispel Grave Dust (3 AP)" style="display: none;">🪄 Dispel</button> </div>
-        
+
+                <button id="action-move-fwd" title="Move Forward 1 Square (1 AP)">⬆️ Move Fwd</button>
+                <button id="action-pivot-left" title="Pivot 90° Left (1 AP)">↩️ Pivot L</button>
+                <button id="action-pivot-right" title="Pivot 90° Right (1 AP)">↪️ Pivot R</button>
+                <button id="action-pivot-180" title="Pivot 180° (1 AP)">🔄 Pivot 180</button>
+
+                <button id="action-dispel" title="Dispel Grave Dust (3 AP)" style="display: none;">🪄 Dispel</button>
+            </div>
+
             <div id="game-board-container">
                 <div id="game-board" class="grid-container">
                     </div>
             </div>
-        
-        
+
+
             <div id="player-info">
                 <div id="current-class-details" class="setup-section class-details-box">
                      <h3>Current Player Info:</h3>
@@ -83,7 +90,7 @@
                     <strong>Turn #:</strong> <span id="status-turn">1</span>
                 </div>
             </div>
-        
+
             <div id="game-log-container">
                 <button id="btn-toggle-log">Show/Hide Log</button>
                 <div id="game-log" class="log-hidden">
@@ -93,20 +100,18 @@
                     </ul>
                 </div>
             </div>
-        
-        
+
+
             <div id="game-controls" class="button-container">
                 <button id="btn-undo" disabled>Undo Last Action</button>
                 <button id="btn-end-turn">End Turn</button>
             </div>
-        
+
              <div class="button-container" style="margin-top: 30px;">
                  <button id="btn-back-to-setup">Back to Setup (Dev)</button>
              </div>
-        
-        </div>
 
-         <div id="popup-elimination" class="popup">
+        </div> <div id="popup-elimination" class="popup">
              <div class="popup-content">
                  <h3 id="elimination-title">Player Eliminated!</h3>
                  <p id="elimination-message">[Player Name] has been eliminated.</p>
@@ -120,7 +125,8 @@
                  <button id="btn-restart-victory">Restart Game</button>
              </div>
          </div>
-        <div id="hazard-picker" class="popup">
+
+         <div id="hazard-picker" class="popup">
             <div class="popup-content">
                 <h4>Select Hazard to Throw</h4>
                 <p>Available:</p>
@@ -129,6 +135,8 @@
                 <button id="btn-cancel-throw" style="background-color: #6c757d; margin-top: 15px;">Cancel Throw</button>
             </div>
         </div>
+
+
     </div><script src="script.js" defer></script>
 </body>
 </html>
