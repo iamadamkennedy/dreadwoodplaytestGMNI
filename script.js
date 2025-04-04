@@ -1,70 +1,81 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- 1. State Variables ---
+
+    // --- Top-Level State Variables ---
     let numberOfPlayers = 0;
     let currentPlayerSetupIndex = 0;
-    let playerData = [];
-    let selectedClasses = [];
-    let currentGameState = {};
-    let gameHistory = []; // For Undo
+    let playerData = []; // Array to hold { name: 'P1', class: null } objects
+    let selectedClasses = []; // Keep track of classes chosen so far in setup
+    let currentGameState = {}; // Main object holding all game info
+    let gameHistory = []; // Stores previous game states for Undo
 
-    // --- 2. Constants ---
+    // --- Constants ---
     const AP_COST = {
-        MOVE: 1, PIVOT: 1, SHOOT: 3, SILVER_BULLET: 3,
-        THROW_HAZARD: 1, THROW_DYNAMITE: 2,
-        // Add other action costs later
+        MOVE: 1, PIVOT: 1, SHOOT: 3, SILVER_BULLET: 3, THROW_HAZARD: 1, THROW_DYNAMITE: 2,
     };
     const DIRECTIONS = ['N', 'E', 'S', 'W'];
-    const CLASS_DATA = { // Includes Narrative Descriptions & Colors
+    const CLASS_DATA = {
         "Sheriff": {
-            color: "color-sheriff", description: "A faction of Vampires enforcing order...", abilities: [
-                { name: "Under My Protection (Passive)", description: "The Sheriff shields nearby Bloodwells..." },
-                { name: "Swift Justice (Passive)", description: "Justice waits for no dawn..." },
-                { name: "Order Restored (Active, 1/game)", description: "(3 AP) Even death cannot stop..." }
-            ] },
+            color: "color-sheriff",
+            description: "A faction of Vampires enforcing order in a chaotic frontier.",
+            abilities: [
+                { name: "Under My Protection (Passive)", description: "The Sheriff shields nearby Bloodwells with an unholy vigilance, making them difficult targets." },
+                { name: "Swift Justice (Passive)", description: "Justice waits for no dawn; one Sheriff presses forward relentlessly at the end of each turn." },
+                { name: "Order Restored (Active, 1/game)", description: "(3 AP) Even death cannot stop the Sheriff's law; call back a fallen comrade from the abyss for one last stand." }
+            ]
+        },
         "Vigilante": {
-            color: "color-vigilante", description: "A faction of Vampires seeking justice...", abilities: [
-                { name: "Side by Side (Passive)", description: "These Blood Brothers act as one..." },
-                { name: "Blood Brothers (Passive)", description: "When fighting close together..." },
-                { name: "Vengeance is Mine (Active, 1/game)", description: "(0 AP) Harm my kin, feel my wrath!..." }
-            ] },
+            color: "color-vigilante",
+            description: "A faction of Vampires seeking justice, using teamwork to punish wrongdoers.",
+            abilities: [
+                { name: "Side by Side (Passive)", description: "These Blood Brothers act as one, seamlessly sharing their actions and energy throughout the turn." },
+                { name: "Blood Brothers (Passive)", description: "When fighting close together, their shared resolve grants them unnatural speed and an extra surge of action." },
+                { name: "Vengeance is Mine (Active, 1/game)", description: "(0 AP) Harm my kin, feel my wrath! An attack fuels an overwhelming counter-assault next turn." }
+            ]
+        },
         "Outlaw": {
-            color: "color-outlaw", description: "A faction of Vampires thriving on chaos...", abilities: [
-                { name: "Daring Escape (Passive)", description: "Shoot, grin, and vanish!..." },
-                { name: "Hand Cannon (Active, 1/game)", description: "(5 AP) Unleash hellfire..." },
-                { name: "Rampage (Active, 1/game)", description: "(2 AP) A whirlwind of lead..." }
-            ] },
+            color: "color-outlaw",
+            description: "A faction of Vampires thriving on chaos, disrupting and escaping with speed.",
+            abilities: [
+                { name: "Daring Escape (Passive)", description: "Shoot, grin, and vanish! After hitting a Bloodwell, the Outlaw makes a swift, spectral getaway." },
+                { name: "Hand Cannon (Active, 1/game)", description: "(5 AP) Unleash hellfire from a cursed Hand Cannon, tearing through foes and obstacles alike in a devastating line." },
+                { name: "Rampage (Active, 1/game)", description: "(2 AP) A whirlwind of lead flies left and right as the Outlaw cuts loose!" }
+            ]
+        },
         "Bounty Hunter": {
-            color: "color-bounty-hunter", description: "A faction of Vampires hunting for profit...", abilities: [
-                { name: "Sharpshooter (Passive)", description: "No cover is safe..." },
-                { name: "Marked Man (Passive)", description: "Every bullet carries a hex..." },
-                { name: "Contract Payoff (Active, 1/game)", description: "(3 AP) Collecting the blood-price..." }
-            ] }
+            color: "color-bounty-hunter",
+            description: "A faction of Vampires hunting for profit, using precision to eliminate targets.",
+            abilities: [
+                { name: "Sharpshooter (Passive)", description: "No cover is safe; the Hunter's cursed bullets find paths through solid stone." },
+                { name: "Marked Man (Passive)", description: "Every bullet carries a hex, leaving wounded Vampires crippled with a debilitating curse." },
+                { name: "Contract Payoff (Active, 1/game)", description: "(3 AP) Collecting the blood-price for a destroyed Bloodwell brings a surge of energy for the next hunt." }
+            ]
+        }
     };
-    const LAYOUT_DATA = { // Example Layouts
-        '2': [ { /* Layout 2P-1 Data */ vampires: [...], bloodwells: [...], hazards: [...] } ],
-        '3': [ { /* Layout 3P-1 Data */ vampires: [...], bloodwells: [...], hazards: [...] } ],
-        '4': [ { /* Layout 4P-1 Data */ vampires: [...], bloodwells: [...], hazards: [...] }, { /* Layout R1 Data */ vampires: [...], bloodwells: [...], hazards: [...] } ]
-    }; // NOTE: Layout data abbreviated in comment block, full data included below
+    const LAYOUT_DATA = {
+        '2': [
+            { vampires: [ { player: 0, coord: 'A2', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'C4', facing: 'S', id: 'P1V2' }, { player: 1, coord: 'A7', facing: 'N', id: 'P2V1' }, { player: 1, coord: 'C9', facing: 'N', id: 'P2V2' } ], bloodwells: [ { player: 0, coord: 'B1', id: 'P1BW1' }, { player: 0, coord: 'D3', id: 'P1BW2' }, { player: 0, coord: 'F2', id: 'P1BW3' }, { player: 1, coord: 'B6', id: 'P2BW1' }, { player: 1, coord: 'D8', id: 'P2BW2' }, { player: 1, coord: 'F7', id: 'P2BW3' } ], hazards: [ { type: 'Tombstone', coord: 'E5' }, { type: 'Carcass', coord: 'D5' }, { type: 'Grave Dust', coord: 'F5' }, { type: 'Tombstone', coord: 'G5' }, { type: 'Carcass', coord: 'E4' }, { type: 'Grave Dust', coord: 'E6' } ] },
+        ],
+        '3': [
+             { vampires: [ { player: 0, coord: 'A2', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'C4', facing: 'S', id: 'P1V2' }, { player: 1, coord: 'F2', facing: 'S', id: 'P2V1' }, { player: 1, coord: 'H4', facing: 'S', id: 'P2V2' }, { player: 2, coord: 'D8', facing: 'N', id: 'P3V1' }, { player: 2, coord: 'F9', facing: 'N', id: 'P3V2' } ], bloodwells: [ { player: 0, coord: 'B1', id: 'P1BW1' }, { player: 0, coord: 'D3', id: 'P1BW2' }, { player: 0, coord: 'A5', id: 'P1BW3' }, { player: 1, coord: 'G1', id: 'P2BW1' }, { player: 1, coord: 'I3', id: 'P2BW2' }, { player: 1, coord: 'G5', id: 'P2BW3' }, { player: 2, coord: 'C7', id: 'P3BW1' }, { player: 2, coord: 'E6', id: 'P3BW2' }, { player: 2, coord: 'G8', id: 'P3BW3' } ], hazards: [ { type: 'Tombstone', coord: 'E5' }, { type: 'Carcass', coord: 'D5' }, { type: 'Grave Dust', coord: 'F5' }, { type: 'Tombstone', coord: 'G5' }, { type: 'Carcass', coord: 'H5' }, { type: 'Grave Dust', coord: 'B7' } ] },
+        ],
+        '4': [
+             { vampires: [ { player: 0, coord: 'A2', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'C4', facing: 'S', id: 'P1V2' }, { player: 1, coord: 'F2', facing: 'S', id: 'P2V1' }, { player: 1, coord: 'H4', facing: 'S', id: 'P2V2' }, { player: 2, coord: 'A7', facing: 'N', id: 'P3V1' }, { player: 2, coord: 'C9', facing: 'N', id: 'P3V2' }, { player: 3, coord: 'F7', facing: 'N', id: 'P4V1' }, { player: 3, coord: 'H9', facing: 'N', id: 'P4V2' } ], bloodwells: [ { player: 0, coord: 'B1', id: 'P1BW1' }, { player: 0, coord: 'D3', id: 'P1BW2' }, { player: 0, coord: 'A3', id: 'P1BW3' }, { player: 1, coord: 'G1', id: 'P2BW1' }, { player: 1, coord: 'I3', id: 'P2BW2' }, { player: 1, coord: 'F3', id: 'P2BW3' }, { player: 2, coord: 'B6', id: 'P3BW1' }, { player: 2, coord: 'D8', id: 'P3BW2' }, { player: 2, coord: 'A8', id: 'P3BW3' }, { player: 3, coord: 'G6', id: 'P4BW1' }, { player: 3, coord: 'I8', id: 'P4BW2' }, { player: 3, coord: 'F8', id: 'P4BW3' } ], hazards: [ { type: 'Tombstone', coord: 'E5' }, { type: 'Carcass', coord: 'D5' }, { type: 'Grave Dust', coord: 'F5' }, { type: 'Tombstone', coord: 'G5' }, { type: 'Carcass', coord: 'E4' }, { type: 'Grave Dust', coord: 'E6' } ] },
+             { vampires: [ { player: 0, coord: 'A2', facing: 'S', id: 'S1' }, { player: 0, coord: 'C3', facing: 'S', id: 'S2' }, { player: 1, coord: 'G2', facing: 'S', id: 'V1' }, { player: 1, coord: 'I3', facing: 'S', id: 'V2' }, { player: 2, coord: 'B8', facing: 'N', id: 'O1' }, { player: 2, coord: 'D7', facing: 'N', id: 'O2' }, { player: 3, coord: 'F8', facing: 'N', id: 'B1' }, { player: 3, coord: 'H7', facing: 'N', id: 'B2' } ], bloodwells: [ { player: 0, coord: 'B1', id: 'SBW1' }, { player: 0, coord: 'D2', id: 'SBW2' }, { player: 0, coord: 'A4', id: 'SBW3' }, { player: 1, coord: 'H1', id: 'VBW1' }, { player: 1, coord: 'F2', id: 'VBW2' }, { player: 1, coord: 'I4', id: 'VBW3' }, { player: 2, coord: 'C9', id: 'OBW1' }, { player: 2, coord: 'A7', id: 'OBW2' }, { player: 2, coord: 'D9', id: 'OBW3' }, { player: 3, coord: 'G9', id: 'BBW1' }, { player: 3, coord: 'I7', id: 'BBW2' }, { player: 3, coord: 'F9', id: 'BBW3' } ], hazards: [ { type: 'Tombstone', coord: 'D5' }, { type: 'Tombstone', coord: 'F5' }, { type: 'Carcass', coord: 'E4' }, { type: 'Carcass', coord: 'E6' }, { type: 'Grave Dust', coord: 'D4' }, { type: 'Grave Dust', coord: 'F6' } ] }
+        ]
+    };
 
-    // --- 3. DOM Element References ---
-    const screens = {
-        playerCount: document.getElementById('screen-player-count'),
-        playerSetup: document.getElementById('screen-player-setup'),
-        gameplay: document.getElementById('screen-gameplay'),
-    };
-    const popups = {
-       elimination: document.getElementById('popup-elimination'),
-       victory: document.getElementById('popup-victory'),
-    }
+    // --- DOM Element References ---
+    const screens = { playerCount: document.getElementById('screen-player-count'), playerSetup: document.getElementById('screen-player-setup'), gameplay: document.getElementById('screen-gameplay'), };
+    const popups = { elimination: document.getElementById('popup-elimination'), victory: document.getElementById('popup-victory'), };
     const playerCountButtons = screens.playerCount.querySelectorAll('button[data-count]');
     const playerSetupTitle = document.getElementById('player-setup-title');
     const playerNameLabel = document.getElementById('player-name-label');
     const playerNameInput = document.getElementById('input-player-name');
     const classSelectionContainer = document.getElementById('class-selection-buttons');
     const classButtons = classSelectionContainer.querySelectorAll('.btn-class');
-    const classDetailsName = document.getElementById('class-name'); // Setup details
-    const classDetailsDescription = document.getElementById('class-description'); // Setup details
-    const classDetailsAbilities = document.getElementById('class-abilities'); // Setup details
+    const classDetailsName = document.getElementById('class-name');
+    const classDetailsDescription = document.getElementById('class-description');
+    const classDetailsAbilities = document.getElementById('class-abilities');
     const classDetailsContainer = document.getElementById('class-details-container');
     const btnBack = document.getElementById('btn-back');
     const btnNext = document.getElementById('btn-next');
@@ -72,9 +83,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const actionBar = document.getElementById('action-bar');
     const gameBoard = document.getElementById('game-board');
     const playerInfoDisplay = document.getElementById('player-info');
-    const currentClassDetailsName = document.getElementById('info-class-name'); // Gameplay details
-    const currentClassDescription = document.getElementById('info-class-description'); // Gameplay details
-    const currentClassAbilitiesList = document.getElementById('info-class-abilities'); // Gameplay details
+    const currentClassDetailsName = document.getElementById('info-class-name');
+    const currentClassDescription = document.getElementById('info-class-description');
+    const currentClassAbilitiesList = document.getElementById('info-class-abilities');
     const infoSilverBullet = document.getElementById('info-silver-bullet');
     const statusBarPlayer = document.getElementById('status-player');
     const statusBarAP = document.getElementById('status-ap');
@@ -92,73 +103,713 @@ document.addEventListener('DOMContentLoaded', () => {
     const hazardPickerOptions = document.getElementById('hazard-picker-options');
     const btnCancelThrow = document.getElementById('btn-cancel-throw');
 
+    // --- END OF SECTION 1 ---
 
-    // --- 4. Function Definitions ---
+// --- Coordinate Helper Functions ---
+function getRowColFromCoord(coord) { // e.g., "A1" -> { row: 1, col: 1 }
+    if (!coord || coord.length < 2) return null;
+    const colLetter = coord.charAt(0).toUpperCase();
+    const rowNum = parseInt(coord.substring(1));
+    if (isNaN(rowNum) || colLetter < 'A' || colLetter > 'I' || rowNum < 1 || rowNum > 9) {
+        return null; // Invalid coord
+    }
+    return { row: rowNum, col: colLetter.charCodeAt(0) - 64 }; // A=1, B=2...
+}
 
-    // --- Coordinate Helper Functions ---
-    function getRowColFromCoord(coord) { if (!coord || coord.length < 2) return null; const colLetter = coord.charAt(0).toUpperCase(); const rowNum = parseInt(coord.substring(1)); if (isNaN(rowNum) || colLetter < 'A' || colLetter > 'I' || rowNum < 1 || rowNum > 9) return null; return { row: rowNum, col: colLetter.charCodeAt(0) - 64 }; }
-    function getCoordFromRowCol(row, col) { if (row < 1 || row > 9 || col < 1 || col > 9) return null; const colLetter = String.fromCharCode(64 + col); return `${colLetter}${row}`; }
-    function getAdjacentCoord(coord, direction) { const rc = getRowColFromCoord(coord); if (!rc) return null; let { row, col } = rc; if (direction === 'N') row--; else if (direction === 'S') row++; else if (direction === 'E') col++; else if (direction === 'W') col--; return getCoordFromRowCol(row, col); }
-    function getDistance(coord1, coord2) { const rc1 = getRowColFromCoord(coord1); const rc2 = getRowColFromCoord(coord2); if (!rc1 || !rc2) return Infinity; return Math.abs(rc1.row - rc2.row) + Math.abs(rc1.col - rc2.col); }
+function getCoordFromRowCol(row, col) { // e.g., { row: 1, col: 1 } -> "A1"
+    if (row < 1 || row > 9 || col < 1 || col > 9) return null;
+    const colLetter = String.fromCharCode(64 + col);
+    return `${colLetter}${row}`;
+}
 
-    // --- UI Helper Functions ---
-    function showScreen(screenId) { Object.values(screens).forEach(screen => screen.classList.remove('active')); if (screens[screenId]) screens[screenId].classList.add('active'); else console.error(`Screen "${screenId}" not found.`); console.log(`Showing screen: ${screenId}`); }
-    function displayClassDetails(className) { const data = CLASS_DATA[className]; const nameEl = document.getElementById('class-name'); const descEl = document.getElementById('class-description'); const abilitiesEl = document.getElementById('class-abilities'); const containerEl = document.getElementById('class-details-container'); if (data) { nameEl.innerHTML = `<strong>Class:</strong> ${className}`; descEl.textContent = data.description; abilitiesEl.innerHTML = ''; data.abilities.forEach(ability => { const li = document.createElement('li'); li.innerHTML = `<strong>${ability.name}:</strong> ${ability.description}`; abilitiesEl.appendChild(li); }); containerEl.style.display = 'block'; } else { nameEl.innerHTML = `<strong>Class:</strong> ---`; descEl.textContent = 'Select a class...'; abilitiesEl.innerHTML = '<li>---</li>'; } }
-    function updatePlayerSetupScreen(playerIndex) { const playerNum = playerIndex + 1; currentPlayerSetupIndex = playerIndex; console.log(`Setting up for P${playerNum}`); if (!playerData[playerIndex]) playerData[playerIndex] = { name: `P${playerNum}`, class: null }; else playerData[playerIndex].class = null; playerNameInput.value = playerData[playerIndex].name !== `P${playerNum}` ? playerData[playerIndex].name : ''; playerNameInput.placeholder = `P${playerNum} Name (Optional)`; playerSetupTitle.textContent = `Player ${playerNum} Setup`; playerNameLabel.textContent = `Player ${playerNum} Name:`; let selBtn = classSelectionContainer.querySelector('.selected'); if (selBtn) selBtn.classList.remove('selected'); classButtons.forEach(button => { const cls = button.dataset.class; button.disabled = selectedClasses.includes(cls); button.style.opacity = button.disabled ? '0.5' : '1'; }); displayClassDetails(null); btnBack.style.display = (playerIndex === 0) ? 'none' : 'inline-block'; btnNext.textContent = (playerIndex === numberOfPlayers - 1) ? 'Start Game' : 'Next'; }
-    function addToLog(message) { const li = document.createElement('li'); li.textContent = message; while (logList.children.length > 50) logList.removeChild(logList.firstChild); logList.appendChild(li); gameLog.scrollTop = gameLog.scrollHeight; console.log("Log:", message); }
-    function generateGrid() { gameBoard.innerHTML = ''; for (let r = 1; r <= 9; r++) { for (let c = 1; c <= 9; c++) { const square = document.createElement('div'); const colLetter = String.fromCharCode(64 + c); const coord = `${colLetter}${r}`; square.classList.add('grid-square'); square.dataset.coord = coord; gameBoard.appendChild(square); } } console.log("Generated grid."); }
-    function getPlayerColorClass(playerIndex) { const player = currentGameState.players[playerIndex]; return player ? (CLASS_DATA[player.class]?.color || '') : ''; }
-    function renderBoard(gameState) { document.querySelectorAll('.piece').forEach(p => p.remove()); if (!gameState?.board) { console.error("Render Error: Invalid state."); return; } gameState.board.vampires?.forEach(vamp => { const targetSquare = gameBoard.querySelector(`[data-coord="${vamp.coord}"]`); if (targetSquare) { const vampElement = document.createElement('div'); const playerClass = gameState.players[vamp.player]?.class; const classColor = CLASS_DATA[playerClass]?.color || ''; vampElement.classList.add('piece', 'vampire', classColor); vampElement.dataset.id = vamp.id; vampElement.dataset.player = vamp.player; vampElement.dataset.facing = vamp.facing; if (vamp.id === gameState.selectedVampireId) vampElement.classList.add('selected'); if (vamp.cursed) vampElement.classList.add('cursed'); targetSquare.appendChild(vampElement); } }); gameState.board.bloodwells?.forEach(bw => { const targetSquare = gameBoard.querySelector(`[data-coord="${bw.coord}"]`); if (targetSquare) { const bwElement = document.createElement('div'); const playerClass = gameState.players[bw.player]?.class; const classColor = CLASS_DATA[playerClass]?.color || ''; bwElement.classList.add('piece', 'bloodwell', classColor); bwElement.dataset.id = bw.id; bwElement.dataset.player = bw.player; bwElement.textContent = '🩸'; targetSquare.appendChild(bwElement); } }); gameState.board.hazards?.forEach(hazard => { const targetSquare = gameBoard.querySelector(`[data-coord="${hazard.coord}"]`); if (targetSquare) { const hazardElement = document.createElement('div'); hazardElement.classList.add('piece', 'hazard'); const typeClass = `hazard-${hazard.type.toLowerCase().replace(' ','-')}`; hazardElement.classList.add(typeClass); let icon = '?'; if (hazard.type === 'Tombstone') icon = '🪦'; else if (hazard.type === 'Carcass') icon = '💀'; else if (hazard.type === 'Grave Dust') icon = '💩'; else if (hazard.type === 'Dynamite') icon = '💥'; hazardElement.textContent = icon; targetSquare.appendChild(hazardElement); } }); }
-    function updatePlayerInfoPanel(player, turn, currentAP, resources) { if (!player || !resources) { console.error("Info Panel Error."); return; } const data = CLASS_DATA[player.class]; if (data) { currentClassDetailsName.innerHTML = `<strong>Class:</strong> ${player.class}`; currentClassDescription.textContent = data.description; currentClassAbilitiesList.innerHTML = ''; data.abilities.forEach(ability => { const li = document.createElement('li'); const isUsed = resources.abilitiesUsed.includes(ability.name); li.innerHTML = `<strong>${ability.name}:</strong> ${ability.description}`; if (isUsed) { li.style.opacity = '0.5'; li.style.textDecoration = 'line-through'; } currentClassAbilitiesList.appendChild(li); }); } infoSilverBullet.textContent = resources.silverBullet > 0 ? `Available (${resources.silverBullet})` : "Used"; statusBarPlayer.textContent = player.name; statusBarAP.textContent = currentAP; statusBarTurn.textContent = turn; const canAffordShoot = currentAP >= AP_COST.SHOOT; const canAffordThrow = currentAP >= AP_COST.THROW_HAZARD; const canAffordSilver = currentAP >= AP_COST.SILVER_BULLET && resources.silverBullet > 0; const isVampSelected = !!currentGameState.selectedVampireId; const selectedVamp = findVampireById(currentGameState.selectedVampireId); const isCursed = selectedVamp?.cursed; btnShoot.disabled = !isVampSelected || !canAffordShoot || isCursed; btnThrow.disabled = !isVampSelected || !canAffordThrow || isCursed; btnSilverBullet.disabled = !isVampSelected || !canAffordSilver || isCursed; }
-    function updateUI() { if (!currentGameState?.players?.length || !currentGameState.playerResources?.length) return; const idx = currentGameState.currentPlayerIndex; if (idx < 0 || idx >= currentGameState.players.length || idx >= currentGameState.playerResources.length) { console.error("Error: Invalid currentPlayerIndex.", currentGameState); return; } const player = currentGameState.players[idx]; const resources = currentGameState.playerResources[idx]; updatePlayerInfoPanel(player, currentGameState.turn, currentGameState.currentAP, resources); }
-    function clearHighlights() { document.querySelectorAll('.grid-square.valid-target, .grid-square.invalid-target').forEach(el => el.classList.remove('valid-target', 'invalid-target')); }
+function getAdjacentCoord(coord, direction) { // direction = 'N', 'E', 'S', 'W'
+    const rc = getRowColFromCoord(coord);
+    if (!rc) return null;
+    let { row, col } = rc;
+    if (direction === 'N') row--;
+    else if (direction === 'S') row++;
+    else if (direction === 'E') col++;
+    else if (direction === 'W') col--;
+    return getCoordFromRowCol(row, col); // Will return null if off board
+}
 
-    // --- Game State & Undo Logic ---
-    function saveStateToHistory() { try { gameHistory.push(JSON.parse(JSON.stringify(currentGameState))); btnUndo.disabled = false; console.log("State saved. History:", gameHistory.length); } catch (error) { console.error("Error saving state:", error); alert("Undo Error!"); } }
-    function undoLastAction() { if (gameHistory.length > 0) { console.log("Undoing..."); try { currentGameState = gameHistory.pop(); renderBoard(currentGameState); updateUI(); addToLog("--- Action Undone ---"); btnUndo.disabled = gameHistory.length === 0; } catch (error) { console.error("Error restoring state:", error); alert("Undo Restore Error!"); } } else { console.log("Nothing to undo."); btnUndo.disabled = true; } }
+// Calculates distance between two coords (Manhattan distance)
+function getDistance(coord1, coord2) {
+    const rc1 = getRowColFromCoord(coord1);
+    const rc2 = getRowColFromCoord(coord2);
+    if (!rc1 || !rc2) return Infinity; // Cannot calculate if coords invalid
+    return Math.abs(rc1.row - rc2.row) + Math.abs(rc1.col - rc2.col);
+}
 
-    // --- Find Pieces ---
-    function findVampireById(vampId) { return currentGameState.board?.vampires?.find(v => v.id === vampId); }
-    function findPieceAtCoord(coord) { if (!currentGameState?.board) return null; const vamp = currentGameState.board.vampires?.find(v => v.coord === coord); if (vamp) return { type: 'vampire', piece: vamp }; const bw = currentGameState.board.bloodwells?.find(b => b.coord === coord); if (bw) return { type: 'bloodwell', piece: bw }; const hazard = currentGameState.board.hazards?.find(h => h.coord === coord); if (hazard) return { type: 'hazard', piece: hazard }; return null; }
+// --- UI Helper Functions ---
+
+// Switches the visible screen
+function showScreen(screenId) {
+    Object.values(screens).forEach(screen => screen.classList.remove('active'));
+    if (screens[screenId]) {
+        screens[screenId].classList.add('active');
+    } else {
+        console.error(`Screen with id "${screenId}" not found.`);
+    }
+    console.log(`Showing screen: ${screenId}`);
+}
+
+// Displays details (including narrative ability descriptions) for setup
+function displayClassDetails(className) {
+    const data = CLASS_DATA[className];
+    // Target setup elements specifically using the references defined earlier
+    if (!classDetailsName || !classDetailsDescription || !classDetailsAbilities || !classDetailsContainer) {
+        console.error("Setup class detail elements not found!"); return;
+    }
+
+    if (data) {
+        classDetailsName.innerHTML = `<strong>Class:</strong> ${className}`;
+        classDetailsDescription.textContent = data.description;
+        classDetailsAbilities.innerHTML = ''; // Clear previous abilities
+        data.abilities.forEach(ability => {
+            const li = document.createElement('li');
+            li.innerHTML = `<strong>${ability.name}:</strong> ${ability.description}`;
+            classDetailsAbilities.appendChild(li);
+        });
+        classDetailsContainer.style.display = 'block';
+    } else {
+        classDetailsName.innerHTML = `<strong>Class:</strong> ---`;
+        classDetailsDescription.textContent = 'Select a class above to see details.';
+        classDetailsAbilities.innerHTML = '<li>---</li>';
+        // Optionally hide container: containerElement.style.display = 'none';
+    }
+}
+
+// Updates the player setup screen UI for the correct player
+function updatePlayerSetupScreen(playerIndex) {
+    const playerNum = playerIndex + 1;
+    currentPlayerSetupIndex = playerIndex;
+
+    console.log(`Setting up screen for Player ${playerNum}`);
+
+    if (!playerData[playerIndex]) {
+         playerData[playerIndex] = { name: `P${playerNum}`, class: null };
+    } else {
+        // Clear class selection when returning to setup screen for a player
+        playerData[playerIndex].class = null;
+    }
+    // Set name input value: if player has a custom name use it, otherwise empty for placeholder
+    playerNameInput.value = (playerData[playerIndex].name && playerData[playerIndex].name !== `P${playerNum}`) ? playerData[playerIndex].name : '';
+    playerNameInput.placeholder = `P${playerNum} Name (Optional)`;
+    playerSetupTitle.textContent = `Player ${playerNum} Setup`;
+    playerNameLabel.textContent = `Player ${playerNum} Name:`;
+
+    // Reset class button selection highlight
+    let previouslySelectedButton = classSelectionContainer.querySelector('.selected');
+    if (previouslySelectedButton) {
+        previouslySelectedButton.classList.remove('selected');
+    }
+    // Update enabled/disabled state of class buttons
+    classButtons.forEach(button => {
+        const className = button.dataset.class;
+        // Disable if class is in the list of classes selected by *other* players
+        button.disabled = selectedClasses.includes(className);
+        button.style.opacity = button.disabled ? '0.5' : '1';
+    });
+
+    displayClassDetails(null); // Reset details view
+
+    // Show/Hide Back button
+    btnBack.style.display = (playerIndex === 0) ? 'none' : 'inline-block';
+    // Update Next/Start Game button text
+    btnNext.textContent = (playerIndex === numberOfPlayers - 1) ? 'Start Game' : 'Next';
+}
+
+// Adds a message to the game log panel
+function addToLog(message) {
+    const li = document.createElement('li');
+    li.textContent = message;
+    // Limit log length
+    while (logList.children.length > 50) {
+         logList.removeChild(logList.firstChild);
+    }
+    logList.appendChild(li);
+    // Auto-scroll to bottom
+    if (gameLog && !gameLog.classList.contains('log-hidden')) { // Only scroll if visible
+         gameLog.scrollTop = gameLog.scrollHeight;
+    }
+    console.log("Log:", message);
+}
+
+// Generates the 9x9 grid squares in the HTML
+function generateGrid() {
+    gameBoard.innerHTML = ''; // Clear existing grid
+    for (let r = 1; r <= 9; r++) {
+        for (let c = 1; c <= 9; c++) {
+            const square = document.createElement('div');
+            const colLetter = String.fromCharCode(64 + c);
+            const coord = `${colLetter}${r}`;
+            square.classList.add('grid-square');
+            square.dataset.coord = coord;
+            gameBoard.appendChild(square);
+        }
+    }
+    console.log("Generated 9x9 grid.");
+}
+
+// Gets the CSS color class name for a given player index
+function getPlayerColorClass(playerIndex) {
+    // Check if game state and players array are initialized
+    const player = currentGameState.players?.[playerIndex];
+    if (player && player.class && CLASS_DATA[player.class]) {
+        return CLASS_DATA[player.class].color || '';
+    }
+    return ''; // Return empty string if player/class/color not found
+}
+
+// Removes target highlighting classes from all grid squares
+function clearHighlights() {
+    document.querySelectorAll('.grid-square.valid-target, .grid-square.invalid-target').forEach(el => {
+        el.classList.remove('valid-target', 'invalid-target');
+    });
+}
+
+// --- END OF SECTION 2 ---
+
+// --- Board Rendering & Gameplay UI Update Functions ---
+
+    // Renders pieces on the board based on game state
+    function renderBoard(gameState) {
+        // console.log("Rendering board state..."); // Reduce console noise
+        document.querySelectorAll('.piece').forEach(p => p.remove()); // Clear existing pieces
+
+        if (!gameState || !gameState.board) { console.error("Render Error: Invalid game state provided."); return; }
+
+        // Render Vampires
+        gameState.board.vampires?.forEach(vamp => {
+            const targetSquare = gameBoard.querySelector(`[data-coord="${vamp.coord}"]`);
+            if (targetSquare) {
+                const vampElement = document.createElement('div');
+                const playerClass = gameState.players[vamp.player]?.class;
+                const classColor = CLASS_DATA[playerClass]?.color || '';
+                vampElement.classList.add('piece', 'vampire', classColor);
+                vampElement.dataset.id = vamp.id; vampElement.dataset.player = vamp.player; vampElement.dataset.facing = vamp.facing;
+                if (vamp.id === gameState.selectedVampireId) vampElement.classList.add('selected');
+                if (vamp.cursed) vampElement.classList.add('cursed');
+                targetSquare.appendChild(vampElement);
+            } else {
+                 console.warn(`Square not found for vampire ${vamp.id} at ${vamp.coord}`);
+            }
+        });
+
+        // Render Bloodwells
+        gameState.board.bloodwells?.forEach(bw => {
+            const targetSquare = gameBoard.querySelector(`[data-coord="${bw.coord}"]`);
+            if (targetSquare) {
+                const bwElement = document.createElement('div');
+                const playerClass = gameState.players[bw.player]?.class;
+                const classColor = CLASS_DATA[playerClass]?.color || '';
+                bwElement.classList.add('piece', 'bloodwell', classColor);
+                bwElement.dataset.id = bw.id; bwElement.dataset.player = bw.player;
+                bwElement.textContent = '🩸';
+                targetSquare.appendChild(bwElement);
+            } else {
+                 console.warn(`Square not found for bloodwell ${bw.id} at ${bw.coord}`);
+            }
+        });
+
+        // Render Hazards
+        gameState.board.hazards?.forEach(hazard => {
+            const targetSquare = gameBoard.querySelector(`[data-coord="${hazard.coord}"]`);
+            if (targetSquare) {
+                const hazardElement = document.createElement('div');
+                hazardElement.classList.add('piece', 'hazard');
+                const typeClass = `hazard-${hazard.type.toLowerCase().replace(' ','-')}`;
+                hazardElement.classList.add(typeClass);
+                let icon = '?';
+                if (hazard.type === 'Tombstone') icon = '🪦'; else if (hazard.type === 'Carcass') icon = '💀'; else if (hazard.type === 'Grave Dust') icon = '💩'; else if (hazard.type === 'Dynamite') icon = '💥';
+                hazardElement.textContent = icon;
+                targetSquare.appendChild(hazardElement);
+            } else {
+                 console.warn(`Square not found for hazard at ${hazard.coord}`);
+            }
+        });
+    }
+
+    // Updates the player info panel during gameplay
+    function updatePlayerInfoPanel(player, turn, currentAP, resources) {
+        // Ensure elements exist before trying to update them
+        if (!player || !resources || !currentClassDetailsName || !currentClassDescription || !currentClassAbilitiesList || !infoSilverBullet || !statusBarPlayer || !statusBarAP || !statusBarTurn) {
+             console.error("Info Panel Error: One or more required elements not found or invalid data provided.");
+             return; // Exit if essential elements/data are missing
+        }
+
+        // console.log(`Updating info panel for ${player.name}, Turn ${turn}, AP: ${currentAP}`); // Reduce noise
+        const data = CLASS_DATA[player.class];
+        if (data) {
+            currentClassDetailsName.innerHTML = `<strong>Class:</strong> ${player.class}`;
+            currentClassDescription.textContent = data.description; // Use the narrative description here too, or could fetch technical rules
+            currentClassAbilitiesList.innerHTML = ''; // Clear previous abilities
+            data.abilities.forEach(ability => {
+                const li = document.createElement('li');
+                // Check if the ability name exists in the player's used abilities list
+                const isUsed = resources.abilitiesUsed?.includes(ability.name); // Use optional chaining for safety
+                li.innerHTML = `<strong>${ability.name}:</strong> ${ability.description}`; // Display narrative desc
+                if (isUsed) {
+                    li.style.opacity = '0.5';
+                    li.style.textDecoration = 'line-through';
+                }
+                // TODO: Add click listeners for *active* abilities if they should be clickable
+                currentClassAbilitiesList.appendChild(li);
+            });
+        } else {
+             // Handle case where class data might be missing
+             currentClassDetailsName.innerHTML = `<strong>Class:</strong> ${player.class || 'Unknown'}`;
+             currentClassDescription.textContent = "Class data not found.";
+             currentClassAbilitiesList.innerHTML = '';
+        }
+
+        // Update Silver Bullet status
+        infoSilverBullet.textContent = resources.silverBullet > 0 ? `Available (${resources.silverBullet})` : "Used";
+
+        // Update Status Bar
+        statusBarPlayer.textContent = player.name;
+        statusBarAP.textContent = currentAP;
+        statusBarTurn.textContent = turn;
+
+        // Update Action Button States based on current game state
+        const canAffordShoot = currentAP >= AP_COST.SHOOT;
+        const canAffordThrowBase = currentAP >= AP_COST.THROW_HAZARD; // Need >= 1 AP even to consider throwing
+        const canAffordSilver = currentAP >= AP_COST.SILVER_BULLET && resources.silverBullet > 0;
+        const isVampSelected = !!currentGameState.selectedVampireId;
+        const selectedVamp = findVampireById(currentGameState.selectedVampireId); // Find selected vampire object
+        const isCursed = selectedVamp?.cursed; // Check if the selected vampire is cursed
+
+        // Enable/disable buttons (ensure button references are valid)
+        if (btnShoot) btnShoot.disabled = !isVampSelected || !canAffordShoot || isCursed;
+        if (btnThrow) btnThrow.disabled = !isVampSelected || !canAffordThrowBase || isCursed; // Base check, specific cost checked later
+        if (btnSilverBullet) btnSilverBullet.disabled = !isVampSelected || !canAffordSilver || isCursed;
+
+        // TODO: Disable/enable other actions (Move, Pivot, Dispel, Class Actives) based on AP cost, selection, curse status, target validity etc.
+        // Example: document.getElementById('action-move').disabled = !isVampSelected || currentAP < AP_COST.MOVE || isCursed;
+    }
+
+    // Central UI update function (calls updatePlayerInfoPanel)
+    function updateUI() {
+        if (!currentGameState || !currentGameState.players || !currentGameState.playerResources) {
+            console.error("updateUI called with invalid game state.");
+             return; // Exit if state is not ready
+        }
+        const currentPlayerIndex = currentGameState.currentPlayerIndex;
+        // Check if index is valid for the arrays
+        if (currentPlayerIndex < 0 || currentPlayerIndex >= currentGameState.players.length || currentPlayerIndex >= currentGameState.playerResources.length) {
+            console.error("Error: currentPlayerIndex is out of bounds in updateUI.", currentGameState);
+            return;
+        }
+        const currentPlayer = currentGameState.players[currentPlayerIndex];
+        const currentResources = currentGameState.playerResources[currentPlayerIndex];
+        // Check if player and resources are valid before calling update
+        if (currentPlayer && currentResources) {
+             updatePlayerInfoPanel(currentPlayer, currentGameState.turn, currentGameState.currentAP, currentResources);
+        } else {
+             console.error("Error fetching current player or resources in updateUI.");
+        }
+        // Note: renderBoard is called separately by functions that change board pieces
+    }
+
+    // --- END OF SECTION 3 ---
+
+    // --- Game State, Undo & Piece Finding Functions ---
+
+    // Saves a deep copy of the current state to history
+    function saveStateToHistory() {
+        try {
+            // Create a deep copy of the game state using JSON methods
+            const stateCopy = JSON.parse(JSON.stringify(currentGameState));
+            gameHistory.push(stateCopy);
+            // Limit history size if desired (e.g., keep last 10 states)
+            // if (gameHistory.length > 10) gameHistory.shift();
+            btnUndo.disabled = false; // Enable undo button now that there's history
+            console.log("State saved. History length:", gameHistory.length);
+        } catch (error) {
+            // Handle potential errors during deep copy (e.g., circular references)
+            console.error("Error saving game state:", error);
+            alert("Error saving game state! Undo may not work correctly.");
+        }
+    }
+
+    // Restores the previous game state from history
+    function undoLastAction() {
+        if (gameHistory.length > 0) {
+            console.log("Undoing last action...");
+            try {
+                // Restore the previous state (it's already a deep copy from history)
+                currentGameState = gameHistory.pop();
+
+                // Re-render everything based on the restored state
+                renderBoard(currentGameState);
+                updateUI(); // Update info panel, button states etc.
+                addToLog("--- Last Action Undone ---");
+
+                // Disable undo if history is now empty
+                btnUndo.disabled = gameHistory.length === 0;
+            } catch (error) {
+                console.error("Error restoring game state:", error);
+                alert("Error restoring game state!");
+                btnUndo.disabled = true; // Disable undo on error
+            }
+        } else {
+            console.log("No actions in history to undo.");
+            btnUndo.disabled = true; // Ensure button is disabled
+        }
+    }
+
+    // --- Find Pieces in Game State ---
+
+    // Finds a vampire object in the current state by its unique ID
+    function findVampireById(vampId) {
+        if (!vampId || !currentGameState.board?.vampires) {
+            return null;
+        }
+        return currentGameState.board.vampires.find(v => v.id === vampId);
+    }
+
+    // Finds any piece (Vampire, Bloodwell, or Hazard) at a specific coordinate
+    function findPieceAtCoord(coord) {
+        if (!coord || !currentGameState?.board) return null;
+
+        // Check for vampire first (visually on top)
+        const vamp = currentGameState.board.vampires?.find(v => v.coord === coord);
+        if (vamp) return { type: 'vampire', piece: vamp };
+
+        // Check for bloodwell next
+        const bw = currentGameState.board.bloodwells?.find(b => b.coord === coord);
+        if (bw) return { type: 'bloodwell', piece: bw };
+
+        // Check for hazard last
+        const hazard = currentGameState.board.hazards?.find(h => h.coord === coord);
+        if (hazard) return { type: 'hazard', piece: hazard };
+
+        return null; // Empty square
+    }
+
+    // --- END OF SECTION 4 ---
 
     // --- Action Execution Functions ---
-    function executeMove(vampire, targetCoord) { if (currentGameState.currentAP < AP_COST.MOVE) { addToLog("No AP."); return; } if (vampire.cursed) { addToLog("Cursed move TBD."); /* Allow for now? */ } const expectedTarget = getAdjacentCoord(vampire.coord, vampire.facing); if (targetCoord !== expectedTarget) { addToLog(`Invalid move target. Need ${expectedTarget}`); return; } const pieceAtTarget = findPieceAtCoord(targetCoord); if (pieceAtTarget && (pieceAtTarget.type === 'vampire' || pieceAtTarget.type === 'bloodwell' || pieceAtTarget.piece.type === 'Carcass')) { addToLog(`Blocked by ${pieceAtTarget.piece.type}.`); return; } saveStateToHistory(); const oldCoord = vampire.coord; vampire.coord = targetCoord; currentGameState.currentAP -= AP_COST.MOVE; addToLog(`${vampire.id} moved ${oldCoord} -> ${targetCoord}. (${currentGameState.currentAP} AP)`); if (pieceAtTarget?.type === 'hazard' && pieceAtTarget.piece.type === 'Grave Dust') if (!vampire.cursed) { vampire.cursed = true; addToLog(`${vampire.id} CURSED by Grave Dust!`); } if (vampire.cursed && pieceAtTarget?.type === 'bloodwell' && pieceAtTarget.piece.player === vampire.player && !findPieceAtCoord(targetCoord, 'hazard')) { vampire.cursed = false; addToLog(`${vampire.id} CURED by Bloodbath!`); } renderBoard(currentGameState); updateUI(); }
-    function executePivot(vampire, newFacing) { if (!DIRECTIONS.includes(newFacing)) return; if (currentGameState.currentAP < AP_COST.PIVOT) { addToLog("No AP."); return; } saveStateToHistory(); vampire.facing = newFacing; currentGameState.currentAP -= AP_COST.PIVOT; addToLog(`${vampire.id} pivoted ${newFacing}. (${currentGameState.currentAP} AP)`); renderBoard(currentGameState); updateUI(); }
-    function executeShoot(vampire, isSilverBullet = false) { const cost = isSilverBullet ? AP_COST.SILVER_BULLET : AP_COST.SHOOT; if (currentGameState.currentAP < cost) { addToLog(`No AP.`); return; } if (vampire.cursed) { addToLog("Cursed cannot shoot."); return; } const res = currentGameState.playerResources[vampire.player]; if (isSilverBullet && res.silverBullet <= 0) { addToLog("No Silver Bullet."); return; } saveStateToHistory(); const shooterIdx = vampire.player; const shooterCls = currentGameState.players[shooterIdx].class; let currCoord = vampire.coord; let msg = `Shot off board.`; addToLog(`${vampire.id} ${isSilverBullet ? 'fires SB' : 'shoots'} ${vampire.facing}...`); if (isSilverBullet) res.silverBullet--; currentGameState.currentAP -= cost; for (let i = 0; i < 9; i++) { currCoord = getAdjacentCoord(currCoord, vampire.facing); if (!currCoord) break; const target = findPieceAtCoord(currCoord); if (target) { const tType = target.type; const tPiece = target.piece; if (tType === 'hazard' && (tPiece.type === 'Tombstone' || tPiece.type === 'Dynamite')) { if (tPiece.type === 'Tombstone' && shooterCls === 'Bounty Hunter') { addToLog(`Passes Tombstone.`); continue; } msg = `Blocked by ${tPiece.type}.`; if (tPiece.type === 'Dynamite') { msg += ` EXPLODES!`; const idx = currentGameState.board.hazards.findIndex(h => h.coord === currCoord); if (idx > -1) currentGameState.board.hazards.splice(idx, 1); /* TODO: Explosion area effect */ addToLog("Dynamite logic TBD."); } break; } if (tType === 'vampire') { if (isSilverBullet && tPiece.player !== shooterIdx) { msg = `SB HIT & ELIMINATED ${tPiece.id}!`; currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.id !== tPiece.id); /* TODO: Check player elim */ } else if (shooterCls === 'Bounty Hunter' && tPiece.player !== shooterIdx && !tPiece.cursed) { msg = `HIT ${tPiece.id}. CURSED!`; const targetV = findVampireById(tPiece.id); if (targetV) targetV.cursed = true; } else { msg = `Hit ${tPiece.id}.`; } break; } if (tType === 'bloodwell') { /* TODO: Check Sheriff protection */ msg = `DESTROYED BW ${tPiece.id}!`; currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== tPiece.id); /* TODO: Check player elim */ break; } if (tType === 'hazard' && (tPiece.type === 'Carcass' || tPiece.type === 'Grave Dust')) { addToLog(`Passes ${tPiece.type}.`); continue; } } } addToLog(msg + ` (${currentGameState.currentAP} AP)`); renderBoard(currentGameState); updateUI(); /* TODO: Check win/loss */ }
-    function executeThrow(vampire, hazardType, targetCoord) { const cost = hazardType === 'Dynamite' ? AP_COST.THROW_DYNAMITE : AP_COST.THROW_HAZARD; if (currentGameState.currentAP < cost) { addToLog(`No AP.`); return; } if (vampire.cursed) { addToLog("Cursed cannot throw."); return; } if (currentGameState.hazardPool[hazardType] <= 0) { addToLog(`No ${hazardType}.`); return; } const dist = getDistance(vampire.coord, targetCoord); if (dist === 0 || dist > 3) { addToLog(`Bad distance.`); return; } const targetPiece = findPieceAtCoord(targetCoord); if (targetPiece && !(hazardType === 'Grave Dust' && targetPiece.type === 'vampire')) { addToLog(`Target blocked.`); return; } /* TODO: Path validation */ saveStateToHistory(); currentGameState.hazardPool[hazardType]--; currentGameState.board.hazards.push({ type: hazardType, coord: targetCoord }); currentGameState.currentAP -= cost; addToLog(`${vampire.id} threw ${hazardType} to ${targetCoord}. (${currentGameState.currentAP} AP)`); if (hazardType === 'Grave Dust' && targetPiece?.type === 'vampire') { const targetV = findVampireById(targetPiece.piece.id); if (targetV && !targetV.cursed) { targetV.cursed = true; addToLog(`${targetV.id} CURSED by GD!`); } } renderBoard(currentGameState); updateUI(); }
-    function nextTurn() { saveStateToHistory(); const prevIdx = currentGameState.currentPlayerIndex; /* TODO: End-of-turn effects */ let nextIdx = (prevIdx + 1) % numberOfPlayers; let check = 0; while (currentGameState.players[nextIdx]?.eliminated && check < numberOfPlayers) { nextIdx = (nextIdx + 1) % numberOfPlayers; check++; } if (check >= numberOfPlayers && !currentGameState.players[nextIdx]?.eliminated) { console.error("Turn advance failed!"); addToLog("Turn Error!"); undoLastAction(); return; } currentGameState.currentPlayerIndex = nextIdx; if (nextIdx <= prevIdx) currentGameState.turn++; const playerIdx = currentGameState.currentPlayerIndex; if (currentGameState.turn === 1) { if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][playerIdx]; else if (numberOfPlayers === 3) currentGameState.currentAP = 6; else if (numberOfPlayers === 2) currentGameState.currentAP = 5; } else { currentGameState.currentAP = 5; } /* TODO: Blood Brothers check */ currentGameState.selectedVampireId = null; currentGameState.actionState = { pendingAction: null, selectedHazardType: null }; btnUndo.disabled = true; /* gameHistory = []; // Optionally clear history */ renderBoard(currentGameState); updateUI(); const currPlayer = currentGameState.players[currentGameState.currentPlayerIndex]; addToLog(`--- Turn ${currentGameState.turn} - ${currPlayer.name}'s turn (${currPlayer.class}). AP: ${currentGameState.currentAP} ---`); /* TODO: Check Victory */ }
 
-    // --- Event Listener Handlers ---
-    function handleBoardClick(event) { const squareEl = event.target.closest('.grid-square'); if (!squareEl) return; const coord = squareEl.dataset.coord; const pending = currentGameState.actionState.pendingAction; if (pending === 'throw-select-target') { const type = currentGameState.actionState.selectedHazardType; const vamp = findVampireById(currentGameState.selectedVampireId); executeThrow(vamp, type, coord); currentGameState.actionState = { pendingAction: null, selectedHazardType: null }; clearHighlights(); } else if (pending === 'move-select-target') { const vamp = findVampireById(currentGameState.selectedVampireId); if (vamp) executeMove(vamp, coord); currentGameState.actionState = { pendingAction: null }; clearHighlights(); } else { handleVampireSelection(event); } }
-    function handleVampireSelection(event) { const vampEl = event.target.closest('.vampire'); if (vampEl) { const vampId = vampEl.dataset.id; const ownerIdx = parseInt(vampEl.dataset.player); if (ownerIdx === currentGameState.currentPlayerIndex) { if (currentGameState.selectedVampireId !== vampId) { currentGameState.selectedVampireId = vampId; renderBoard(currentGameState); updateUI(); console.log(`Selected ${vampId}`); } } else { addToLog("Cannot select opponent."); if (currentGameState.selectedVampireId) { currentGameState.selectedVampireId = null; renderBoard(currentGameState); updateUI(); } } } else if (event.target.classList.contains('grid-square')) { if (currentGameState.selectedVampireId && !currentGameState.actionState.pendingAction) { currentGameState.selectedVampireId = null; renderBoard(currentGameState); updateUI(); clearHighlights(); console.log("Deselected."); } } }
-    function clearHighlights() { document.querySelectorAll('.grid-square.valid-target, .grid-square.invalid-target').forEach(el => el.classList.remove('valid-target', 'invalid-target')); }
+    function executeMove(vampire, targetCoord) {
+        // --- Validation ---
+        // 1. Check AP Cost
+        if (currentGameState.currentAP < AP_COST.MOVE) { addToLog("Not enough AP to Move."); return false; } // Return false on failure
+        // 2. Check if Cursed (Rule: only 1 square move per TURN)
+        // TODO: Implement turn-based move limit for cursed vampires. This requires tracking moves made *this turn*.
+        // For now, allow cursed move but log warning, rule not fully enforced.
+        if (vampire.cursed) { addToLog("Warning: Cursed movement limit (1/turn) not fully enforced yet."); }
+        // 3. Check target validity (must be adjacent IN FACING direction)
+        const expectedTarget = getAdjacentCoord(vampire.coord, vampire.facing);
+        if (targetCoord !== expectedTarget) {
+             addToLog(`Invalid move target. Must move 1 square in facing direction (${vampire.facing}). Clicked ${targetCoord}, expected ${expectedTarget}.`);
+             return false; // Return false on failure
+        }
+        // 4. Check target occupancy (Vamp, BW, Carcass block)
+        const pieceAtTarget = findPieceAtCoord(targetCoord);
+        if (pieceAtTarget && (pieceAtTarget.type === 'vampire' || pieceAtTarget.type === 'bloodwell' || (pieceAtTarget.type === 'hazard' && pieceAtTarget.piece.type === 'Carcass'))) {
+             addToLog(`Cannot move onto square ${targetCoord} occupied by ${pieceAtTarget.piece.type}.`);
+             return false; // Return false on failure
+        }
+        // --- End Validation ---
 
-    // --- Functions for Throw Action ---
-    function populateHazardPicker() { hazardPickerOptions.innerHTML = ''; if (!currentGameState?.hazardPool || typeof currentGameState.currentAP === 'undefined') { console.error("Cannot populate picker: Invalid state."); addToLog("Error prepping throw."); return; } const pool = currentGameState.hazardPool; const ap = currentGameState.currentAP; const createBtn = (type, icon, cost) => { const btn = document.createElement('button'); btn.dataset.hazardType = type; const count = pool[type] || 0; btn.innerHTML = `<span class="hazard-icon">${icon}</span> ${type} <span class="hazard-cost">(${cost} AP)</span>`; btn.disabled = count <= 0 || ap < cost; btn.title = `${count} available`; hazardPickerOptions.appendChild(btn); }; createBtn('Tombstone', '🪦', AP_COST.THROW_HAZARD); createBtn('Carcass', '💀', AP_COST.THROW_HAZARD); createBtn('Grave Dust', '💩', AP_COST.THROW_HAZARD); createBtn('Dynamite', '💥', AP_COST.THROW_DYNAMITE); }
-    function handleHazardSelection(hazardType) { console.log("Selected hazard:", hazardType); const cost = hazardType === 'Dynamite' ? AP_COST.THROW_DYNAMITE : AP_COST.THROW_HAZARD; if (!currentGameState?.hazardPool || !currentGameState.actionState) { console.error("Cannot handle selection: Invalid state."); return; } if (currentGameState.hazardPool[hazardType] <= 0) { addToLog(`No ${hazardType}.`); return; } if (currentGameState.currentAP < cost) { addToLog(`Not enough AP.`); return; } currentGameState.actionState.pendingAction = 'throw-select-target'; currentGameState.actionState.selectedHazardType = hazardType; hazardPickerPopup.style.display = 'none'; highlightThrowTargets(); addToLog(`Throwing ${hazardType}. Select target.`); }
-    function highlightThrowTargets() { clearHighlights(); const vamp = findVampireById(currentGameState.selectedVampireId); if (!vamp || !currentGameState?.actionState) return; const startCoord = vamp.coord; const type = currentGameState.actionState.selectedHazardType; if (!type) return; document.querySelectorAll('.grid-square').forEach(sq => { const targetCoord = sq.dataset.coord; const dist = getDistance(startCoord, targetCoord); let isValid = false; if (dist > 0 && dist <= 3) { const targetPiece = findPieceAtCoord(targetCoord); if (!targetPiece || (type === 'Grave Dust' && targetPiece.type === 'vampire')) { /* TODO: Path validation */ isValid = true; } } if (isValid) sq.classList.add('valid-target'); /* else sq.classList.add('invalid-target'); */ }); }
+        saveStateToHistory(); // Save state *before* the move
 
-    // --- Initialization ---
-    function initializeGame() { console.log("Initializing game..."); gameHistory = []; const layouts = LAYOUT_DATA[numberOfPlayers]; if (!layouts?.length) { alert(`Error: No layouts for ${numberOfPlayers}P!`); showScreen('playerCount'); return; } const layoutIdx = Math.floor(Math.random() * layouts.length); const layout = layouts[layoutIdx]; addToLog(`Selected Layout: ${numberOfPlayers}P #${layoutIdx + 1}`); currentGameState = { players: playerData.map(p => ({ name: p.name, class: p.class, eliminated: false })), board: { vampires: JSON.parse(JSON.stringify(layout.vampires.map(v => ({...v, cursed: false})))), bloodwells: JSON.parse(JSON.stringify(layout.bloodwells)), hazards: JSON.parse(JSON.stringify(layout.hazards)) }, hazardPool: { 'Tombstone': 4 - layout.hazards.filter(h => h.type === 'Tombstone').length, 'Carcass': 4 - layout.hazards.filter(h => h.type === 'Carcass').length, 'Grave Dust': 4 - layout.hazards.filter(h => h.type === 'Grave Dust').length, 'Dynamite': 3 }, playerResources: playerData.map(() => ({ silverBullet: 1, abilitiesUsed: [] })), turn: 1, currentPlayerIndex: 0, currentAP: 0, selectedVampireId: null, actionState: { pendingAction: null, selectedHazardType: null } }; const pIdx = currentGameState.currentPlayerIndex; if (currentGameState.turn === 1) { if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][pIdx]; else if (numberOfPlayers === 3) currentGameState.currentAP = 6; else if (numberOfPlayers === 2) currentGameState.currentAP = 5; } else currentGameState.currentAP = 5; generateGrid(); renderBoard(currentGameState); const player = currentGameState.players[pIdx]; if (!player) { console.error("Init fail: No player."); return; } const resources = currentGameState.playerResources[pIdx]; updatePlayerInfoPanel(player, currentGameState.turn, currentGameState.currentAP, resources); logList.innerHTML = `<li>Game Started: ${numberOfPlayers}P Layout #${layoutIdx + 1}</li>`; gameLog.scrollTop = 0; btnUndo.disabled = true; gameBoard.removeEventListener('click', handleBoardClick); gameBoard.addEventListener('click', handleBoardClick); btnUndo.removeEventListener('click', undoLastAction); btnUndo.addEventListener('click', undoLastAction); btnEndTurn.removeEventListener('click', nextTurn); btnEndTurn.addEventListener('click', nextTurn); showScreen('gameplay'); addToLog(`Turn ${currentGameState.turn} - ${player.name}'s turn (${player.class}). AP: ${currentGameState.currentAP}`); }
+        // Update state
+        const oldCoord = vampire.coord;
+        vampire.coord = targetCoord;
+        currentGameState.currentAP -= AP_COST.MOVE;
+        addToLog(`${vampire.id} moved ${oldCoord} -> ${targetCoord}. (${currentGameState.currentAP} AP left)`);
 
-    // --- Attach Event Listeners ---
-    // Setup Screens Listeners
-    playerCountButtons.forEach(button => { button.addEventListener('click', () => { numberOfPlayers = parseInt(button.dataset.count); playerData = new Array(numberOfPlayers); selectedClasses = []; updatePlayerSetupScreen(0); showScreen('playerSetup'); }); });
-    classButtons.forEach(button => { button.addEventListener('click', () => { if (button.disabled) return; let sel = classSelectionContainer.querySelector('.selected'); if (sel) sel.classList.remove('selected'); button.classList.add('selected'); const cls = button.dataset.class; if (playerData[currentPlayerSetupIndex]) playerData[currentPlayerSetupIndex].class = cls; displayClassDetails(cls); }); });
-    playerNameInput.addEventListener('input', () => { if(playerData[currentPlayerSetupIndex]) playerData[currentPlayerSetupIndex].name = playerNameInput.value.trim() || `P${currentPlayerSetupIndex + 1}`; });
-    btnBack.addEventListener('click', () => { const cls = playerData[currentPlayerSetupIndex]?.class; if(cls) { const idx = selectedClasses.indexOf(cls); if (idx > -1) selectedClasses.splice(idx, 1); } if (currentPlayerSetupIndex > 0) updatePlayerSetupScreen(currentPlayerSetupIndex - 1); else { selectedClasses = []; playerData = []; showScreen('playerCount'); } });
-    btnNext.addEventListener('click', () => { const data = playerData[currentPlayerSetupIndex]; if (!data || !data.class) { alert(`Please select a class for Player ${currentPlayerSetupIndex + 1}!`); return; } if (!data.name) data.name = `P${currentPlayerSetupIndex + 1}`; if (!selectedClasses.includes(data.class)) selectedClasses.push(data.class); if (currentPlayerSetupIndex < numberOfPlayers - 1) updatePlayerSetupScreen(currentPlayerSetupIndex + 1); else initializeGame(); });
-    // Gameplay Screen Listeners
-    btnToggleLog.addEventListener('click', () => { gameLog.classList.toggle('log-hidden'); });
-    btnBackToSetup.addEventListener('click', () => { if (confirm("Return to setup? Game progress will be lost.")) { numberOfPlayers = 0; currentPlayerSetupIndex = 0; playerData = []; selectedClasses = []; currentGameState = {}; gameHistory = []; showScreen('playerCount'); } });
-    // Action Buttons
-    btnShoot.addEventListener('click', () => { const vamp = findVampireById(currentGameState.selectedVampireId); if (vamp) executeShoot(vamp, false); else addToLog("Select Vampire."); });
-    btnSilverBullet.addEventListener('click', () => { const vamp = findVampireById(currentGameState.selectedVampireId); const res = currentGameState.playerResources[currentGameState.currentPlayerIndex]; if (vamp && res.silverBullet > 0) { if (confirm("Use Silver Bullet?")) executeShoot(vamp, true); } else if (!vamp) addToLog("Select Vampire."); else addToLog("No Silver Bullet."); });
-    btnThrow.addEventListener('click', () => { const vamp = findVampireById(currentGameState.selectedVampireId); if (!vamp) { addToLog("Select Vampire."); return; } if (vamp.cursed) { addToLog("Cursed cannot throw."); return; } if (currentGameState.currentAP < AP_COST.THROW_HAZARD) { addToLog("Not enough AP."); return; } populateHazardPicker(); hazardPickerPopup.style.display = 'flex'; currentGameState.actionState.pendingAction = 'throw-select-hazard'; addToLog("Select hazard to throw."); });
-    btnCancelThrow.addEventListener('click', () => { hazardPickerPopup.style.display = 'none'; currentGameState.actionState = { pendingAction: null, selectedHazardType: null }; clearHighlights(); addToLog("Throw cancelled."); });
-    hazardPickerOptions.addEventListener('click', (event) => { const btn = event.target.closest('button'); if (btn?.dataset.hazardType) handleHazardSelection(btn.dataset.hazardType); });
+        // Check for landing effects
+        if (pieceAtTarget?.type === 'hazard' && pieceAtTarget.piece.type === 'Grave Dust') {
+            if (!vampire.cursed) {
+                 vampire.cursed = true;
+                 addToLog(`${vampire.id} landed on Grave Dust and is now CURSED!`);
+            }
+        }
+        // Check for Bloodbath (landing on own BW to cure curse - check NO hazard)
+        const landedOnBW = findPieceAtCoord(targetCoord)?.type === 'bloodwell';
+        const isHazardAlsoPresent = findPieceAtCoord(targetCoord)?.type === 'hazard'; // Check if hazard is on the same square
+        if (vampire.cursed && landedOnBW && !isHazardAlsoPresent && findPieceAtCoord(targetCoord).piece.player === vampire.player) {
+            vampire.cursed = false;
+             addToLog(`${vampire.id} performed Bloodbath at ${targetCoord} and is CURED!`);
+        }
 
-    // --- Initial Load ---
-    showScreen('playerCount'); // Start with the player count screen
+        // Update UI
+        renderBoard(currentGameState);
+        updateUI();
+        return true; // Indicate success
+    }
 
+    function executePivot(vampire, newFacing) {
+        if (!DIRECTIONS.includes(newFacing)) { console.error("Invalid pivot direction:", newFacing); return false; }
+        if (currentGameState.currentAP < AP_COST.PIVOT) { addToLog("Not enough AP to Pivot."); return false; }
+        // Cursed can pivot
+
+        saveStateToHistory();
+
+        vampire.facing = newFacing;
+        currentGameState.currentAP -= AP_COST.PIVOT;
+        addToLog(`${vampire.id} pivoted to face ${newFacing}. (${currentGameState.currentAP} AP left)`);
+        renderBoard(currentGameState);
+        updateUI();
+        return true; // Indicate success
+    }
+
+    function executeShoot(vampire, isSilverBullet = false) {
+        const cost = isSilverBullet ? AP_COST.SILVER_BULLET : AP_COST.SHOOT;
+        if (currentGameState.currentAP < cost) { addToLog(`Not enough AP to ${isSilverBullet ? 'use Silver Bullet' : 'Shoot'}.`); return false; }
+        if (vampire.cursed) { addToLog("Cursed vampires cannot shoot."); return false; }
+        const playerResources = currentGameState.playerResources[vampire.player];
+        if (isSilverBullet && playerResources.silverBullet <= 0) { addToLog("No Silver Bullet left."); return false; }
+
+        saveStateToHistory(); // Save state *before* shooting
+
+        const shooterPlayerIndex = vampire.player;
+        const shooterClass = currentGameState.players[shooterPlayerIndex].class;
+        let currentCoord = vampire.coord;
+        let hitMessage = `Shot from ${vampire.coord} facing ${vampire.facing} travelled off board.`; // Default msg
+        let shotHitSomething = false; // Flag to track if the shot actually hit anything significant
+
+        addToLog(`${vampire.id} ${isSilverBullet ? 'fires a Silver Bullet' : 'shoots'} facing ${vampire.facing}...`);
+
+        if (isSilverBullet) {
+             playerResources.silverBullet--; // Decrement resource
+        }
+        currentGameState.currentAP -= cost; // Deduct AP
+
+        // Trace path square by square
+        for (let i = 0; i < 9; i++) { // Max 9 squares range possible
+            const nextCoord = getAdjacentCoord(currentCoord, vampire.facing);
+            if (!nextCoord) { // Fell off board
+                hitMessage = `Shot from ${vampire.coord} went off the board.`;
+                break;
+            }
+            currentCoord = nextCoord; // Advance check to next square
+
+            const pieceAtCoord = findPieceAtCoord(currentCoord);
+            if (pieceAtCoord) {
+                const targetType = pieceAtCoord.type;
+                const targetPiece = pieceAtCoord.piece;
+
+                // 1. Check blocking hazards FIRST
+                if (targetType === 'hazard' && (targetPiece.type === 'Tombstone' || targetPiece.type === 'Dynamite')) {
+                     // Bounty Hunters ignore Tombstones
+                     if (targetPiece.type === 'Tombstone' && shooterClass === 'Bounty Hunter') {
+                        addToLog(`Passes through Tombstone at ${currentCoord} (Sharpshooter).`);
+                        continue; // Shot continues
+                     }
+                     // TODO: Check Sheriff 'Under My Protection' if target is Dynamite adjacent to Sheriff? Assume Dynamite always blocks for now.
+                     hitMessage = `Shot blocked by ${targetPiece.type} at ${currentCoord}.`;
+                     shotHitSomething = true; // Blocked is significant
+                     // Check if Dynamite explodes
+                     if (targetPiece.type === 'Dynamite') {
+                         hitMessage += ` Dynamite EXPLODES!`;
+                         // --- TODO: Trigger Dynamite Explosion Logic ---
+                         // Find dynamite object in state
+                         const dynamiteIndex = currentGameState.board.hazards.findIndex(h => h.coord === currentCoord);
+                         if (dynamiteIndex > -1) {
+                            // Remove Dynamite from board state *first*
+                            currentGameState.board.hazards.splice(dynamiteIndex, 1);
+                            addToLog(`Dynamite removed from ${currentCoord}.`);
+                             // TODO: Implement 3x3 area calculation and effects
+                             // - Get adjacent squares
+                             // - Remove other hazards in area
+                             // - Destroy Bloodwells in area
+                             addToLog("Dynamite explosion effect logic TBD.");
+                         }
+                         // --- End Dynamite Logic ---
+                     }
+                     break; // Stop shot path
+                }
+
+                // 2. Check target pieces if not blocked
+                // Hit Vampire
+                if (targetType === 'vampire') {
+                    shotHitSomething = true;
+                     if (isSilverBullet && targetPiece.player !== shooterPlayerIndex) {
+                         hitMessage = `Silver Bullet HIT & ELIMINATED enemy ${targetPiece.id} at ${currentCoord}!`;
+                         const targetPlayerIndex = targetPiece.player;
+                         currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.id !== targetPiece.id);
+                         // TODO: Check if targetPlayerIndex is now eliminated (no vamps OR no BWs)
+                     } else if (shooterClass === 'Bounty Hunter' && targetPiece.player !== shooterPlayerIndex && !targetPiece.cursed) {
+                         hitMessage = `Shot HIT enemy ${targetPiece.id} at ${currentCoord}. Target is CURSED (Marked Man)!`;
+                         const targetVamp = findVampireById(targetPiece.id); // Modify the actual object in state
+                         if(targetVamp) targetVamp.cursed = true;
+                     } else {
+                         hitMessage = `Shot hit ${targetPiece.id} at ${currentCoord} (no effect).`;
+                     }
+                     break; // Stop shot after hitting vampire
+                }
+
+                // Hit Bloodwell
+                if (targetType === 'bloodwell') {
+                    shotHitSomething = true;
+                    // TODO: Check Sheriff 'Under My Protection' before destroying
+                    // Logic: Find if any Sheriff vamp (player index matches targetPiece.player) is adjacent
+                     hitMessage = `Shot DESTROYED Bloodwell ${targetPiece.id} at ${currentCoord}!`;
+                     const targetPlayerIndex = targetPiece.player;
+                     currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== targetPiece.id);
+                     // TODO: Check if targetPlayerIndex is now eliminated (no vamps OR no BWs)
+                     break; // Stop shot after hitting bloodwell
+                }
+
+                // Pass through non-blocking hazards
+                if (targetType === 'hazard' && (targetPiece.type === 'Carcass' || targetPiece.type === 'Grave Dust')) {
+                     addToLog(`Shot passes through ${targetPiece.type} at ${currentCoord}.`);
+                    // Shot continues through these
+                }
+            }
+            // If square was empty, shot continues
+        }
+
+        // Final log message
+        addToLog(hitMessage + ` (${currentGameState.currentAP} AP left)`);
+        if (isSilverBullet && !shotHitSomething) { // Warn if SB missed important target
+            addToLog("Silver Bullet did not eliminate an enemy vampire or destroy a bloodwell.");
+        }
+
+        renderBoard(currentGameState);
+        updateUI();
+        // TODO: Check win/loss conditions after shot resolution (player elimination)
+        return true; // Indicate success
+    }
+
+    function executeThrow(vampire, hazardType, targetCoord) {
+        const cost = hazardType === 'Dynamite' ? AP_COST.THROW_DYNAMITE : AP_COST.THROW_HAZARD;
+        // Basic checks
+        if (currentGameState.currentAP < cost) { addToLog(`Not enough AP to Throw ${hazardType}.`); return false; }
+        if (vampire.cursed) { addToLog("Cursed vampires cannot throw hazards."); return false; }
+        if (!currentGameState.hazardPool || (currentGameState.hazardPool[hazardType] || 0) <= 0) { addToLog(`No ${hazardType} left in the pool to throw.`); return false; }
+
+        // --- Validation ---
+        // 1. Distance (must be 1-3 squares away)
+        const distance = getDistance(vampire.coord, targetCoord);
+        if(distance <= 0 || distance > 3) { addToLog(`Invalid throw distance (${distance}). Must be 1-3 squares away.`); return false; }
+
+        // 2. Target Occupancy Rules
+        const pieceAtTarget = findPieceAtCoord(targetCoord);
+        if(pieceAtTarget) { // Target square is occupied
+             if (!(hazardType === 'Grave Dust' && pieceAtTarget.type === 'vampire')) {
+                 // Can only target occupied square if throwing Grave Dust AT a Vampire
+                 addToLog(`Cannot throw ${hazardType} onto occupied square ${targetCoord} containing a ${pieceAtTarget.type}.`);
+                 return false;
+             }
+        } // Else: Target square is empty, which is generally required (except GD->Vamp)
+
+        // 3. Clear Path (Simplified check - Assumes direct line for now)
+        // TODO: Implement proper line-of-sight / path check
+        // Iterate squares between vampire.coord and targetCoord.
+        // Check for Vamps, BWs, Carcasses (these block throw path). Tombstone/Dynamite/GD do NOT block path.
+        addToLog("Warning: Throw path validation not fully implemented yet."); // Placeholder warning
+
+        // --- End Validation ---
+
+        saveStateToHistory(); // Save state *before* throwing
+
+        // Update State
+        currentGameState.hazardPool[hazardType]--; // Decrement available pool count
+        currentGameState.board.hazards.push({ type: hazardType, coord: targetCoord }); // Add hazard to board
+        currentGameState.currentAP -= cost; // Deduct AP
+        addToLog(`${vampire.id} threw ${hazardType} to ${targetCoord}. (${currentGameState.currentAP} AP left)`);
+
+        // Apply effect if Grave Dust hits a Vampire
+        if (hazardType === 'Grave Dust' && pieceAtTarget?.type === 'vampire') {
+            const targetVamp = findVampireById(pieceAtTarget.piece.id); // Get the actual vampire object
+            if (targetVamp && !targetVamp.cursed) {
+                targetVamp.cursed = true;
+                addToLog(`${targetVamp.id} was hit by thrown Grave Dust & is now CURSED!`);
+            }
+        }
+
+        // Update UI
+        renderBoard(currentGameState);
+        updateUI();
+        return true; // Indicate success
+    }
+
+     function nextTurn() {
+         // Check if any actions are pending (like selecting throw target)
+         if(currentGameState.actionState?.pendingAction){
+             addToLog("Cannot end turn while an action is pending. Cancel or complete the action.");
+             // Optionally auto-cancel? For now, require manual cancel.
+              // btnCancelThrow.click(); // Example: Simulate cancel click if desired
+             return;
+         }
+
+         // Save state before ending turn (allows undoing the 'end turn' itself if desired)
+         saveStateToHistory();
+
+         const previousPlayerIndex = currentGameState.currentPlayerIndex;
+         const previousPlayer = currentGameState.players[previousPlayerIndex];
+
+         // --- Apply end-of-turn effects ---
+         // Example: Sheriff Swift Justice
+         if (previousPlayer?.class === 'Sheriff' && !previousPlayer.eliminated) {
+             // TODO: Implement logic to *allow player to choose* which Sheriff (if >1) gets free move.
+             // For now, just log it as a reminder.
+             addToLog("Sheriff's Swift Justice may apply (manual application needed).");
+         }
+         // TODO: Add other end-of-turn effects if any
+
+         // Advance Player Index (Looping and skipping eliminated)
+         let nextPlayerIndex = (previousPlayerIndex + 1) % numberOfPlayers;
+         let loopCheck = 0;
+         // Check if player data exists before checking eliminated status
+         while (currentGameState.players[nextPlayerIndex]?.eliminated && loopCheck < numberOfPlayers) {
+             nextPlayerIndex = (nextPlayerIndex + 1) % numberOfPlayers;
+             loopCheck++;
+         }
+          // Check if only one player remains after looping (or if loop failed)
+         const activePlayers = currentGameState.players.filter(p => !p.eliminated);
+         if (activePlayers.length <= 1 && loopCheck >= numberOfPlayers) {
+             console.error("Error: Could not find next active player! Possible game end state missed?");
+             addToLog("Error advancing turn!");
+             undoLastAction(); // Revert the end turn attempt
+             return;
+         }
+         currentGameState.currentPlayerIndex = nextPlayerIndex;
+
+         // Increment turn number if we wrapped around to player 0
+         if (currentGameState.currentPlayerIndex === 0 && previousPlayerIndex !== 0) {
+            // Only increment if we actually wrapped around (prevents increment on first P1 turn)
+            currentGameState.turn++;
+         }
+
+
+         // Set AP for the new player
+         const playerIndex = currentGameState.currentPlayerIndex;
+         // Reset AP based on rules (Turn 1 has scaling)
+         if (currentGameState.turn === 1) {
+             if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][playerIndex];
+             else if (numberOfPlayers === 3) currentGameState.currentAP = 6; // Rule was 6AP per player for 3P
+             else if (numberOfPlayers === 2) currentGameState.currentAP = 5; // Rule was 5AP per player for 2P
+         } else {
+             currentGameState.currentAP = 5; // Standard AP for all turns after 1
+         }
+         // TODO: Add Vigilante Blood Brothers check here & potentially add +1 AP
+
+         // Reset turn-specific state
+         currentGameState.selectedVampireId = null;
+         currentGameState.actionState = { pendingAction: null, selectedHazardType: null };
+         clearHighlights(); // Ensure no lingering highlights
+
+         // Manage Undo History - Disable undo at start of new turn.
+         btnUndo.disabled = true;
+         // Decide whether to clear history entirely on turn end or keep it
+         // gameHistory = []; // Option to clear history each turn (simplifies)
+         // For max flexibility let's keep history, player must undo *before* ending turn.
+
+         // Update UI for new player
+         renderBoard(currentGameState);
+         updateUI();
+         const currentPlayer = currentGameState.players[currentGameState.currentPlayerIndex];
+         addToLog(`--- Turn ${currentGameState.turn} - ${currentPlayer.name}'s turn (${currentPlayer.class}). AP: ${currentGameState.currentAP} ---`);
+         // TODO: Check Victory condition here (only 1 player not eliminated)
+    }
+
+    // --- END OF SECTION 5 ---
+    
 }); // End DOMContentLoaded
