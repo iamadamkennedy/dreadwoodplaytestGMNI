@@ -70,7 +70,7 @@ button {
     transition: background-color 0.2s ease;
 }
 
-button:hover {
+button:hover:not(:disabled) { /* Ensure hover only affects enabled buttons */
     background-color: #a0522d; /* Sienna */
 }
 
@@ -84,7 +84,7 @@ button:disabled {
 #btn-back {
     background-color: #6c757d; /* Gray */
 }
-#btn-back:hover {
+#btn-back:hover:not(:disabled) {
     background-color: #5a6268;
 }
 
@@ -132,9 +132,10 @@ button:disabled {
     background-color: #f9f9f9;
 }
 
-#class-abilities {
+#class-abilities { /* Target specifically setup abilities list */
     list-style: disc;
     margin-left: 20px;
+    padding-left: 0; /* Reset padding */
 }
 /* Added spacing for ability list items in setup */
 #class-abilities li {
@@ -156,8 +157,8 @@ button:disabled {
     align-items: center;
 }
 
-.popup.active {
-    display: flex; /* Use flex to center content */
+.popup.active { /* Use this class to show popups if needed */
+    display: flex;
 }
 
 .popup-content {
@@ -182,11 +183,16 @@ button:disabled {
     flex-wrap: wrap;
     border-bottom: 1px solid #eee;
     padding-bottom: 15px;
+    display: flex; /* Use flex for action bar */
+    justify-content: center;
+    gap: 10px;
 }
 .action-buttons button { /* More specific selector for gameplay action buttons */
     background-color: #e8e8e8;
     color: #333;
     min-width: 80px;
+    padding: 8px 12px; /* Slightly smaller padding */
+    font-size: 0.9em;
 }
 .action-buttons button:hover:not(:disabled) { /* Don't change hover if disabled */
     background-color: #dcdcdc;
@@ -228,10 +234,10 @@ button:disabled {
     align-items: center;
     font-size: 0.6em; /* Smaller font for coords */
     color: #aaa;
-    /* Ensure squares maintain aspect ratio if grid container size changes */
     aspect-ratio: 1 / 1;
     overflow: hidden; /* Hide piece overflow */
     cursor: pointer; /* Default cursor */
+    transition: background-color 0.2s ease; /* Smooth transition for hover/highlight */
 }
 .grid-square:hover {
     background-color: #f0f0f0; /* Slight hover effect */
@@ -253,26 +259,31 @@ button:disabled {
     box-sizing: border-box; /* Include border in size */
     pointer-events: none; /* Click goes through to square by default */
     user-select: none; /* Prevent text selection */
-    /* Basic facing indicator setup */
     line-height: 1; /* Adjust line height for icon centering */
 }
 
-/* Facing Indicators (Simple Arrow Text) */
-/* Adjust font size/position as needed */
-.vampire[data-facing="N"]::before { content: '↑'; position: absolute; top: 2px; width: 100%; text-align: center; font-size: 0.6em; color: rgba(0,0,0,0.6); }
-.vampire[data-facing="S"]::before { content: '↓'; position: absolute; bottom: 2px; width: 100%; text-align: center; font-size: 0.6em; color: rgba(0,0,0,0.6); }
-.vampire[data-facing="E"]::before { content: '→'; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 0.6em; color: rgba(0,0,0,0.6); }
-.vampire[data-facing="W"]::before { content: '←'; position: absolute; left: 4px; top: 50%; transform: translateY(-50%); font-size: 0.6em; color: rgba(0,0,0,0.6); }
+/* Facing Indicators (Simple Arrow Text using ::before) */
+.vampire::before {
+    content: ''; /* Needs content to show */
+    position: absolute;
+    font-size: 0.6em;
+    color: rgba(0,0,0,0.7);
+    text-shadow: 1px 1px 1px rgba(255,255,255,0.3);
+    z-index: 1; /* Ensure it's above background */
+}
+.vampire[data-facing="N"]::before { content: '↑'; top: 2px; width: 100%; text-align: center; }
+.vampire[data-facing="S"]::before { content: '↓'; bottom: 2px; width: 100%; text-align: center; }
+.vampire[data-facing="E"]::before { content: '→'; right: 4px; top: 50%; transform: translateY(-50%); }
+.vampire[data-facing="W"]::before { content: '←'; left: 4px; top: 50%; transform: translateY(-50%); }
 
 
 .vampire {
     border-radius: 50%;
     border: 2px solid black;
-    z-index: 10; /* Above hazards */
-    cursor: pointer; /* Indicate vampires are selectable */
+    z-index: 10; /* Vampires above Bloodwells/Hazards */
+    cursor: pointer;
     pointer-events: auto; /* Allow clicks ON vampires */
-    color: rgba(255,255,255,0.7); /* Color for facing arrow */
-    text-shadow: 1px 1px 1px rgba(0,0,0,0.2); /* Make arrow slightly more visible */
+    color: rgba(255,255,255,0.7); /* Was for text content, less needed now */
 }
 .vampire.selected {
     outline: 3px solid gold;
@@ -316,100 +327,66 @@ button:disabled {
 
 
 /* Player Info & Status Bar */
-#player-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start; /* Align tops */
-    gap: 20px;
-    margin-top: 20px;
-    flex-wrap: wrap; /* Allow wrapping on small screens */
-}
+#player-info { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
+/* Apply setup-section styling to current class details */
 #current-class-details {
     flex: 1; /* Take available space */
     min-width: 250px; /* Prevent being too squished */
-    margin-top: 0; /* Reset margin from .setup-section */
+    margin-top: 0; /* Reset margin */
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fafafa;
+    text-align: left;
 }
-#current-class-details #info-class-abilities li { /* Style abilities in info panel */
-     margin-bottom: 5px;
-     font-size: 0.9em;
-}
+#current-class-details h3, #current-class-details h4 { margin-top: 10px; margin-bottom: 5px;} /* Add some heading margin */
+#current-class-details #info-class-abilities { list-style: disc; margin-left: 20px; padding-left: 0; }
+#current-class-details #info-class-abilities li { margin-bottom: 5px; font-size: 0.9em; }
 
-#status-bar {
-    flex-basis: 100%; /* Force to full width below details */
-    text-align: center;
-    font-size: 1.1em;
-    font-weight: bold;
-    padding: 10px;
-    background-color: #eee;
-    border-radius: 4px;
-    margin-top: 10px;
-}
-#status-bar span {
-    color: #8b4513; /* Brown color for dynamic values */
-    display: inline-block; /* Helps with spacing */
-    min-width: 20px; /* Ensure space for AP number */
-    text-align: center;
-}
+#status-bar { flex-basis: 100%; text-align: center; font-size: 1.1em; font-weight: bold; padding: 10px; background-color: #eee; border-radius: 4px; margin-top: 10px; }
+#status-bar span { color: #8b4513; display: inline-block; min-width: 20px; text-align: center; }
 
 
 /* Game Log */
-#game-log-container {
-    margin-top: 20px;
-    text-align: left;
-}
-#btn-toggle-log {
-    margin-bottom: 5px;
-    background-color: #6c757d;
-}
-#game-log {
-    border: 1px solid #ccc;
-    background-color: #f8f8f8;
-    padding: 10px;
-    max-height: 150px; /* Limit height */
-    overflow-y: auto; /* Add scrollbar if needed */
-    border-radius: 4px;
-    font-size: 0.9em;
-    transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out, border 0.3s ease-out; /* Smooth toggle */
-}
-#game-log.log-hidden {
-    max-height: 0;
-    opacity: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    border: none; /* Hide border when hidden */
-    overflow: hidden;
-    margin-top: 0; /* Remove margin when hidden */
-}
-#log-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-#log-list li {
-    padding: 2px 0;
-    border-bottom: 1px dotted #eee;
-}
-#log-list li:last-child {
-    border-bottom: none;
-}
+#game-log-container { margin-top: 20px; text-align: left; }
+#btn-toggle-log { margin-bottom: 5px; background-color: #6c757d; }
+#game-log { border: 1px solid #ccc; background-color: #f8f8f8; padding: 10px; max-height: 150px; overflow-y: auto; border-radius: 4px; font-size: 0.9em; transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out, border 0.3s ease-out; }
+#game-log.log-hidden { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; border: none; overflow: hidden; margin-top: 0; }
+#log-list { list-style: none; padding: 0; margin: 0; }
+#log-list li { padding: 2px 0; border-bottom: 1px dotted #eee; }
+#log-list li:last-child { border-bottom: none; }
 
 
 /* Game Controls */
-#game-controls {
-    margin-top: 20px;
-    border-top: 1px solid #eee;
-    padding-top: 20px;
-}
-#btn-undo:disabled {
-    background-color: #cccccc;
-    color: #666666;
-    cursor: not-allowed;
-}
+#game-controls { margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px; }
+#btn-undo:disabled { background-color: #cccccc; color: #666666; cursor: not-allowed; }
+#btn-back-to-setup { background-color: #ffc107; color: #333; }
+#btn-back-to-setup:hover:not(:disabled) { background-color: #e0a800; }
 
-#btn-back-to-setup { /* Style the temp button */
-     background-color: #ffc107; /* Warning yellow */
-     color: #333;
-}
-#btn-back-to-setup:hover {
-     background-color: #e0a800;
-}
+/* --- Gameplay Action Enhancements --- */
+/* Hazard Picker Panel (Initially Hidden via popup class) */
+#hazard-picker .popup-content { max-width: 500px; }
+#hazard-picker-options { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; } /* Layout buttons inside */
+#hazard-picker-options button { min-width: 100px; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 0.9em; padding: 8px; background-color: #f8f8f8; color: #333; border: 1px solid #ccc; }
+#hazard-picker-options button .hazard-icon { font-size: 1.8em; }
+#hazard-picker-options button .hazard-cost { font-size: 0.8em; color: #555; }
+#hazard-picker-options button:disabled { background-color: #e0e0e0; opacity: 0.6; }
+#hazard-picker-options button:hover:not(:disabled) { background-color: #e0e0e0; }
+#btn-cancel-throw { background-color: #6c757d; margin-top: 15px; }
+#btn-cancel-throw:hover:not(:disabled) { background-color: #5a6268; }
+
+
+/* Target Highlighting */
+.grid-square.valid-target {
+    background-color: rgba(0, 255, 0, 0.3) !important; /* Use !important to override hover */
+    outline: 1px solid darkgreen;
+    cursor: crosshair;
+ }
+.grid-square.invalid-target {
+    /* Optional: make invalid squares less prominent or non-interactive */
+     /* background-color: rgba(255, 0, 0, 0.05); */
+     /* cursor: not-allowed; */
+ }
+
+/* Move/Pivot Action Buttons (If added later) */
+.direction-buttons button { min-width: 40px; font-size: 1.2em; padding: 5px 10px; }
