@@ -54,10 +54,56 @@
         </div>
 
         <div id="screen-gameplay" class="screen">
-            <h2>Gameplay Screen</h2>
-            <p>Game board and controls will appear here.</p>
-             <div class="button-container">
-                 <button id="btn-restart-stub">Restart (Stub)</button> </div>
+            <h2>Dreadwood - Gameplay</h2>
+        
+            <div id="action-bar" class="button-container action-buttons">
+                <button id="action-shoot" title="Shoot (3 AP)">🔫 Shoot</button>
+                <button id="action-throw" title="Throw Hazard (1/2 AP)">✋ Throw</button>
+                <button id="action-silver-bullet" title="Silver Bullet Shot (3 AP)">💎 Silver</button>
+                <button id="action-dispel" title="Dispel Grave Dust (3 AP)" style="display: none;">🪄 Dispel</button> </div>
+        
+            <div id="game-board-container">
+                <div id="game-board" class="grid-container">
+                    </div>
+            </div>
+        
+        
+            <div id="player-info">
+                <div id="current-class-details" class="setup-section class-details-box">
+                     <h3>Current Player Info:</h3>
+                     <p id="info-class-name"><strong>Class:</strong> ---</p>
+                     <p id="info-class-description">---</p>
+                     <h4>Abilities:</h4>
+                     <ul id="info-class-abilities"><li>---</li></ul>
+                     <p><strong>Silver Bullet:</strong> <span id="info-silver-bullet">Available</span></p>
+                </div>
+                <div id="status-bar">
+                    <strong>Current Turn:</strong> <span id="status-player">---</span> |
+                    <strong>AP:</strong> <span id="status-ap">X</span> |
+                    <strong>Turn #:</strong> <span id="status-turn">1</span>
+                </div>
+            </div>
+        
+            <div id="game-log-container">
+                <button id="btn-toggle-log">Show/Hide Log</button>
+                <div id="game-log" class="log-hidden">
+                    <h4>Game Log</h4>
+                    <ul id="log-list">
+                        <li>Game Started...</li>
+                    </ul>
+                </div>
+            </div>
+        
+        
+            <div id="game-controls" class="button-container">
+                <button id="btn-undo" disabled>Undo Last Action</button>
+                <button id="btn-end-turn">End Turn</button>
+            </div>
+        
+             <div class="button-container" style="margin-top: 30px;">
+                 <button id="btn-back-to-setup">Back to Setup (Dev)</button>
+             </div>
+        
         </div>
 
          <div id="popup-elimination" class="popup">
