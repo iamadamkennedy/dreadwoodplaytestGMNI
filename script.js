@@ -53,27 +53,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const logList = document.getElementById('log-list');
     const btnBackToSetup = document.getElementById('btn-back-to-setup'); // Temp button
 
-    // --- Class Data (Hardcoded for now) ---
+    // --- Class Data (Includes Descriptions) ---
     const CLASS_DATA = {
         "Sheriff": {
-            color: "color-sheriff", // Added for rendering later
+            color: "color-sheriff",
             description: "A faction of Vampires enforcing order in a chaotic frontier.",
-            abilities: ["Under My Protection (Passive)", "Swift Justice (Passive)", "Order Restored (Active, 1/game)"]
+            abilities: [
+                { name: "Under My Protection (Passive)", description: "Bloodwells adjacent (in 3x3 grid) to a Sheriff are immune to regular shots (but not Hand Cannon)." },
+                { name: "Swift Justice (Passive)", description: "At the end of your turn, may move one non-cursed Vampire 1 square forward (0 AP)." },
+                { name: "Order Restored (Active, 1/game)", description: "(3 AP) Revive one eliminated Sheriff adjacent to one of your remaining Vampires or Bloodwells. Discard card." }
+            ]
         },
         "Vigilante": {
             color: "color-vigilante",
             description: "A faction of Vampires seeking justice, using teamwork to punish wrongdoers.",
-            abilities: ["Side by Side (Passive)", "Blood Brothers (Passive)", "Vengeance is Mine (Active, 1/game)"]
+            abilities: [
+                { name: "Side by Side (Passive)", description: "AP is shared between both Vampires; either can use AP from the pool on their turn." },
+                { name: "Blood Brothers (Passive)", description: "If both Vampires are within a 3x3 grid at the start of the turn, gain +1 AP (if both spend at least 1 AP)." },
+                { name: "Vengeance is Mine (Active, 1/game)", description: "(0 AP) If an opponent shoots one of your Bloodwells or Vampires, gain 7 AP *next* turn. Discard card." }
+            ]
         },
         "Outlaw": {
             color: "color-outlaw",
             description: "A faction of Vampires thriving on chaos, disrupting and escaping with speed.",
-            abilities: ["Daring Escape (Passive)", "Hand Cannon (Active, 1/game)", "Rampage (Active, 1/game)"]
+            abilities: [
+                { name: "Daring Escape (Passive)", description: "Once per turn, after shooting a Bloodwell, pivot any direction and move up to 2 squares (0 AP)." },
+                { name: "Hand Cannon (Active, 1/game)", description: "(5 AP) Fire piercing shot up to 5 spaces, ignoring Hazards (unless Sheriff-protected). Destroys Bloodwells/Hazards hit. Discard card." },
+                { name: "Rampage (Active, 1/game)", description: "(2 AP) Shoot simultaneously left and right of facing direction (two normal shots). Discard card." }
+            ]
         },
         "Bounty Hunter": {
             color: "color-bounty-hunter",
             description: "A faction of Vampires hunting for profit, using precision to eliminate targets.",
-            abilities: ["Sharpshooter (Passive)", "Marked Man (Passive)", "Contract Payoff (Active, 1/game)"]
+            abilities: [
+                { name: "Sharpshooter (Passive)", description: "Your shots ignore Tombstones in the line of fire." },
+                { name: "Marked Man (Passive)", description: "Shots hitting enemy Vampires inflict Curse (Move 1 square/turn, Cannot Shoot/Throw)." },
+                { name: "Contract Payoff (Active, 1/game)", description: "(3 AP) Shoot any Bloodwell; if successful, gain +3 AP (2P) or +5 AP (3P/4P) *next* turn. Discard card." }
+            ]
         }
     };
 
@@ -86,16 +102,18 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(`Showing screen: ${screenId}`);
     }
 
-    // Displays details for a selected class during setup
+    // Displays details (including ability descriptions) for a selected class during setup
     function displayClassDetails(className) {
         const data = CLASS_DATA[className];
         if (data) {
             classDetailsName.innerHTML = `<strong>Class:</strong> ${className}`;
             classDetailsDescription.textContent = data.description;
             classDetailsAbilities.innerHTML = ''; // Clear previous abilities
+            // Now iterate through the objects in the abilities array
             data.abilities.forEach(ability => {
                 const li = document.createElement('li');
-                li.textContent = ability;
+                // Use innerHTML to add bolding for the name
+                li.innerHTML = `<strong>${ability.name}:</strong> ${ability.description}`;
                 classDetailsAbilities.appendChild(li);
             });
             classDetailsContainer.style.display = 'block'; // Show details
@@ -233,7 +251,8 @@ document.addEventListener('DOMContentLoaded', () => {
             currentClassAbilitiesList.innerHTML = ''; // Clear previous abilities
             data.abilities.forEach(ability => {
                 const li = document.createElement('li');
-                li.textContent = ability;
+                // Display ability name and description from the object
+                li.innerHTML = `<strong>${ability.name}:</strong> ${ability.description}`;
                 // TODO: Add check if ability used (from game state), add click listeners for actives
                 currentClassAbilitiesList.appendChild(li);
             });
@@ -255,6 +274,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         // li.textContent = `[${time}] ${message}`;
         li.textContent = message;
+        // Keep only a certain number of log entries?
+        while (logList.children.length > 50) { // Keep last 50 entries
+             logList.removeChild(logList.firstChild);
+        }
         logList.appendChild(li);
         // Auto-scroll to bottom
         gameLog.scrollTop = gameLog.scrollHeight;
@@ -270,19 +293,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. Select Layout: Randomly select a layout based on numberOfPlayers
         //    (Need layout data structure containing multiple layouts per player count)
          const initialLayout = { // Using Layout R1 as placeholder
-             vampires: [
+             vampires: [ // player index, starting coord, facing, unique ID, cursed status
                  { player: 0, coord: 'A2', facing: 'S', id: 'S1', cursed: false }, { player: 0, coord: 'C3', facing: 'S', id: 'S2', cursed: false },
                  { player: 1, coord: 'G2', facing: 'S', id: 'V1', cursed: false }, { player: 1, coord: 'I3', facing: 'S', id: 'V2', cursed: false },
                  { player: 2, coord: 'B8', facing: 'N', id: 'O1', cursed: false }, { player: 2, coord: 'D7', facing: 'N', id: 'O2', cursed: false },
                  { player: 3, coord: 'F8', facing: 'N', id: 'B1', cursed: false }, { player: 3, coord: 'H7', facing: 'N', id: 'B2', cursed: false }
              ],
-             bloodwells: [ // Need to track which player they belong to
+             bloodwells: [ // player index, starting coord, unique ID
                  { player: 0, coord: 'B1', id: 'SBW1' }, { player: 0, coord: 'D2', id: 'SBW2' }, { player: 0, coord: 'A4', id: 'SBW3' },
                  { player: 1, coord: 'H1', id: 'VBW1' }, { player: 1, coord: 'F2', id: 'VBW2' }, { player: 1, coord: 'I4', id: 'VBW3' },
                  { player: 2, coord: 'C9', id: 'OBW1' }, { player: 2, coord: 'A7', id: 'OBW2' }, { player: 2, coord: 'D9', id: 'OBW3' },
                  { player: 3, coord: 'G9', id: 'BBW1' }, { player: 3, coord: 'I7', id: 'BBW2' }, { player: 3, coord: 'F9', id: 'BBW3' }
              ],
-             hazards: [ // Hazards on board
+             hazards: [ // Hazards currently on board
                  { type: 'Tombstone', coord: 'D5' }, { type: 'Tombstone', coord: 'F5' },
                  { type: 'Carcass', coord: 'E4' }, { type: 'Carcass', coord: 'E6' },
                  { type: 'Grave Dust', coord: 'D4' }, { type: 'Grave Dust', coord: 'F6' }
@@ -290,8 +313,8 @@ document.addEventListener('DOMContentLoaded', () => {
          };
          // This needs to represent the *entire* state needed to run/undo the game
          currentGameState = {
-             players: playerData, // {name, class}
-             layout: initialLayout, // Holds pieces currently on board
+             players: playerData.map(p => ({ name: p.name, class: p.class, eliminated: false })), // Add elimination status
+             layout: JSON.parse(JSON.stringify(initialLayout)), // DEEP COPY of layout pieces on board
              hazardPool: { // Hazards available to THROW
                  'Tombstone': 4 - initialLayout.hazards.filter(h => h.type === 'Tombstone').length,
                  'Carcass': 4 - initialLayout.hazards.filter(h => h.type === 'Carcass').length,
@@ -300,21 +323,32 @@ document.addEventListener('DOMContentLoaded', () => {
              },
              playerResources: playerData.map(() => ({ // Per-player resources
                  silverBullet: 1,
-                 abilitiesUsed: [] // Track used 'once per game' active abilities
+                 abilitiesUsed: [] // Track used 'once per game' active abilities like 'Order Restored'
              })),
              turn: 1,
              currentPlayerIndex: 0,
              currentAP: 0, // Will be set below based on turn/player count
-             selectedVampireId: null,
-             history: [], // For Undo functionality
-             // Add player elimination status etc.
+             selectedVampireId: null, // ID of the currently selected vampire piece
+             history: [], // For Undo functionality (stores previous game states)
          };
 
          // Set initial AP based on rules
+         // AP: P1 gets 4, P2 gets 5, P3 gets 6, P4 gets 8. Standard 5 AP after that.
+         const playerIndex = currentGameState.currentPlayerIndex;
          if (currentGameState.turn === 1) {
-             if (numberOfPlayers === 2) currentGameState.currentAP = 5; // P1 in 2P game
-             else if (numberOfPlayers === 3) currentGameState.currentAP = 6; // P1 in 3P game
-             else if (numberOfPlayers === 4) currentGameState.currentAP = 4; // P1 in 4P game (using corrected 4/5/6/8)
+             if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][playerIndex];
+             else if (numberOfPlayers === 3) currentGameState.currentAP = [6, 6, 6][playerIndex]; // Rule was 6AP per player
+             else if (numberOfPlayers === 2) currentGameState.currentAP = [5, 5][playerIndex]; // Rule was 5AP per player
+         } else {
+             currentGameState.currentAP = 5; // Standard AP
+         }
+         // AP Adjustment based on user feedback later: P1=4, P2=5, P3=6, P4=8 for 4P R1.
+         if (currentGameState.turn === 1 && numberOfPlayers === 4) {
+            currentGameState.currentAP = [4, 5, 6, 8][playerIndex];
+         } else if (currentGameState.turn === 1 && numberOfPlayers === 3) {
+             currentGameState.currentAP = [6, 6, 6][playerIndex]; // Stick to original 3P rule? Or scale like 4P? Let's use original rule.
+         } else if (currentGameState.turn === 1 && numberOfPlayers === 2) {
+            currentGameState.currentAP = [5, 5][playerIndex]; // Stick to original 2P rule
          } else {
              currentGameState.currentAP = 5; // Standard AP
          }
