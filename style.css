@@ -136,8 +136,9 @@ button:disabled {
     list-style: disc;
     margin-left: 20px;
 }
+/* Added spacing for ability list items in setup */
 #class-abilities li {
-    margin-bottom: 8px; /* Added spacing */
+    margin-bottom: 8px;
 }
 
 
@@ -187,7 +188,7 @@ button:disabled {
     color: #333;
     min-width: 80px;
 }
-.action-buttons button:hover {
+.action-buttons button:hover:not(:disabled) { /* Don't change hover if disabled */
     background-color: #dcdcdc;
 }
 .action-buttons button:disabled {
@@ -236,7 +237,7 @@ button:disabled {
     background-color: #f0f0f0; /* Slight hover effect */
 }
 
-/* --- Piece/Hazard Placeholder Styles (Add more detail later) --- */
+/* --- Piece/Hazard Styles --- */
 .piece {
     position: absolute;
     top: 5%;
@@ -250,57 +251,68 @@ button:disabled {
     font-size: 1.5em; /* Adjust for icons */
     font-weight: bold;
     box-sizing: border-box; /* Include border in size */
-    pointer-events: none; /* Click goes through to square */
+    pointer-events: none; /* Click goes through to square by default */
     user-select: none; /* Prevent text selection */
+    /* Basic facing indicator setup */
+    line-height: 1; /* Adjust line height for icon centering */
 }
 
+/* Facing Indicators (Simple Arrow Text) */
+/* Adjust font size/position as needed */
+.vampire[data-facing="N"]::before { content: '↑'; position: absolute; top: 2px; width: 100%; text-align: center; font-size: 0.6em; color: rgba(0,0,0,0.6); }
+.vampire[data-facing="S"]::before { content: '↓'; position: absolute; bottom: 2px; width: 100%; text-align: center; font-size: 0.6em; color: rgba(0,0,0,0.6); }
+.vampire[data-facing="E"]::before { content: '→'; position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 0.6em; color: rgba(0,0,0,0.6); }
+.vampire[data-facing="W"]::before { content: '←'; position: absolute; left: 4px; top: 50%; transform: translateY(-50%); font-size: 0.6em; color: rgba(0,0,0,0.6); }
+
+
 .vampire {
-    /* Basic shape */
     border-radius: 50%;
     border: 2px solid black;
     z-index: 10; /* Above hazards */
     cursor: pointer; /* Indicate vampires are selectable */
     pointer-events: auto; /* Allow clicks ON vampires */
+    color: rgba(255,255,255,0.7); /* Color for facing arrow */
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.2); /* Make arrow slightly more visible */
 }
 .vampire.selected {
     outline: 3px solid gold;
      box-shadow: 0 0 10px gold;
+     z-index: 11; /* Ensure selected is on top */
 }
 .vampire.cursed {
     border: 3px dashed purple !important; /* Use !important to override base border if needed */
     box-shadow: 0 0 8px purple;
 }
-/* Add facing indicator later, maybe with ::after */
 
 .bloodwell {
-    /* Basic shape */
     border-radius: 10%;
     border: 2px dashed #555;
     font-size: 1.2em;
      z-index: 5; /* Below vampires */
      opacity: 0.8;
+      color: rgba(0,0,0,0.6); /* Color for BW icon */
 }
 
 .hazard {
-     /* Basic shape */
     border-radius: 0; /* Square */
      border: 1px solid #999;
     font-size: 1.2em;
      z-index: 1; /* Below everything */
      opacity: 0.7;
+     color: rgba(0,0,0,0.8); /* Color for hazard icon */
 }
 
-/* Class Colors (Used for backgrounds on pieces now) */
+/* Class Colors (Used for backgrounds on pieces) */
 .color-sheriff { background-color: rgba(70, 130, 180, 0.7); } /* SteelBlue */
 .color-vigilante { background-color: rgba(105, 105, 105, 0.7); } /* DimGray */
 .color-outlaw { background-color: rgba(178, 34, 34, 0.7); } /* Firebrick */
 .color-bounty-hunter { background-color: rgba(85, 107, 47, 0.7); } /* DarkOliveGreen */
 
-/* Hazard specific appearances */
+/* Hazard specific appearances (overrides base hazard background) */
 .hazard-tombstone { background-color: #b0b0b0; }
 .hazard-carcass { background-color: #deb887; } /* BurlyWood */
 .hazard-grave-dust { background-color: #e6e6fa; } /* Lavender */
-.hazard-dynamite { background-color: #ff4500; } /* OrangeRed */
+.hazard-dynamite { background-color: #ff4500; color: white; } /* OrangeRed */
 
 
 /* Player Info & Status Bar */
