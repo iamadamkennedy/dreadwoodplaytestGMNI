@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dreadwood Testbed</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="game-container">
+
+        <div id="screen-player-count" class="screen active">
+            <h1>Dreadwood Setup</h1>
+            <p>Select the number of players:</p>
+            <div class="button-container">
+                <button id="btn-2-players" data-count="2">2 Players</button>
+                <button id="btn-3-players" data-count="3">3 Players</button>
+                <button id="btn-4-players" data-count="4">4 Players</button>
+            </div>
+        </div>
+
+        <div id="screen-player-setup" class="screen">
+            <h2 id="player-setup-title">Player X Setup</h2>
+
+            <div class="setup-section">
+                <label id="player-name-label" for="input-player-name">Player X Name:</label>
+                <input type="text" id="input-player-name" placeholder="Enter Name">
+            </div>
+
+            <div class="setup-section">
+                <label>Select Class:</label>
+                <div id="class-selection-buttons" class="button-container class-buttons">
+                    <button class="btn-class" data-class="Sheriff">Sheriff</button>
+                    <button class="btn-class" data-class="Vigilante">Vigilante</button>
+                    <button class="btn-class" data-class="Outlaw">Outlaw</button>
+                    <button class="btn-class" data-class="Bounty Hunter">Bounty Hunter</button>
+                </div>
+            </div>
+
+            <div id="class-details-container" class="setup-section class-details-box">
+                <h3>Selected Class Details:</h3>
+                <p id="class-name"><strong>Class:</strong> ---</p>
+                <p id="class-description"><i>Select a class above to see details.</i></p>
+                <h4>Abilities:</h4>
+                <ul id="class-abilities">
+                    <li>---</li>
+                </ul>
+            </div>
+
+            <div class="navigation-buttons button-container">
+                <button id="btn-back">Back</button>
+                <button id="btn-next">Next</button> </div>
+        </div>
+
+        <div id="screen-gameplay" class="screen">
+            <h2>Gameplay Screen</h2>
+            <p>Game board and controls will appear here.</p>
+             <div class="button-container">
+                 <button id="btn-restart-stub">Restart (Stub)</button> </div>
+        </div>
+
+         <div id="popup-elimination" class="popup">
+             <div class="popup-content">
+                 <h3 id="elimination-title">Player Eliminated!</h3>
+                 <p id="elimination-message">[Player Name] has been eliminated.</p>
+                 <button id="btn-close-elimination">OK</button>
+             </div>
+         </div>
+         <div id="popup-victory" class="popup">
+             <div class="popup-content">
+                 <h3 id="victory-title">Victory!</h3>
+                 <p id="victory-message">[Player Name] Wins!</p>
+                 <button id="btn-restart-victory">Restart Game</button>
+             </div>
+         </div>
+
+    </div><script src="script.js" defer></script>
+</body>
+</html>
