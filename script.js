@@ -685,34 +685,64 @@ function clearHighlights() {
         if (!currentGameState.hazardPool || (currentGameState.hazardPool[hazardType] || 0) <= 0) { addToLog(`No ${hazardType} left in the pool to throw.`); return false; }
 
         // --- Validation ---
-        // 1. Distance (must be 1-3 squares away)
-        const distance = getDistance(vampire.coord, targetCoord);
-        if(distance <= 0 || distance > 3) { addToLog(`Invalid throw distance (${distance}). Must be 1-3 squares away.`); return false; }
+        const startCoord = vampire.coord;
+        const facing = vampire.facing;
+        const distance = getDistance(startCoord, targetCoord);
+
+        // 1. Distance & Direction Check
+        let validDirectionAndDist = false;
+        let currentCheckCoord = startCoord;
+        for (let d = 1; d <= 3; d++) {
+            currentCheckCoord = getAdjacentCoord(currentCheckCoord, facing);
+            if (currentCheckCoord === targetCoord) {
+                 if(d === distance) { // Ensure Manhattan matches steps in facing dir
+                     validDirectionAndDist = true;
+                 }
+                break;
+            }
+            if (!currentCheckCoord) break; // Stop if off board
+        }
+        if (!validDirectionAndDist) {
+            addToLog(`Invalid throw target. Must be 1-3 squares in facing direction (${facing}).`); return false;
+        }
 
         // 2. Target Occupancy Rules
         const pieceAtTarget = findPieceAtCoord(targetCoord);
-        if(pieceAtTarget) { // Target square is occupied
-             if (!(hazardType === 'Grave Dust' && pieceAtTarget.type === 'vampire')) {
-                 // Can only target occupied square if throwing Grave Dust AT a Vampire
-                 addToLog(`Cannot throw ${hazardType} onto occupied square ${targetCoord} containing a ${pieceAtTarget.type}.`);
-                 return false;
+        if (pieceAtTarget) {
+            if (!(hazardType === 'Grave Dust' && pieceAtTarget.type === 'vampire')) {
+                addToLog(`Cannot throw ${hazardType} onto occupied square ${targetCoord} containing a ${pieceAtTarget.type}.`);
+                return false;
+            }
+        } // Else: Target square is empty, which is generally required.
+
+        // 3. Clear Path Check
+        // Iterate from start+1 up to target-1, check for blocking pieces
+        let pathClear = true;
+        currentCheckCoord = startCoord;
+        for (let d = 1; d < distance; d++) { // Check intermediate squares ONLY
+             currentCheckCoord = getAdjacentCoord(currentCheckCoord, facing);
+             if (!currentCheckCoord) { pathClear = false; break; } // Should not happen if targetCoord is valid, but safety check
+             const pieceOnPath = findPieceAtCoord(currentCheckCoord);
+             // Vamps, BWs, Carcasses block the path
+             if (pieceOnPath && (pieceOnPath.type === 'vampire' || pieceOnPath.type === 'bloodwell' || pieceOnPath.piece.type === 'Carcass')) {
+                 pathClear = false;
+                 addToLog(`Throw path blocked by ${pieceOnPath.piece.type} at ${currentCheckCoord}.`);
+                 break;
              }
-        } // Else: Target square is empty, which is generally required (except GD->Vamp)
-
-        // 3. Clear Path (Simplified check - Assumes direct line for now)
-        // TODO: Implement proper line-of-sight / path check
-        // Iterate squares between vampire.coord and targetCoord.
-        // Check for Vamps, BWs, Carcasses (these block throw path). Tombstone/Dynamite/GD do NOT block path.
-        addToLog("Warning: Throw path validation not fully implemented yet."); // Placeholder warning
-
+        }
+        if (!pathClear) {
+             return false; // Path blocked, cannot execute throw
+        }
         // --- End Validation ---
 
+
+        // If Validation Passes:
         saveStateToHistory(); // Save state *before* throwing
 
         // Update State
-        currentGameState.hazardPool[hazardType]--; // Decrement available pool count
-        currentGameState.board.hazards.push({ type: hazardType, coord: targetCoord }); // Add hazard to board
-        currentGameState.currentAP -= cost; // Deduct AP
+        currentGameState.hazardPool[hazardType]--;
+        currentGameState.board.hazards.push({ type: hazardType, coord: targetCoord });
+        currentGameState.currentAP -= cost;
         addToLog(`${vampire.id} threw ${hazardType} to ${targetCoord}. (${currentGameState.currentAP} AP left)`);
 
         // Apply effect if Grave Dust hits a Vampire
@@ -720,7 +750,7 @@ function clearHighlights() {
             const targetVamp = findVampireById(pieceAtTarget.piece.id); // Get the actual vampire object
             if (targetVamp && !targetVamp.cursed) {
                 targetVamp.cursed = true;
-                addToLog(`${targetVamp.id} was hit by thrown Grave Dust & is now CURSED!`);
+                addToLog(`${targetVamp.id} hit by thrown Grave Dust & is now CURSED!`);
             }
         }
 
@@ -867,7 +897,7 @@ function clearHighlights() {
         addToLog(`Throwing ${hazardType}. Select a target square.`);
     }
 
-    // Calculates and highlights valid squares for the selected throw action
+    // Calculates and highlights valid squares for the selected throw action (FACING ONLY)
     function highlightThrowTargets() {
         clearHighlights(); // Clear previous highlights first
         const selectedVamp = findVampireById(currentGameState.selectedVampireId);
@@ -875,39 +905,84 @@ function clearHighlights() {
         if (!selectedVamp || !currentGameState?.actionState?.selectedHazardType) return;
 
         const startCoord = selectedVamp.coord;
+        const facing = selectedVamp.facing;
         const hazardType = currentGameState.actionState.selectedHazardType;
+        let currentCoord = startCoord;
+        let pathClear = true;
 
-        // Iterate through all grid squares to check validity
-        document.querySelectorAll('.grid-square').forEach(square => {
-            const targetCoord = square.dataset.coord;
-            const distance = getDistance(startCoord, targetCoord);
-            let isValid = false;
+        // Check squares 1, 2, and 3 spaces away in the facing direction
+        for (let dist = 1; dist <= 3; dist++) {
+            const targetCoord = getAdjacentCoord(currentCoord, facing);
 
-            // Check distance rule (1-3 squares)
-            if (distance > 0 && distance <= 3) {
-                // --- TODO: Implement full path validation ---
-                // Check intermediate squares for blocking pieces (Vamp, BW, Carcass)
+            if (!targetCoord) { // Off the board
+                pathClear = false;
+                break;
+            }
 
-                // Check target occupancy rule
-                const pieceAtTarget = findPieceAtCoord(targetCoord);
-                if (!pieceAtTarget) { // Empty square is generally valid
-                    isValid = true;
-                } else if (hazardType === 'Grave Dust' && pieceAtTarget.type === 'vampire') {
-                    // Grave Dust can specifically target squares occupied by Vampires
-                    isValid = true;
+            const pieceAtTarget = findPieceAtCoord(targetCoord);
+
+            // Check if the path is blocked *before* this square (for dist 2 & 3)
+            // Or if the target square itself is blocked for throwing *onto*
+            if (!pathClear) break; // Stop if path was blocked earlier
+
+            // Check for blocking pieces on the path or target square
+            // Vamps, BWs, Carcasses always block the path/target (except GD onto Vamp)
+            if (pieceAtTarget) {
+                if (pieceAtTarget.type === 'vampire' || pieceAtTarget.type === 'bloodwell' || pieceAtTarget.piece.type === 'Carcass') {
+                    // If throwing GD AT a vampire, this square IS valid, but path beyond is blocked
+                    if (hazardType === 'Grave Dust' && pieceAtTarget.type === 'vampire' && dist <= 3) {
+                        const targetSquareElement = gameBoard.querySelector(`[data-coord="${targetCoord}"]`);
+                        if(targetSquareElement) targetSquareElement.classList.add('valid-target');
+                        pathClear = false; // Path blocked beyond this square
+                        addToLog(`Path blocked beyond ${targetCoord} by ${pieceAtTarget.type}`);
+                        // Don't break yet, allow highlighting this square if it's the target
+                    } else {
+                        // Otherwise, this piece blocks throwing onto or through this square
+                        pathClear = false;
+                        addToLog(`Path blocked at ${targetCoord} by ${pieceAtTarget.type}`);
+                        break; // Stop checking further
+                    }
                 }
-                // --- End Placeholder Validation ---
+                // Tombstones/Dynamite/GD do NOT block the *path* of a throw, only the landing spot if not GD->Vamp
+                else if (pieceAtTarget.type === 'hazard' && (pieceAtTarget.piece.type === 'Tombstone' || pieceAtTarget.piece.type === 'Dynamite' || pieceAtTarget.piece.type === 'Grave Dust')) {
+                    // Cannot land on these hazards, path is blocked for landing here
+                    pathClear = false;
+                    addToLog(`Cannot land on existing hazard at ${targetCoord}`);
+                    // We check this square is invalid, but don't break, maybe next square is valid? Needs clear path rule clarification.
+                    // Let's assume for now: if you hit non-passable hazard, you stop. If you hit passable, path continues but cannot land there.
+                    // Let's adjust: If you hit ANY hazard (except GD->Vamp case), cannot land here. Path clear check needs refinement based on intermediate squares.
+
+                    // --- Simplified approach for now: Only empty squares or Vamp(for GD) are valid targets ---
+                    // If we hit any piece here, and it's not the GD->Vamp case, the square is not a valid target.
+                    if (!(hazardType === 'Grave Dust' && pieceAtTarget.type === 'vampire')) {
+                        // This square is not valid, but path might continue? Let's just mark invalid for now.
+                            const targetSquareElement = gameBoard.querySelector(`[data-coord="${targetCoord}"]`);
+                        if(targetSquareElement) targetSquareElement.classList.add('invalid-target'); // Mark as invalid landing
+                        // Need to clarify rules: Does hitting a non-blocking hazard stop the throw entirely, or just prevent landing there?
+                        // Assuming for now path continues, but cannot land here. So don't break pathClear.
+                    } else {
+                        // This is the GD->Vamp case, mark as valid target. Path blocked beyond.
+                        const targetSquareElement = gameBoard.querySelector(`[data-coord="${targetCoord}"]`);
+                        if(targetSquareElement) targetSquareElement.classList.add('valid-target');
+                        pathClear = false; // Cannot throw *through* a vampire
+                    }
+
+
+                }
             }
 
-            // Apply highlighting class if valid
-            if (isValid) {
-                square.classList.add('valid-target');
+            // If the path is still clear up to this point AND the target square is valid for landing
+            const isOccupiable = !pieceAtTarget || (hazardType === 'Grave Dust' && pieceAtTarget.type === 'vampire');
+            if (pathClear && isOccupiable) {
+                const targetSquareElement = gameBoard.querySelector(`[data-coord="${targetCoord}"]`);
+                if (targetSquareElement) {
+                    targetSquareElement.classList.add('valid-target');
+                }
             }
-            // Optionally add 'invalid-target' class to others within range but blocked
-            // else if (distance > 0 && distance <= 3) {
-            //     square.classList.add('invalid-target');
-            // }
-        });
+
+            // Prepare for next iteration
+            currentCoord = targetCoord; // Move forward for next distance check
+        }
     }
 
     // --- END OF SECTION 6 ---
@@ -915,46 +990,51 @@ function clearHighlights() {
     // --- Event Listener Handlers ---
 
     // Handles clicks on the game board (delegated from gameBoard element)
+    // Handles clicks on the game board (delegated from gameBoard element)
     function handleBoardClick(event) {
         const clickedSquareElement = event.target.closest('.grid-square');
         if (!clickedSquareElement) return; // Click wasn't inside a square
 
         const clickedCoord = clickedSquareElement.dataset.coord;
-        const pendingAction = currentGameState.actionState?.pendingAction; // Use optional chaining
 
+        // Ensure game state is ready before processing clicks
         if (!currentGameState || !currentGameState.actionState) {
              console.error("Game state not ready for board click."); return;
         }
+        const pendingAction = currentGameState.actionState.pendingAction;
 
         // --- Route click based on pending action ---
         if (pendingAction === 'throw-select-target') {
             const selectedHazardType = currentGameState.actionState.selectedHazardType;
             const selectedVamp = findVampireById(currentGameState.selectedVampireId);
-            // Check if the clicked square was highlighted as valid
+
+            // IMPORTANT: Only execute if the clicked square was actually highlighted as valid
             if (clickedSquareElement.classList.contains('valid-target')) {
+                // Validation should happen primarily within executeThrow now
                 executeThrow(selectedVamp, selectedHazardType, clickedCoord);
             } else {
-                addToLog("Invalid throw target selected. Action cancelled."); // Or provide better feedback
+                addToLog("Invalid throw target selected. Action cancelled."); // Provide feedback
             }
-            // Reset action state regardless of success/failure after click
+            // Reset action state and clear highlights regardless of success/failure
             currentGameState.actionState = { pendingAction: null, selectedHazardType: null };
-            clearHighlights(); // Remove target highlighting
+            clearHighlights();
 
         } else if (pendingAction === 'move-select-target') {
             // If Move required clicking target square:
-            const selectedVamp = findVampireById(currentGameState.selectedVampireId);
+             const selectedVamp = findVampireById(currentGameState.selectedVampireId);
+            // Check if the square was valid before executing
             if (selectedVamp && clickedSquareElement.classList.contains('valid-target')) {
-                 executeMove(selectedVamp, clickedCoord); // Assumes executeMove checks adjacency/facing
+                 executeMove(selectedVamp, clickedCoord); // executeMove performs final checks
             } else {
                  addToLog("Invalid move target selected. Action cancelled.");
             }
-            currentGameState.actionState = { pendingAction: null };
+             currentGameState.actionState = { pendingAction: null };
             clearHighlights();
 
         } else if (pendingAction === 'pivot-select-direction') {
              // Pivot action state might be handled by direction buttons instead of board click
              console.warn("Board clicked while waiting for pivot direction.");
-             clearHighlights(); // Clear any potential highlights if needed
+             clearHighlights();
              currentGameState.actionState = { pendingAction: null }; // Reset state
 
         } else {
