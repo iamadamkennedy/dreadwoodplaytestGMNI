@@ -102,6 +102,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const hazardPickerPopup = document.getElementById('hazard-picker');
     const hazardPickerOptions = document.getElementById('hazard-picker-options');
     const btnCancelThrow = document.getElementById('btn-cancel-throw');
+    const btnMoveFwd = document.getElementById('action-move-fwd');
+    const btnPivotL = document.getElementById('action-pivot-left');
+    const btnPivotR = document.getElementById('action-pivot-right');
+    const btnPivot180 = document.getElementById('action-pivot-180');
 
     // --- END OF SECTION 1 ---
 
@@ -131,6 +135,23 @@ function getAdjacentCoord(coord, direction) { // direction = 'N', 'E', 'S', 'W'
     else if (direction === 'E') col++;
     else if (direction === 'W') col--;
     return getCoordFromRowCol(row, col); // Will return null if off board
+}
+// Calculates new facing after pivoting
+function getNewFacing(currentFacing, pivotType) { // pivotType = 'L', 'R', '180'
+    const currentIndex = DIRECTIONS.indexOf(currentFacing);
+    if (currentIndex === -1) return currentFacing; // Should not happen
+
+    let newIndex;
+    if (pivotType === 'L') {
+        newIndex = (currentIndex - 1 + DIRECTIONS.length) % DIRECTIONS.length;
+    } else if (pivotType === 'R') {
+        newIndex = (currentIndex + 1) % DIRECTIONS.length;
+    } else if (pivotType === '180') {
+        newIndex = (currentIndex + 2) % DIRECTIONS.length;
+    } else {
+        return currentFacing; // Invalid pivot type
+    }
+    return DIRECTIONS[newIndex];
 }
 
 // Calculates distance between two coords (Manhattan distance)
@@ -494,24 +515,24 @@ function clearHighlights() {
 
     function executeMove(vampire, targetCoord) {
         // --- Validation ---
-        // 1. Check AP Cost
-        if (currentGameState.currentAP < AP_COST.MOVE) { addToLog("Not enough AP to Move."); return false; } // Return false on failure
-        // 2. Check if Cursed (Rule: only 1 square move per TURN)
-        // TODO: Implement turn-based move limit for cursed vampires. This requires tracking moves made *this turn*.
-        // For now, allow cursed move but log warning, rule not fully enforced.
-        if (vampire.cursed) { addToLog("Warning: Cursed movement limit (1/turn) not fully enforced yet."); }
-        // 3. Check target validity (must be adjacent IN FACING direction)
+        if (currentGameState.currentAP < AP_COST.MOVE) { addToLog("Not enough AP to Move."); return false; }
+
+        // Cursed Check: Rule is only 1 MOVE *action* per turn if cursed.
+        if (vampire.cursed) {
+            // Check if this vampire has already moved this turn
+            if (vampire.movesThisTurn >= 1) {
+                addToLog(`Cursed ${vampire.id} has already moved this turn. Cannot move again.`);
+                return false; // Deny move
+            }
+            // If cursed and movesThisTurn is 0, allow the move (and increment counter below)
+            addToLog(`Cursed ${vampire.id} making its move for the turn.`);
+        }
+
+        // Target & Path Checks
         const expectedTarget = getAdjacentCoord(vampire.coord, vampire.facing);
-        if (targetCoord !== expectedTarget) {
-             addToLog(`Invalid move target. Must move 1 square in facing direction (${vampire.facing}). Clicked ${targetCoord}, expected ${expectedTarget}.`);
-             return false; // Return false on failure
-        }
-        // 4. Check target occupancy (Vamp, BW, Carcass block)
+        if (targetCoord !== expectedTarget) { addToLog(`Invalid move target. Must move 1 square forward (${vampire.facing}).`); return false; }
         const pieceAtTarget = findPieceAtCoord(targetCoord);
-        if (pieceAtTarget && (pieceAtTarget.type === 'vampire' || pieceAtTarget.type === 'bloodwell' || (pieceAtTarget.type === 'hazard' && pieceAtTarget.piece.type === 'Carcass'))) {
-             addToLog(`Cannot move onto square ${targetCoord} occupied by ${pieceAtTarget.piece.type}.`);
-             return false; // Return false on failure
-        }
+        if (pieceAtTarget && (pieceAtTarget.type === 'vampire' || pieceAtTarget.type === 'bloodwell' || (pieceAtTarget.type === 'hazard' && pieceAtTarget.piece.type === 'Carcass'))) { addToLog(`Cannot move onto occupied square ${targetCoord}.`); return false; }
         // --- End Validation ---
 
         saveStateToHistory(); // Save state *before* the move
@@ -520,22 +541,16 @@ function clearHighlights() {
         const oldCoord = vampire.coord;
         vampire.coord = targetCoord;
         currentGameState.currentAP -= AP_COST.MOVE;
+        // ** ADDED: Increment move counter **
+        vampire.movesThisTurn = (vampire.movesThisTurn || 0) + 1; // Increment move counter for this vamp
+
         addToLog(`${vampire.id} moved ${oldCoord} -> ${targetCoord}. (${currentGameState.currentAP} AP left)`);
 
-        // Check for landing effects
-        if (pieceAtTarget?.type === 'hazard' && pieceAtTarget.piece.type === 'Grave Dust') {
-            if (!vampire.cursed) {
-                 vampire.cursed = true;
-                 addToLog(`${vampire.id} landed on Grave Dust and is now CURSED!`);
-            }
-        }
-        // Check for Bloodbath (landing on own BW to cure curse - check NO hazard)
+        // Landing effects (Grave Dust / Bloodbath)
+        if (pieceAtTarget?.type === 'hazard' && pieceAtTarget.piece.type === 'Grave Dust' && !vampire.cursed) { vampire.cursed = true; addToLog(`${vampire.id} landed on Grave Dust & CURSED!`); }
         const landedOnBW = findPieceAtCoord(targetCoord)?.type === 'bloodwell';
-        const isHazardAlsoPresent = findPieceAtCoord(targetCoord)?.type === 'hazard'; // Check if hazard is on the same square
-        if (vampire.cursed && landedOnBW && !isHazardAlsoPresent && findPieceAtCoord(targetCoord).piece.player === vampire.player) {
-            vampire.cursed = false;
-             addToLog(`${vampire.id} performed Bloodbath at ${targetCoord} and is CURED!`);
-        }
+        const isHazardAlsoPresent = currentGameState.board.hazards.some(h => h.coord === targetCoord); // Check if *any* hazard is on the BW square
+        if (vampire.cursed && landedOnBW && !isHazardAlsoPresent && findPieceAtCoord(targetCoord).piece.player === vampire.player) { vampire.cursed = false; addToLog(`${vampire.id} performed Bloodbath at ${targetCoord} and is CURED!`); }
 
         // Update UI
         renderBoard(currentGameState);
@@ -760,85 +775,80 @@ function clearHighlights() {
         return true; // Indicate success
     }
 
-     function nextTurn() {
-         // Check if any actions are pending (like selecting throw target)
-         if(currentGameState.actionState?.pendingAction){
-             addToLog("Cannot end turn while an action is pending. Cancel or complete the action.");
-             // Optionally auto-cancel? For now, require manual cancel.
-              // btnCancelThrow.click(); // Example: Simulate cancel click if desired
-             return;
-         }
+    function nextTurn() {
+        // Check if any actions are pending (like selecting throw target)
+        if(currentGameState.actionState?.pendingAction){
+            addToLog("Cannot end turn while an action is pending. Cancel or complete the action.");
+            return;
+        }
 
-         // Save state before ending turn (allows undoing the 'end turn' itself if desired)
-         saveStateToHistory();
+        // Save state before ending turn (allows undoing the 'end turn' itself)
+        saveStateToHistory();
 
-         const previousPlayerIndex = currentGameState.currentPlayerIndex;
-         const previousPlayer = currentGameState.players[previousPlayerIndex];
+        const previousPlayerIndex = currentGameState.currentPlayerIndex;
+        const previousPlayer = currentGameState.players[previousPlayerIndex];
 
-         // --- Apply end-of-turn effects ---
-         // Example: Sheriff Swift Justice
-         if (previousPlayer?.class === 'Sheriff' && !previousPlayer.eliminated) {
-             // TODO: Implement logic to *allow player to choose* which Sheriff (if >1) gets free move.
-             // For now, just log it as a reminder.
-             addToLog("Sheriff's Swift Justice may apply (manual application needed).");
-         }
-         // TODO: Add other end-of-turn effects if any
+        // --- Apply end-of-turn effects ---
+        // Example: Sheriff Swift Justice
+        if (previousPlayer?.class === 'Sheriff' && !previousPlayer.eliminated) {
+            addToLog("Sheriff's Swift Justice may apply (Manual Check / UI TBD).");
+            // TODO: Implement UI/logic for Swift Justice choice & execution
+        }
+        // TODO: Add other end-of-turn effects
 
-         // Advance Player Index (Looping and skipping eliminated)
-         let nextPlayerIndex = (previousPlayerIndex + 1) % numberOfPlayers;
-         let loopCheck = 0;
-         // Check if player data exists before checking eliminated status
-         while (currentGameState.players[nextPlayerIndex]?.eliminated && loopCheck < numberOfPlayers) {
-             nextPlayerIndex = (nextPlayerIndex + 1) % numberOfPlayers;
-             loopCheck++;
-         }
-          // Check if only one player remains after looping (or if loop failed)
+        // Advance Player Index (Looping and skipping eliminated)
+        let nextPlayerIndex = (previousPlayerIndex + 1) % numberOfPlayers;
+        let loopCheck = 0;
+        while (currentGameState.players[nextPlayerIndex]?.eliminated && loopCheck < numberOfPlayers) {
+            nextPlayerIndex = (nextPlayerIndex + 1) % numberOfPlayers;
+            loopCheck++;
+        }
          const activePlayers = currentGameState.players.filter(p => !p.eliminated);
-         if (activePlayers.length <= 1 && loopCheck >= numberOfPlayers) {
-             console.error("Error: Could not find next active player! Possible game end state missed?");
-             addToLog("Error advancing turn!");
-             undoLastAction(); // Revert the end turn attempt
-             return;
-         }
-         currentGameState.currentPlayerIndex = nextPlayerIndex;
+        if (activePlayers.length <= 1 && loopCheck >= numberOfPlayers) {
+            console.error("Error: Could not find next active player! Possible game end state missed?");
+            addToLog("Error advancing turn!");
+            undoLastAction(); // Revert the end turn attempt
+            return;
+        }
+        currentGameState.currentPlayerIndex = nextPlayerIndex;
 
-         // Increment turn number if we wrapped around to player 0
-         if (currentGameState.currentPlayerIndex === 0 && previousPlayerIndex !== 0) {
-            // Only increment if we actually wrapped around (prevents increment on first P1 turn)
+
+        // Increment turn number if we wrapped around to player 0
+        if (currentGameState.currentPlayerIndex === 0 && previousPlayerIndex !== 0) {
             currentGameState.turn++;
-         }
+        }
 
+       // Set AP for the new player
+        const playerIndex = currentGameState.currentPlayerIndex;
+        if (currentGameState.turn === 1) { // Only check turn 1 for scaling
+            if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][playerIndex];
+            else if (numberOfPlayers === 3) currentGameState.currentAP = 6;
+            else if (numberOfPlayers === 2) currentGameState.currentAP = 5;
+             else currentGameState.currentAP = 5; // Fallback for 1 player?
+        } else {
+            currentGameState.currentAP = 5; // Standard AP for all turns after 1
+        }
+        // TODO: Add Vigilante Blood Brothers check here & potentially add +1 AP
 
-         // Set AP for the new player
-         const playerIndex = currentGameState.currentPlayerIndex;
-         // Reset AP based on rules (Turn 1 has scaling)
-         if (currentGameState.turn === 1) {
-             if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][playerIndex];
-             else if (numberOfPlayers === 3) currentGameState.currentAP = 6; // Rule was 6AP per player for 3P
-             else if (numberOfPlayers === 2) currentGameState.currentAP = 5; // Rule was 5AP per player for 2P
-         } else {
-             currentGameState.currentAP = 5; // Standard AP for all turns after 1
-         }
-         // TODO: Add Vigilante Blood Brothers check here & potentially add +1 AP
+        // --- Reset turn-specific state ---
+        currentGameState.selectedVampireId = null;
+        currentGameState.actionState = { pendingAction: null, selectedHazardType: null };
+        clearHighlights();
+        btnUndo.disabled = true;
+        // ** ADDED: Reset movesThisTurn for ALL vampires **
+        if (currentGameState.board?.vampires) {
+            currentGameState.board.vampires.forEach(v => v.movesThisTurn = 0);
+        }
+        // ** End Added Reset **
+        // gameHistory = []; // Clearing history means cannot undo across turns
 
-         // Reset turn-specific state
-         currentGameState.selectedVampireId = null;
-         currentGameState.actionState = { pendingAction: null, selectedHazardType: null };
-         clearHighlights(); // Ensure no lingering highlights
-
-         // Manage Undo History - Disable undo at start of new turn.
-         btnUndo.disabled = true;
-         // Decide whether to clear history entirely on turn end or keep it
-         // gameHistory = []; // Option to clear history each turn (simplifies)
-         // For max flexibility let's keep history, player must undo *before* ending turn.
-
-         // Update UI for new player
-         renderBoard(currentGameState);
-         updateUI();
-         const currentPlayer = currentGameState.players[currentGameState.currentPlayerIndex];
-         addToLog(`--- Turn ${currentGameState.turn} - ${currentPlayer.name}'s turn (${currentPlayer.class}). AP: ${currentGameState.currentAP} ---`);
-         // TODO: Check Victory condition here (only 1 player not eliminated)
-    }
+        // Update UI for new player
+        renderBoard(currentGameState);
+        updateUI();
+        const currentPlayer = currentGameState.players[currentGameState.currentPlayerIndex];
+        addToLog(`--- Turn ${currentGameState.turn} - ${currentPlayer.name}'s turn (${currentPlayer.class}). AP: ${currentGameState.currentAP} ---`);
+        // TODO: Check Victory condition here (only 1 player not eliminated)
+   }
 
     // --- END OF SECTION 5 ---
 
@@ -1089,6 +1099,7 @@ function clearHighlights() {
 
 
     // --- Initialization ---
+    // --- Initialization ---
     function initializeGame() {
         console.log("Initializing game...");
         gameHistory = []; // Clear history for new game
@@ -1098,78 +1109,79 @@ function clearHighlights() {
         if (!layoutsForPlayerCount || layoutsForPlayerCount.length === 0) {
             alert(`Error: No layouts defined for ${numberOfPlayers} players! Cannot start game.`);
             console.error(`No layouts found for ${numberOfPlayers} players!`);
-            // Don't proceed to gameplay screen if setup fails
-            showScreen('playerCount'); // Go back to setup start
+            showScreen('playerCount');
             return;
         }
         const layoutIndex = Math.floor(Math.random() * layoutsForPlayerCount.length);
         const selectedLayout = layoutsForPlayerCount[layoutIndex];
-        const layoutName = `${numberOfPlayers}P Layout #${layoutIndex + 1}`; // For logging
-        addToLog(`Selected ${layoutName}`);
+        const layoutName = `${numberOfPlayers}P Layout #${layoutIndex + 1}`;
+        // addToLog(`Selected ${layoutName}`); // Log added later after init
         console.log(`Selected ${layoutName}`);
-
 
         // 2. Set up initial game state structure
         currentGameState = {
             players: playerData.map(p => ({ name: p.name, class: p.class, eliminated: false })),
-            board: { // Store pieces currently on board separately from layout definition
-                 vampires: JSON.parse(JSON.stringify(selectedLayout.vampires.map(v => ({...v, cursed: false})))), // Deep copy & add cursed status
-                 bloodwells: JSON.parse(JSON.stringify(selectedLayout.bloodwells)), // Deep copy
-                 hazards: JSON.parse(JSON.stringify(selectedLayout.hazards)) // Deep copy
+            board: {
+                 // Add cursed and movesThisTurn properties during initialization
+                 vampires: JSON.parse(JSON.stringify(selectedLayout.vampires.map(v => ({
+                     ...v,
+                     cursed: false,
+                     movesThisTurn: 0 // <-- ADDED: Initialize move counter
+                    })))),
+                 bloodwells: JSON.parse(JSON.stringify(selectedLayout.bloodwells)),
+                 hazards: JSON.parse(JSON.stringify(selectedLayout.hazards))
             },
-            hazardPool: { // Hazards available to THROW
+            hazardPool: {
                  'Tombstone': 4 - (selectedLayout.hazards.filter(h=>h.type==='Tombstone').length),
                  'Carcass': 4 - (selectedLayout.hazards.filter(h=>h.type==='Carcass').length),
                  'Grave Dust': 4 - (selectedLayout.hazards.filter(h=>h.type==='Grave Dust').length),
-                 'Dynamite': 3 // Starts at full count
+                 'Dynamite': 3
              },
-            playerResources: playerData.map(() => ({ // Per-player resources
+            playerResources: playerData.map(() => ({
                 silverBullet: 1,
-                abilitiesUsed: [] // Track used 'once per game' active abilities
+                abilitiesUsed: []
             })),
             turn: 1,
             currentPlayerIndex: 0,
             currentAP: 0, // Will be set below
-            selectedVampireId: null, // ID of the currently selected vampire piece
-            actionState: { // Track multi-stage actions
-                 pendingAction: null, // e.g., 'throw-select-target', 'move-select-target'
+            selectedVampireId: null,
+            actionState: {
+                 pendingAction: null,
                  selectedHazardType: null
             }
-            // History managed separately by saveStateToHistory
+            // History managed separately
         };
 
         // 3. Set Initial AP
         const playerIndex = currentGameState.currentPlayerIndex;
          if (currentGameState.turn === 1) {
-             // Using the corrected 4/5/6/8 rule for 4P R1 based on user spec
              if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][playerIndex];
-             else if (numberOfPlayers === 3) currentGameState.currentAP = 6; // Original rule: 6 each
-             else if (numberOfPlayers === 2) currentGameState.currentAP = 5; // Original rule: 5 each
+             else if (numberOfPlayers === 3) currentGameState.currentAP = 6;
+             else if (numberOfPlayers === 2) currentGameState.currentAP = 5;
          } else {
-             // This case shouldn't happen on init, but safety default
-             currentGameState.currentAP = 5;
+             currentGameState.currentAP = 5; // Should not happen on init
          }
 
         // 4. Initial Render & UI Update
         generateGrid();
         renderBoard(currentGameState);
         const currentPlayer = currentGameState.players[currentGameState.currentPlayerIndex];
-        if (!currentPlayer) { console.error("Init failed, no current player."); return; } // Safety check
+        if (!currentPlayer) { console.error("Init failed, no current player."); return; }
         const currentResources = currentGameState.playerResources[currentGameState.currentPlayerIndex];
         updatePlayerInfoPanel(currentPlayer, currentGameState.turn, currentGameState.currentAP, currentResources);
 
         logList.innerHTML = `<li>Game Started with ${layoutName}</li>`; // Reset log
         gameLog.scrollTop = 0;
-        btnUndo.disabled = true; // Can't undo at start of game
+        btnUndo.disabled = true;
 
-        // 5. Add Gameplay Event Listeners (Remove old ones first for safety if re-initializing)
-        gameBoard.removeEventListener('click', handleBoardClick);
+        // 5. Add/Update Gameplay Event Listeners
+        gameBoard.removeEventListener('click', handleBoardClick); // Ensure no duplicates if re-initializing
         gameBoard.addEventListener('click', handleBoardClick);
         btnUndo.removeEventListener('click', undoLastAction);
         btnUndo.addEventListener('click', undoLastAction);
         btnEndTurn.removeEventListener('click', nextTurn);
         btnEndTurn.addEventListener('click', nextTurn);
-        // Action button listeners are attached globally below, no need to re-add here
+        // Action button listeners are attached globally once
 
         // 6. Show Gameplay Screen
         showScreen('gameplay');
