@@ -570,25 +570,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
      // --- Functions for Throw Action ---
-     function populateHazardPicker() {
-         hazardPickerOptions.innerHTML = ''; // Clear old options
-         const pool = currentGameState.hazardPool;
-         const ap = currentGameState.currentAP;
+function populateHazardPicker() {
+    console.log("--- Populating Hazard Picker ---"); // <-- ADD THIS LINE
+    hazardPickerOptions.innerHTML = ''; // Clear old options
+    const pool = currentGameState.hazardPool;
+    const ap = currentGameState.currentAP;
 
-         const createButton = (type, icon, cost) => {
-             const button = document.createElement('button');
-             button.dataset.hazardType = type;
-             button.innerHTML = `<span class="hazard-icon">${icon}</span> ${type} <span class="hazard-cost">(${cost} AP)</span>`;
-             button.disabled = pool[type] <= 0 || ap < cost;
-             // Add count? button.title = `${pool[type]} available`;
-             hazardPickerOptions.appendChild(button);
-         };
+    console.log("Hazard Pool:", pool, "Current AP:", ap); // <-- ADD THIS LINE
 
-         createButton('Tombstone', '🪦', AP_COST.THROW_HAZARD);
-         createButton('Carcass', '💀', AP_COST.THROW_HAZARD);
-         createButton('Grave Dust', '💩', AP_COST.THROW_HAZARD);
-         createButton('Dynamite', '💥', AP_COST.THROW_DYNAMITE);
-     }
+    const createButton = (type, icon, cost) => {
+        console.log(`Creating button for: ${type}, Pool: ${pool[type]}, Cost: ${cost}, Has AP: ${ap >= cost}`); // <-- ADD THIS LINE
+        const button = document.createElement('button');
+        button.dataset.hazardType = type;
+        button.innerHTML = `<span class="hazard-icon">${icon}</span> <span class="math-inline">\{type\} <span class\="hazard\-cost"\>\(</span>{cost} AP)</span>`;
+        button.disabled = pool[type] <= 0 || ap < cost;
+        // Add count? button.title = `${pool[type]} available`;
+        hazardPickerOptions.appendChild(button);
+    };
+
+    createButton('Tombstone', '🪦', AP_COST.THROW_HAZARD);
+    createButton('Carcass', '💀', AP_COST.THROW_HAZARD);
+    createButton('Grave Dust', '💩', AP_COST.THROW_HAZARD);
+    createButton('Dynamite', '💥', AP_COST.THROW_DYNAMITE);
+     console.log("Finished populating picker."); // <-- ADD THIS LINE
+}
 
      function handleHazardSelection(hazardType) {
          console.log("Selected hazard:", hazardType);
