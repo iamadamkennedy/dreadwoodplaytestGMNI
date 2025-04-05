@@ -286,7 +286,10 @@ function updatePlayerSetupScreen(playerIndex) {
         // }
     });
 
-    displayClassDetails(null); // Reset details view initially
+    displayClassDetails(null); // Reset details view
+    // ADD THIS LINE to hide any previous error message:
+    const errorMsgElement = document.getElementById('class-error-msg');
+    if (errorMsgElement) errorMsgElement.style.display = 'none';
 
     // Show/Hide Back button
     btnBack.style.display = (playerIndex === 0) ? 'none' : 'inline-block';
@@ -1305,25 +1308,39 @@ function clearHighlights() {
             showScreen('playerCount');
         }
     });
-    // Next / Start Game Button Listener - FIXED
+// Next / Start Game Button Listener - Uses Inline Error, No Alert
 btnNext.addEventListener('click', () => {
     console.log("Next/Start Game button clicked");
-    const currentPlayerData = playerData[currentPlayerSetupIndex];
+    const errorMsgElement = document.getElementById('class-error-msg'); // Get error message element
+    // Ensure the error message element exists before trying to use it
+    if (errorMsgElement) {
+        errorMsgElement.style.display = 'none'; // Hide error initially
+        errorMsgElement.textContent = ''; // Clear previous message
+    } else {
+         console.error("Element #class-error-msg not found!");
+    }
 
-    if (!currentPlayerData) { console.error("Error: Player data not initialized for index", currentPlayerSetupIndex); return; }
+    const currentPlayerData = playerData[currentPlayerSetupIndex];
+    if (!currentPlayerData) { console.error("Error: Player data not initialized"); return; }
 
     // Validate: Class must be selected
     if (!currentPlayerData.class) {
-        alert(`Please select a class for Player ${currentPlayerSetupIndex + 1}!`);
-        return;
+        // alert(`Please select a class for Player ${currentPlayerSetupIndex + 1}!`); // REMOVED ALERT
+        if (errorMsgElement) {
+            errorMsgElement.textContent = `Please select a class for Player ${currentPlayerSetupIndex + 1}!`; // Set text
+            errorMsgElement.style.display = 'block'; // Show error message
+        } else {
+             alert(`Please select a class for Player ${currentPlayerSetupIndex + 1}!`); // Fallback alert if element missing
+        }
+        return; // Stop processing
     }
 
      // Ensure name is set (even if default)
      if (!currentPlayerData.name) {
-         currentPlayerData.name = playerNameInput.placeholder || `P${currentPlayerSetupIndex + 1}`;
+         currentPlayerData.name = `P${currentPlayerSetupIndex + 1}`; // Use default if empty
      }
 
-    // We no longer need to manually add to selectedClasses array here
+    // --- We no longer manage selectedClasses array here ---
 
     // Check if more players need setup
     if (currentPlayerSetupIndex < numberOfPlayers - 1) {
