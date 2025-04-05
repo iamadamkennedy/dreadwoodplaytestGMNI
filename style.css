@@ -306,22 +306,30 @@ button:disabled {
 
 .bloodwell {
     border-radius: 10%;
-    border: 2px dashed #555;
-    font-size: 1.2em;
-     z-index: 5; /* Below vampires */
-     opacity: 0.8;
-      color: rgba(0,0,0,0.6); /* Color for BW icon */
+    border: 3px dashed transparent; /* Thicker border, color set by player class below */
+    font-size: 1.8em; /* Larger icon */
+    z-index: 5; /* Below vampires */
+    opacity: 1; /* Fully opaque */
+    color: crimson; /* Bold red icon */
+    background-color: black; /* Black background */
+    /* Inherits position, width, height, centering etc. from .piece */
 }
+
+/* Player-specific Bloodwell Border Colors */
+.bloodwell.player0 { border-color: #4682b4; } /* Sheriff Blue */
+.bloodwell.player1 { border-color: #696969; } /* Vigilante Gray */
+.bloodwell.player2 { border-color: #b22222; } /* Outlaw Red */
+.bloodwell.player3 { border-color: #556b2f; } /* BH Green */
+/* Add more if supporting > 4 players, though game rules are 2-4 */
 
 .hazard {
     border-radius: 0; /* Square */
-     border: 1px solid #555; /* Slightly darker border */
-    font-size: 1.6em; /* Increased icon size */
-     z-index: 1; /* Below everything */
-     opacity: 1; /* Make fully opaque */
-     color: rgba(0,0,0,0.9); /* Make icon darker */
-     font-weight: normal; /* Bold might distort some emojis */
-    /* Base styles inherited from .piece (position, width, height, centering etc) */
+     border: 1px solid #555; /* Default border */
+    font-size: 1.6em; /* Base icon size */
+     z-index: 1; /* Below other pieces */
+     opacity: 1; /* Fully opaque */
+     color: rgba(0,0,0,0.9); /* Default dark icon color */
+    /* Inherits position, width, height, centering etc. from .piece */
 }
 
 /* Class Colors (Used for backgrounds on pieces) */
@@ -330,12 +338,30 @@ button:disabled {
 .color-outlaw { background-color: rgba(178, 34, 34, 0.7); } /* Firebrick */
 .color-bounty-hunter { background-color: rgba(85, 107, 47, 0.7); } /* DarkOliveGreen */
 
-/* Hazard specific appearances (overrides base hazard background) */
-.hazard-tombstone { background-color: #b0b0b0; }
-.hazard-carcass { background-color: #deb887; } /* BurlyWood */
-.hazard-grave-dust { background-color: #e6e6fa; } /* Lavender */
-.hazard-dynamite { background-color: #ff4500; color: white; } /* OrangeRed */
-
+/* Hazard specific appearances */
+.hazard-tombstone {
+    background-color: transparent;
+    border: none;
+    font-size: 2em; /* Larger icon */
+    color: #333; /* Dark icon */
+}
+.hazard-carcass {
+    background-color: #D2B48C; /* Tan background */
+    border: none;
+    color: black; /* Ensure skull is visible */
+     /* font-size: 1.6em; */ /* Inherits base hazard size unless overridden */
+}
+.hazard-grave-dust {
+    background-color: mediumpurple; /* Purple background */
+    color: white; /* Light icon for contrast */
+    /* border: 1px solid #555; */ /* Keep or remove border? Keeping for now */
+}
+.hazard-dynamite {
+    background-color: #ff4500; /* Keep orangered */
+    color: white; /* Keep white icon */
+    font-size: 2em; /* Larger icon */
+    border: none;
+}
 
 /* Player Info & Status Bar */
 #player-info { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
