@@ -165,7 +165,71 @@ document.addEventListener('DOMContentLoaded', () => {
     function clearHighlights() { document.querySelectorAll('.grid-square.valid-target, .grid-square.invalid-target').forEach(el => el.classList.remove('valid-target', 'invalid-target')); }
 
     // --- Board Rendering & Gameplay UI Update ---
-    function renderBoard(gameState) { document.querySelectorAll('.piece').forEach(p => p.remove()); if (!gameState?.board) { console.error("Render Error: Invalid state."); return; } gameState.board.vampires?.forEach(vamp => { const targetSquare = gameBoard.querySelector(`[data-coord="${vamp.coord}"]`); if (targetSquare) { const vampElement = document.createElement('div'); const playerClass = gameState.players[vamp.player]?.class; const classColor = CLASS_DATA[playerClass]?.color || ''; vampElement.classList.add('piece', 'vampire', classColor); vampElement.dataset.id = vamp.id; vampElement.dataset.player = vamp.player; vampElement.dataset.facing = vamp.facing; if (vamp.id === gameState.selectedVampireId) vampElement.classList.add('selected'); if (vamp.cursed) vampElement.classList.add('cursed'); targetSquare.appendChild(vampElement); } }); gameState.board.bloodwells?.forEach(bw => { const targetSquare = gameBoard.querySelector(`[data-coord="${bw.coord}"]`); if (targetSquare) { const bwElement = document.createElement('div'); const playerClass = gameState.players[bw.player]?.class; const classColor = CLASS_DATA[playerClass]?.color || ''; bwElement.classList.add('piece', 'bloodwell', classColor); bwElement.dataset.id = bw.id; bwElement.dataset.player = bw.player; bwElement.textContent = '🩸'; targetSquare.appendChild(bwElement); } }); gameState.board.hazards?.forEach(hazard => { const targetSquare = gameBoard.querySelector(`[data-coord="${hazard.coord}"]`); if (targetSquare) { const hazardElement = document.createElement('div'); hazardElement.classList.add('piece', 'hazard'); const typeClass = `hazard-${hazard.type.toLowerCase().replace(' ','-')}`; hazardElement.classList.add(typeClass); let icon = '?'; if (hazard.type === 'Tombstone') icon = '🪦'; else if (hazard.type === 'Carcass') icon = '💀'; else if (hazard.type === 'Grave Dust') icon = '💩'; else if (hazard.type === 'Dynamite') icon = '💥'; hazardElement.textContent = icon; targetSquare.appendChild(hazardElement); } }); }
+
+    // Renders pieces on the board based on game state (Updated for Bloodwell Styling)
+    function renderBoard(gameState) {
+        // console.log("Rendering board state..."); // Reduce console noise
+        document.querySelectorAll('.piece').forEach(p => p.remove()); // Clear existing pieces
+
+        if (!gameState || !gameState.board) { console.error("Render Error: Invalid game state provided."); return; }
+
+        // Render Vampires
+        gameState.board.vampires?.forEach(vamp => {
+            const targetSquare = gameBoard.querySelector(`[data-coord="${vamp.coord}"]`);
+            if (targetSquare) {
+                const vampElement = document.createElement('div');
+                const playerClass = gameState.players[vamp.player]?.class;
+                const classColor = CLASS_DATA[playerClass]?.color || '';
+                vampElement.classList.add('piece', 'vampire', classColor); // Vampires keep class background
+                vampElement.dataset.id = vamp.id; vampElement.dataset.player = vamp.player; vampElement.dataset.facing = vamp.facing;
+                if (vamp.id === gameState.selectedVampireId) vampElement.classList.add('selected');
+                if (vamp.cursed) vampElement.classList.add('cursed');
+                targetSquare.appendChild(vampElement);
+            } else {
+                 console.warn(`Square not found for vampire ${vamp.id} at ${vamp.coord}`);
+            }
+        });
+
+        // Render Bloodwells
+        gameState.board.bloodwells?.forEach(bw => {
+            const targetSquare = gameBoard.querySelector(`[data-coord="${bw.coord}"]`);
+            if (targetSquare) {
+                const bwElement = document.createElement('div');
+                // const playerClass = gameState.players[bw.player]?.class; // No longer needed for background
+                // const classColor = CLASS_DATA[playerClass]?.color || ''; // No longer needed for background
+
+                // --- MODIFIED LINES ---
+                bwElement.classList.add('piece', 'bloodwell'); // Add base classes (NO color class here)
+                bwElement.classList.add(`player${bw.player}`); // Add player index class (e.g., 'player0', 'player1') for border color CSS rule
+                // --- END MODIFICATION ---
+
+                bwElement.dataset.id = bw.id;
+                bwElement.dataset.player = bw.player;
+                bwElement.textContent = '🩸'; // Blood drop icon
+                targetSquare.appendChild(bwElement);
+            } else {
+                 console.warn(`Square not found for bloodwell ${bw.id} at ${bw.coord}`);
+            }
+        });
+
+        // Render Hazards
+        gameState.board.hazards?.forEach(hazard => {
+            const targetSquare = gameBoard.querySelector(`[data-coord="${hazard.coord}"]`);
+            if (targetSquare) {
+                const hazardElement = document.createElement('div');
+                hazardElement.classList.add('piece', 'hazard');
+                const typeClass = `hazard-${hazard.type.toLowerCase().replace(' ','-')}`;
+                hazardElement.classList.add(typeClass);
+                let icon = '?';
+                if (hazard.type === 'Tombstone') icon = '🪦'; else if (hazard.type === 'Carcass') icon = '💀'; else if (hazard.type === 'Grave Dust') icon = '💩'; else if (hazard.type === 'Dynamite') icon = '💥';
+                hazardElement.textContent = icon;
+                targetSquare.appendChild(hazardElement);
+            } else {
+                 console.warn(`Square not found for hazard at ${hazard.coord}`);
+            }
+        });
+    }
+    
     function updatePlayerInfoPanel(player, turn, currentAP, resources) { if (!player || !resources || !currentClassDetailsName) { console.error("Info Panel Error."); return; } const data = CLASS_DATA[player.class]; if (data) { currentClassDetailsName.innerHTML = `<strong>Class:</strong> ${player.class}`; currentClassDescription.textContent = data.description; currentClassAbilitiesList.innerHTML = ''; data.abilities.forEach(ability => { const li = document.createElement('li'); const isUsed = resources.abilitiesUsed?.includes(ability.name); li.innerHTML = `<strong>${ability.name}:</strong> ${ability.description}`; if (isUsed) { li.style.opacity = '0.5'; li.style.textDecoration = 'line-through'; } currentClassAbilitiesList.appendChild(li); }); } infoSilverBullet.textContent = resources.silverBullet > 0 ? `Available (${resources.silverBullet})` : "Used"; statusBarPlayer.textContent = player.name; statusBarAP.textContent = currentAP; statusBarTurn.textContent = turn; const canAffordShoot = currentAP >= AP_COST.SHOOT; const canAffordThrowBase = currentAP >= AP_COST.THROW_HAZARD; const canAffordSilver = currentAP >= AP_COST.SILVER_BULLET && resources.silverBullet > 0; const isVampSelected = !!currentGameState.selectedVampireId; const selectedVamp = findVampireById(currentGameState.selectedVampireId); const isCursed = selectedVamp?.cursed; if (btnShoot) btnShoot.disabled = !isVampSelected || !canAffordShoot || isCursed; if (btnThrow) btnThrow.disabled = !isVampSelected || !canAffordThrowBase || isCursed; if (btnSilverBullet) btnSilverBullet.disabled = !isVampSelected || !canAffordSilver || isCursed; }
     function updateUI() { if (!currentGameState?.players?.length || !currentGameState.playerResources?.length) return; const idx = currentGameState.currentPlayerIndex; if (idx < 0 || idx >= currentGameState.players.length || idx >= currentGameState.playerResources.length) { console.error("Error: Invalid idx.", currentGameState); return; } const player = currentGameState.players[idx]; const resources = currentGameState.playerResources[idx]; if (player && resources) updatePlayerInfoPanel(player, currentGameState.turn, currentGameState.currentAP, resources); else console.error("Error fetching player/resources."); }
 
