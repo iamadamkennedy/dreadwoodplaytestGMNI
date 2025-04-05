@@ -338,10 +338,10 @@ button:disabled {
 }
 
 /* Class Colors (Used for backgrounds on pieces) */
-.color-sheriff { background-color: rgba(70, 130, 180, 0.7); } /* SteelBlue */
-.color-vigilante { background-color: rgba(105, 105, 105, 0.7); } /* DimGray */
-.color-outlaw { background-color: rgba(178, 34, 34, 0.7); } /* Firebrick */
-.color-bounty-hunter { background-color: rgba(34, 139, 34, 0.7); } /* Forest Green w/ Alpha */
+.vampire.color-sheriff { background-color: rgba(70, 130, 180, 0.7); } /* SteelBlue */
+.vampire.color-vigilante { background-color: rgba(105, 105, 105, 0.7); } /* DimGray */
+.vampire.color-outlaw { background-color: rgba(178, 34, 34, 0.7); } /* Firebrick */
+.vampire.color-bounty-hunter { background-color: rgba(34, 139, 34, 0.7); } /* Forest Green w/ Alpha */
 
 /* Hazard specific appearances */
 .hazard-tombstone {
