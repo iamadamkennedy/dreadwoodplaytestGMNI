@@ -21,6 +21,20 @@ body {
     text-align: center;
 }
 
+/* Adjust spacing on shorter screens */
+@media (max-height: 750px) {
+    #game-container {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+    #screen-player-setup .setup-section {
+        margin-top: 15px; /* Reduce top margin between sections */
+        padding: 10px; /* Reduce padding inside sections */
+    }
+    /* Reduce font size slightly if needed */
+    /* body { font-size: 0.95em; } */
+}
+
 /* Screen Visibility */
 .screen {
     display: none; /* Hide screens by default */
@@ -85,6 +99,14 @@ button:disabled {
     background-color: #6c757d; /* Gray */
 }
 #btn-back:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+
+#btn-back-to-start {
+    background-color: #6c757d; /* Gray */
+    color: white;
+}
+#btn-back-to-start:hover:not(:disabled) {
     background-color: #5a6268;
 }
 
