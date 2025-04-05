@@ -315,11 +315,13 @@ button:disabled {
 
 .hazard {
     border-radius: 0; /* Square */
-     border: 1px solid #999;
-    font-size: 1.2em;
+     border: 1px solid #555; /* Slightly darker border */
+    font-size: 1.6em; /* Increased icon size */
      z-index: 1; /* Below everything */
-     opacity: 0.7;
-     color: rgba(0,0,0,0.8); /* Color for hazard icon */
+     opacity: 1; /* Make fully opaque */
+     color: rgba(0,0,0,0.9); /* Make icon darker */
+     font-weight: normal; /* Bold might distort some emojis */
+    /* Base styles inherited from .piece (position, width, height, centering etc) */
 }
 
 /* Class Colors (Used for backgrounds on pieces) */
