@@ -346,7 +346,7 @@ button:disabled {
 /* Hazard specific appearances */
 .hazard-tombstone {
     background-color: transparent;
-    border: none; font-size: 2.4em; /* Increased size */
+    border: none; font-size: 3em;
     color: #333; /* Dark icon */
 }
 .hazard-carcass {
@@ -361,8 +361,12 @@ button:disabled {
 .hazard-dynamite {
     background-color: #ff4500; /* Keep orangered */
     color: white; /* Keep white icon */
-    font-size: 2em; /* Increased size */
+    font-size: 3em; /* Increased size (adjust if needed) */
     border: none;
+    -webkit-text-stroke-width: 1px;
+    -webkit-text-stroke-color: black;
+    text-stroke-width: 1px;
+    text-stroke-color: black;
 }
 
 /* Player Info & Status Bar */
