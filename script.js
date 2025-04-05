@@ -1364,7 +1364,47 @@ btnNext.addEventListener('click', () => {
     classButtons.forEach(button => button.addEventListener('click', () => { if (button.disabled) return; let sel = classSelectionContainer.querySelector('.selected'); if (sel) sel.classList.remove('selected'); button.classList.add('selected'); const cls = button.dataset.class; if (playerData[currentPlayerSetupIndex]) playerData[currentPlayerSetupIndex].class = cls; displayClassDetails(cls); }));
     playerNameInput.addEventListener('input', () => { if(playerData[currentPlayerSetupIndex]) playerData[currentPlayerSetupIndex].name = playerNameInput.value.trim() || `P${currentPlayerSetupIndex + 1}`; });
     btnBack.addEventListener('click', () => { /* ... (Simplified logic from previous step, removing selectedClasses) ... */ if (currentPlayerSetupIndex > 0) updatePlayerSetupScreen(currentPlayerSetupIndex - 1); else { playerData = []; showScreen('playerCount'); } }); // Simplified: Doesn't need to track selectedClasses manually
-    btnNext.addEventListener('click', () => { /* ... (Simplified logic from previous step, removing selectedClasses) ... */ const data = playerData[currentPlayerSetupIndex]; if (!data || !data.class) { alert(`Select class for P${currentPlayerSetupIndex + 1}!`); return; } if (!data.name) data.name = `P${currentPlayerSetupIndex + 1}`; if (currentPlayerSetupIndex < numberOfPlayers - 1) updatePlayerSetupScreen(currentPlayerSetupIndex + 1); else initializeGame(); });
+    // Next / Start Game Button Listener (Corrected - No Alert)
+    btnNext.addEventListener('click', () => {
+        // No alert needed here - button is disabled until class is selected.
+        console.log("Next/Start Game button clicked");
+        const currentPlayerData = playerData[currentPlayerSetupIndex];
+
+        // Basic safety check for player data existence
+        if (!currentPlayerData) {
+             console.error("Error: Player data not initialized for index", currentPlayerSetupIndex);
+             // Optionally, provide user feedback here if this edge case occurs
+             return;
+        }
+
+         // Ensure name is set (use default if empty)
+         if (!currentPlayerData.name || currentPlayerData.name.trim() === '') {
+             currentPlayerData.name = `P${currentPlayerSetupIndex + 1}`;
+             // Update the playerData array entry too if needed, though input listener should handle it
+             playerData[currentPlayerSetupIndex].name = currentPlayerData.name;
+         }
+
+        // Add selected class to the list for uniqueness check on next screen
+        // This check ensures we don't accidentally proceed without a class if button enabling fails
+        if (currentPlayerData.class && !selectedClasses.includes(currentPlayerData.class)) {
+             selectedClasses.push(currentPlayerData.class);
+             console.log("Added class to selected list:", currentPlayerData.class, selectedClasses);
+        } else if (!currentPlayerData.class) {
+             // This should ideally not be reachable if button disabling works
+             console.error("Next clicked but no class selected - button should have been disabled!");
+             // Provide non-alert feedback if necessary, e.g., flashing the class buttons red
+             return; // Prevent proceeding
+        }
+
+        // --- Proceed to next step ---
+        if (currentPlayerSetupIndex < numberOfPlayers - 1) {
+            // If more players need setup, update screen for the next player
+            updatePlayerSetupScreen(currentPlayerSetupIndex + 1);
+        } else {
+            // If this was the last player, initialize and start the game
+             initializeGame();
+        }
+    });
 
     // Gameplay Screen Listeners (Attached ONCE when script loads)
     btnToggleLog.addEventListener('click', () => { gameLog.classList.toggle('log-hidden'); });
