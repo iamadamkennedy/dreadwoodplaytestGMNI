@@ -24,11 +24,6 @@
             <h2 id="player-setup-title">Player X Setup</h2>
 
             <div class="setup-section">
-                <label id="player-name-label" for="input-player-name">Player X Name:</label>
-                <input type="text" id="input-player-name" placeholder="Enter Name">
-            </div>
-
-            <div class="setup-section">
                 <label>Select Class:</label>
                 <div id="class-selection-buttons" class="button-container class-buttons">
                     <button class="btn-class" data-class="Sheriff">Sheriff</button>
@@ -36,8 +31,12 @@
                     <button class="btn-class" data-class="Outlaw">Outlaw</button>
                     <button class="btn-class" data-class="Bounty Hunter">Bounty Hunter</button>
                 </div>
-                <p id="class-error-msg" class="error-message" style="display: none;"></p>
-            </div>
+                 </div>
+
+            <div class="setup-section">
+                <label id="player-name-label" for="input-player-name">Player X Name:</label>
+                <input type="text" id="input-player-name" placeholder="Enter Name (Optional)">
+                 </div>
 
             <div id="class-details-container" class="setup-section class-details-box">
                 <h3>Selected Class Details:</h3>
@@ -51,7 +50,7 @@
 
             <div class="navigation-buttons button-container">
                 <button id="btn-back">Back</button>
-                <button id="btn-next">Next</button> </div>
+                <button id="btn-back-to-start">Back to Start</button> <button id="btn-next">Next</button> </div>
         </div>
 
         <div id="screen-gameplay" class="screen">
@@ -62,20 +61,19 @@
                 <button id="action-throw" title="Throw Hazard (1/2 AP)">✋ Throw</button>
                 <button id="action-silver-bullet" title="Silver Bullet Shot (3 AP)">💎 Silver</button>
                 <button id="action-dispel" title="Dispel Grave Dust (3 AP)" style="display: none;">🪄 Dispel</button>
-            </div>
+                 </div>
 
             <div id="movement-bar" class="button-container movement-buttons">
-                <button id="move-n" class="move-button" data-direction="N" title="Move/Pivot North (1 AP)">⬆️</button>
-        <button id="move-w" class="move-button" data-direction="W" title="Move/Pivot West (1 AP)">⬅️</button>
-        <button id="move-e" class="move-button" data-direction="E" title="Move/Pivot East (1 AP)">➡️</button>
-        <button id="move-s" class="move-button" data-direction="S" title="Move/Pivot South (1 AP)">⬇️</button>
+                 <button id="move-n" class="move-button" data-direction="N" title="Move/Pivot North (1 AP)">⬆️</button>
+                <button id="move-w" class="move-button" data-direction="W" title="Move/Pivot West (1 AP)">⬅️</button>
+                <button id="move-e" class="move-button" data-direction="E" title="Move/Pivot East (1 AP)">➡️</button>
+                <button id="move-s" class="move-button" data-direction="S" title="Move/Pivot South (1 AP)">⬇️</button>
             </div>
 
             <div id="game-board-container">
                 <div id="game-board" class="grid-container">
                     </div>
             </div>
-
 
             <div id="player-info">
                 <div id="current-class-details" class="setup-section class-details-box">
@@ -103,7 +101,6 @@
                 </div>
             </div>
 
-
             <div id="game-controls" class="button-container">
                 <button id="btn-undo" disabled>Undo Last Action</button>
                 <button id="btn-end-turn">End Turn</button>
@@ -117,17 +114,14 @@
              <div class="popup-content">
                  <h3 id="elimination-title">Player Eliminated!</h3>
                  <p id="elimination-message">[Player Name] has been eliminated.</p>
-                 <button id="btn-close-elimination">OK</button>
-             </div>
+                 <button id="btn-close-elimination">OK</button> </div>
          </div>
          <div id="popup-victory" class="popup">
              <div class="popup-content">
                  <h3 id="victory-title">Victory!</h3>
                  <p id="victory-message">[Player Name] Wins!</p>
-                 <button id="btn-restart-victory">Restart Game</button>
-             </div>
+                 <button id="btn-restart-victory">Restart Game</button> </div>
          </div>
-
          <div id="hazard-picker" class="popup">
             <div class="popup-content">
                 <h4>Select Hazard to Throw</h4>
@@ -137,7 +131,6 @@
                 <button id="btn-cancel-throw" style="background-color: #6c757d; margin-top: 15px;">Cancel Throw</button>
             </div>
         </div>
-
 
     </div><script src="script.js" defer></script>
 </body>
