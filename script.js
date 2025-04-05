@@ -202,38 +202,56 @@ function displayClassDetails(className) {
 }
 
 // Updates the player setup screen UI for the correct player
+// Updates the player setup screen UI for the correct player (FIXED Back Button Bug)
 function updatePlayerSetupScreen(playerIndex) {
     const playerNum = playerIndex + 1;
-    currentPlayerSetupIndex = playerIndex;
+    currentPlayerSetupIndex = playerIndex; // Update global index
 
     console.log(`Setting up screen for Player ${playerNum}`);
 
+    // Ensure player data slot exists, reset selected class for this player index
     if (!playerData[playerIndex]) {
          playerData[playerIndex] = { name: `P${playerNum}`, class: null };
     } else {
-        // Clear class selection when returning to setup screen for a player
-        playerData[playerIndex].class = null;
+        playerData[playerIndex].class = null; // Reset class selection when revisiting this player's setup
     }
-    // Set name input value: if player has a custom name use it, otherwise empty for placeholder
+
+    // Set name input value
     playerNameInput.value = (playerData[playerIndex].name && playerData[playerIndex].name !== `P${playerNum}`) ? playerData[playerIndex].name : '';
     playerNameInput.placeholder = `P${playerNum} Name (Optional)`;
+
+    // Update titles and labels
     playerSetupTitle.textContent = `Player ${playerNum} Setup`;
     playerNameLabel.textContent = `Player ${playerNum} Name:`;
 
-    // Reset class button selection highlight
+    // --- Determine disabled classes based on OTHER players' choices ---
+    const disabledClasses = [];
+    for (let i = 0; i < numberOfPlayers; i++) {
+         // If looking at a DIFFERENT player AND they have selected a class
+         if (i !== playerIndex && playerData[i]?.class) {
+             disabledClasses.push(playerData[i].class);
+         }
+    }
+    // ---
+
+    // Reset button states
     let previouslySelectedButton = classSelectionContainer.querySelector('.selected');
     if (previouslySelectedButton) {
         previouslySelectedButton.classList.remove('selected');
     }
-    // Update enabled/disabled state of class buttons
     classButtons.forEach(button => {
         const className = button.dataset.class;
-        // Disable if class is in the list of classes selected by *other* players
-        button.disabled = selectedClasses.includes(className);
+        // Disable button if class is in our calculated disabled list
+        button.disabled = disabledClasses.includes(className);
         button.style.opacity = button.disabled ? '0.5' : '1';
+        // Re-select the button if this player had previously chosen it (before going back/next)
+        // Note: We reset playerData[playerIndex].class above, so this won't highlight on first load/back
+        // if (playerData[playerIndex].class === className) {
+        //     button.classList.add('selected');
+        // }
     });
 
-    displayClassDetails(null); // Reset details view
+    displayClassDetails(null); // Reset details view initially
 
     // Show/Hide Back button
     btnBack.style.display = (playerIndex === 0) ? 'none' : 'inline-block';
@@ -1212,8 +1230,49 @@ function clearHighlights() {
     playerCountButtons.forEach(button => button.addEventListener('click', () => { numberOfPlayers = parseInt(button.dataset.count); playerData = new Array(numberOfPlayers); selectedClasses = []; updatePlayerSetupScreen(0); showScreen('playerSetup'); }));
     classButtons.forEach(button => button.addEventListener('click', () => { if (button.disabled) return; let sel = classSelectionContainer.querySelector('.selected'); if (sel) sel.classList.remove('selected'); button.classList.add('selected'); const cls = button.dataset.class; if (playerData[currentPlayerSetupIndex]) playerData[currentPlayerSetupIndex].class = cls; displayClassDetails(cls); }));
     playerNameInput.addEventListener('input', () => { if(playerData[currentPlayerSetupIndex]) playerData[currentPlayerSetupIndex].name = playerNameInput.value.trim() || `P${currentPlayerSetupIndex + 1}`; });
-    btnBack.addEventListener('click', () => { const cls = playerData[currentPlayerSetupIndex]?.class; if(cls) { const idx = selectedClasses.indexOf(cls); if (idx > -1) selectedClasses.splice(idx, 1); } if (currentPlayerSetupIndex > 0) updatePlayerSetupScreen(currentPlayerSetupIndex - 1); else { selectedClasses = []; playerData = []; showScreen('playerCount'); } });
-    btnNext.addEventListener('click', () => { const data = playerData[currentPlayerSetupIndex]; if (!data || !data.class) { alert(`Select class for P${currentPlayerSetupIndex + 1}!`); return; } if (!data.name) data.name = `P${currentPlayerSetupIndex + 1}`; if (!selectedClasses.includes(data.class)) selectedClasses.push(data.class); if (currentPlayerSetupIndex < numberOfPlayers - 1) updatePlayerSetupScreen(currentPlayerSetupIndex + 1); else initializeGame(); });
+    // Back Button (Player Setup) Listener - FIXED
+    btnBack.addEventListener('click', () => {
+        console.log("Back button clicked");
+        // We no longer need to manually remove classes from selectedClasses array
+
+        if (currentPlayerSetupIndex > 0) {
+            // Go back to previous player's setup
+            updatePlayerSetupScreen(currentPlayerSetupIndex - 1);
+        } else {
+            // Go back to player count selection
+            playerData = []; // Clear player data when going back to start
+            showScreen('playerCount');
+        }
+    });
+    // Next / Start Game Button Listener - FIXED
+btnNext.addEventListener('click', () => {
+    console.log("Next/Start Game button clicked");
+    const currentPlayerData = playerData[currentPlayerSetupIndex];
+
+    if (!currentPlayerData) { console.error("Error: Player data not initialized for index", currentPlayerSetupIndex); return; }
+
+    // Validate: Class must be selected
+    if (!currentPlayerData.class) {
+        alert(`Please select a class for Player ${currentPlayerSetupIndex + 1}!`);
+        return;
+    }
+
+     // Ensure name is set (even if default)
+     if (!currentPlayerData.name) {
+         currentPlayerData.name = playerNameInput.placeholder || `P${currentPlayerSetupIndex + 1}`;
+     }
+
+    // We no longer need to manually add to selectedClasses array here
+
+    // Check if more players need setup
+    if (currentPlayerSetupIndex < numberOfPlayers - 1) {
+        // Move to next player's setup
+        updatePlayerSetupScreen(currentPlayerSetupIndex + 1);
+    } else {
+        // Last player, start the game
+         initializeGame();
+    }
+});
 
     // Gameplay Screen Listeners
     btnToggleLog.addEventListener('click', () => { gameLog.classList.toggle('log-hidden'); });
