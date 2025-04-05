@@ -146,6 +146,31 @@ function getAdjacentCoord(coord, direction) { // direction = 'N', 'E', 'S', 'W'
     else if (direction === 'W') col--;
     return getCoordFromRowCol(row, col); // Will return null if off board
 }
+
+// Gets all 8 adjacent coordinates (N, E, S, W, NE, SE, SW, NW)
+function getAllAdjacentCoords(coord) {
+    const adjacentCoords = [];
+    const rc = getRowColFromCoord(coord);
+    if (!rc) return adjacentCoords; // Return empty if start coord invalid
+
+    // Loop through row offsets (-1, 0, 1) and col offsets (-1, 0, 1)
+    for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue; // Skip the center square itself
+
+            const adjRow = rc.row + dr;
+            const adjCol = rc.col + dc;
+            const adjCoord = getCoordFromRowCol(adjRow, adjCol);
+
+            if (adjCoord) { // Add if it's a valid coordinate on the board
+                adjacentCoords.push(adjCoord);
+            }
+        }
+    }
+    return adjacentCoords;
+}
+// --- Coordinate Helper Functions ---
+
 // Calculates new facing after pivoting
 function getNewFacing(currentFacing, pivotType) { // pivotType = 'L', 'R', '180'
     const currentIndex = DIRECTIONS.indexOf(currentFacing);
@@ -555,8 +580,11 @@ function clearHighlights() {
         // Target & Path Checks
         const expectedTarget = getAdjacentCoord(vampire.coord, vampire.facing);
         if (targetCoord !== expectedTarget) { addToLog(`Invalid move target. Must move 1 square forward (${vampire.facing}).`); return false; }
-        const pieceAtTarget = findPieceAtCoord(targetCoord);
-        if (pieceAtTarget && (pieceAtTarget.type === 'vampire' || pieceAtTarget.type === 'bloodwell' || (pieceAtTarget.type === 'hazard' && pieceAtTarget.piece.type === 'Carcass'))) { addToLog(`Cannot move onto occupied square ${targetCoord}.`); return false; }
+        const pieceAtTarget = findPieceAtCoord(targetCoord); // Check what's initially at the destination
+        // Check for blocking pieces (Vamp, BW, Carcass) - This already prevents moving ONTO a Bloodwell
+        if (pieceAtTarget && (pieceAtTarget.type === 'vampire' || pieceAtTarget.type === 'bloodwell' || (pieceAtTarget.type === 'hazard' && pieceAtTarget.piece.type === 'Carcass'))) {
+             addToLog(`Cannot move onto square ${targetCoord} occupied by a ${pieceAtTarget.piece?.type || pieceAtTarget.type}.`); return false;
+        }
         // --- End Validation ---
 
         saveStateToHistory(); // Save state *before* the move
@@ -567,36 +595,51 @@ function clearHighlights() {
         currentGameState.currentAP -= AP_COST.MOVE; // Deduct AP
         vampire.movesThisTurn = (vampire.movesThisTurn || 0) + 1; // Increment move counter
 
-        // --- Fix Log Message --- (Ensure this fix is applied)
-        addToLog(`${vampire.id} moved ${oldCoord} -> ${targetCoord}. (${currentGameState.currentAP} AP left)`);
-        // --- End Log Message Fix ---
+        addToLog(`${vampire.id} moved ${oldCoord} -> ${targetCoord}. (${currentGameState.currentAP} AP left)`); // Corrected log message
 
         // --- Check Landing Effects ---
         // 1. Landing on Grave Dust
-        if (pieceAtTarget?.type === 'hazard' && pieceAtTarget.piece.type === 'Grave Dust' && !vampire.cursed) {
+        const hazardLandedOn = currentGameState.board.hazards.find(h => h.coord === targetCoord); // Check specifically for hazard on landing square
+        if (hazardLandedOn?.type === 'Grave Dust' && !vampire.cursed) {
             console.log("Applying curse from landing on Grave Dust.");
              vampire.cursed = true;
              addToLog(`${vampire.id} landed on Grave Dust and is now CURSED!`);
         }
 
-        // 2. Bloodbath Cure Check (Universal - Any Clean BW)
+        // 2. Bloodbath Cure Check (NEW Adjacency Logic)
         if (vampire.cursed) { // Only check if the vampire was cursed when it moved
             console.log(`Checking Bloodbath for ${vampire.id} at ${targetCoord} (was cursed).`);
-            const landedOnBW = currentGameState.board.bloodwells.find(bw => bw.coord === targetCoord); // Check specifically for *any* bloodwell here
-            const isHazardAlsoPresent = currentGameState.board.hazards.some(h => h.coord === targetCoord); // Check if ANY hazard is here
+            const landedOnHazard = !!hazardLandedOn; // Did we land on *any* hazard?
 
-            // --- UPDATED CONDITION: Removed owner check ---
-            // Conditions: Landed on ANY Bloodwell AND no hazard is present
-            if (landedOnBW && !isHazardAlsoPresent) {
-            // --- END UPDATED CONDITION ---
-                console.log("Bloodbath conditions MET! Curing curse and resetting moves.");
-                vampire.cursed = false; // Lift the curse!
-                vampire.movesThisTurn = 0; // Reset move counter immediately upon cure
-                const bwOwner = currentGameState.players[landedOnBW.player]?.name || 'Unknown Player';
-                addToLog(`${vampire.id} performed Bloodbath on ${bwOwner}'s Bloodwell at ${targetCoord} and is CURED!`);
+            // Conditions: Landing square must be hazard-free AND adjacent to ANY Bloodwell
+            if (!landedOnHazard) {
+                 const adjacentCoords = getAllAdjacentCoords(targetCoord); // Use the new helper
+                 let foundAdjacentBW = false;
+                 let adjacentBWCoord = null;
+                 for (const adjCoord of adjacentCoords) {
+                      const pieceAtAdj = findPieceAtCoord(adjCoord);
+                      if (pieceAtAdj?.type === 'bloodwell') {
+                          foundAdjacentBW = true;
+                          adjacentBWCoord = adjCoord; // Store which BW was adjacent for logging
+                           console.log(`Found adjacent Bloodwell (${pieceAtAdj.piece.id}) at ${adjCoord}.`);
+                          break; // Found one, no need to check others
+                      }
+                 }
+
+                 // If landed on clean square AND adjacent to a bloodwell -> CURE
+                 if (foundAdjacentBW) {
+                     console.log("Bloodbath conditions MET (Adjacent)! Curing curse and resetting moves.");
+                     vampire.cursed = false; // Lift the curse!
+                     vampire.movesThisTurn = 0; // Reset move counter immediately upon cure
+                     addToLog(`${vampire.id} performed Bloodbath by landing near ${adjacentBWCoord} at ${targetCoord} and is CURED!`);
+                 } else {
+                      // Log failure reason for debugging
+                      console.log(`Bloodbath conditions NOT met. Landing square ${targetCoord} clean: ${!landedOnHazard}, Adjacent BW found: ${foundAdjacentBW}`);
+                 }
+
             } else {
-                 // Log why it failed, useful for debugging
-                 console.log(`Bloodbath conditions NOT met. Is BW: ${!!landedOnBW}, Own BW check skipped, No Hazard: ${!isHazardAlsoPresent}`);
+                 // Log failure reason for debugging
+                 console.log(`Bloodbath cannot trigger: Landed on a hazard (${hazardLandedOn.type}) at ${targetCoord}.`);
             }
         }
         // --- End Landing Effects ---
@@ -654,6 +697,7 @@ function clearHighlights() {
                 hitMessage = `Shot from ${vampire.coord} went off the board.`;
                 break;
             }
+            
             currentCoord = nextCoord; // Advance check to next square
 
             const pieceAtCoord = findPieceAtCoord(currentCoord);
