@@ -187,17 +187,18 @@ button:disabled {
     justify-content: center;
     gap: 10px;
 }
-.action-buttons button { /* More specific selector for gameplay action buttons */
+/* Use class for more specific targeting */
+#action-bar button {
     background-color: #e8e8e8;
     color: #333;
     min-width: 80px;
     padding: 8px 12px; /* Slightly smaller padding */
     font-size: 0.9em;
 }
-.action-buttons button:hover:not(:disabled) { /* Don't change hover if disabled */
+#action-bar button:hover:not(:disabled) { /* Don't change hover if disabled */
     background-color: #dcdcdc;
 }
-.action-buttons button:disabled {
+#action-bar button:disabled {
      background-color: #f5f5f5;
      color: #aaa;
      cursor: not-allowed;
@@ -262,19 +263,22 @@ button:disabled {
     line-height: 1; /* Adjust line height for icon centering */
 }
 
-/* Facing Indicators (Simple Arrow Text using ::before) */
+/* Facing Indicators (Larger, Bolder Arrow Text using ::before) */
 .vampire::before {
-    content: ''; /* Needs content to show */
+    content: ''; /* Base rule */
     position: absolute;
-    font-size: 0.6em;
-    color: rgba(0,0,0,0.7);
-    text-shadow: 1px 1px 1px rgba(255,255,255,0.3);
+    font-size: 1.1em; /* << INCREASED FONT SIZE */
+    font-weight: bold; /* Make it bolder */
+    color: rgba(0,0,0,0.8); /* Darker for better contrast */
+    text-shadow: 1px 1px 1px rgba(255,255,255,0.5); /* Optional shadow */
     z-index: 1; /* Ensure it's above background */
+    line-height: 1; /* Keep alignment tight */
 }
-.vampire[data-facing="N"]::before { content: '↑'; top: 2px; width: 100%; text-align: center; }
-.vampire[data-facing="S"]::before { content: '↓'; bottom: 2px; width: 100%; text-align: center; }
-.vampire[data-facing="E"]::before { content: '→'; right: 4px; top: 50%; transform: translateY(-50%); }
-.vampire[data-facing="W"]::before { content: '←'; left: 4px; top: 50%; transform: translateY(-50%); }
+/* Using solid arrows, adjusted position slightly */
+.vampire[data-facing="N"]::before { content: '▲'; top: 0px; width: 100%; text-align: center; }
+.vampire[data-facing="S"]::before { content: '▼'; bottom: 0px; width: 100%; text-align: center; }
+.vampire[data-facing="E"]::before { content: '▶'; right: 2px; top: 50%; transform: translateY(-50%); }
+.vampire[data-facing="W"]::before { content: '◀'; left: 2px; top: 50%; transform: translateY(-50%); }
 
 
 .vampire {
@@ -390,3 +394,12 @@ button:disabled {
 
 /* Move/Pivot Action Buttons (If added later) */
 .direction-buttons button { min-width: 40px; font-size: 1.2em; padding: 5px 10px; }
+
+/* Style for inline error messages (for setup alert replacement) */
+.error-message {
+    color: #b22222; /* Firebrick red */
+    font-weight: bold;
+    margin-top: 10px;
+    text-align: center; /* Center the message */
+    min-height: 1em; /* Reserve space even when hidden */
+}
