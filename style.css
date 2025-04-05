@@ -400,7 +400,7 @@ button:disabled {
 /* Move/Pivot Action Buttons (If added later) */
 .direction-buttons button { min-width: 40px; font-size: 1.2em; padding: 5px 10px; }
 
-/* Style for inline error messages (for setup alert replacement) */
+/* Style for inline error messages */
 .error-message {
     color: #b22222; /* Firebrick red */
     font-weight: bold;
