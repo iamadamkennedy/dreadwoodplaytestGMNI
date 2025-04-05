@@ -107,6 +107,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnPivotR = document.getElementById('action-pivot-right');
     const btnPivot180 = document.getElementById('action-pivot-180');
 
+
+    // --- ADD THESE LOGS ---
+    console.log("Move/Pivot Button DOM References:");
+    console.log("btnMoveFwd:", btnMoveFwd);
+    console.log("btnPivotL:", btnPivotL);
+    console.log("btnPivotR:", btnPivotR);
+    console.log("btnPivot180:", btnPivot180);
+    // --- END OF ADDED LOGS ---
+
+
     // --- END OF SECTION 1 ---
 
 // --- Coordinate Helper Functions ---
