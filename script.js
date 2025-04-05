@@ -99,6 +99,13 @@ document.addEventListener('DOMContentLoaded', () => {
        hazardPicker: document.getElementById('hazard-picker') // Reference the hazard picker popup
     };
 
+    const movementBar = document.getElementById('movement-bar');
+    // Add references for the specific arrow buttons too
+    const btnMoveN = document.getElementById('move-n');
+    const btnMoveW = document.getElementById('move-w');
+    const btnMoveE = document.getElementById('move-e');
+    const btnMoveS = document.getElementById('move-s');
+
     // Player Count Screen Elements
     const playerCountButtons = screens.playerCount.querySelectorAll('button[data-count]');
 
@@ -235,7 +242,74 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    function updatePlayerInfoPanel(player, turn, currentAP, resources) { if (!player || !resources || !currentClassDetailsName) { console.error("Info Panel Error."); return; } const data = CLASS_DATA[player.class]; if (data) { currentClassDetailsName.innerHTML = `<strong>Class:</strong> ${player.class}`; currentClassDescription.textContent = data.description; currentClassAbilitiesList.innerHTML = ''; data.abilities.forEach(ability => { const li = document.createElement('li'); const isUsed = resources.abilitiesUsed?.includes(ability.name); li.innerHTML = `<strong>${ability.name}:</strong> ${ability.description}`; if (isUsed) { li.style.opacity = '0.5'; li.style.textDecoration = 'line-through'; } currentClassAbilitiesList.appendChild(li); }); } infoSilverBullet.textContent = resources.silverBullet > 0 ? `Available (${resources.silverBullet})` : "Used"; statusBarPlayer.textContent = player.name; statusBarAP.textContent = currentAP; statusBarTurn.textContent = turn; const canAffordShoot = currentAP >= AP_COST.SHOOT; const canAffordThrowBase = currentAP >= AP_COST.THROW_HAZARD; const canAffordSilver = currentAP >= AP_COST.SILVER_BULLET && resources.silverBullet > 0; const isVampSelected = !!currentGameState.selectedVampireId; const selectedVamp = findVampireById(currentGameState.selectedVampireId); const isCursed = selectedVamp?.cursed; if (btnShoot) btnShoot.disabled = !isVampSelected || !canAffordShoot || isCursed; if (btnThrow) btnThrow.disabled = !isVampSelected || !canAffordThrowBase || isCursed; if (btnSilverBullet) btnSilverBullet.disabled = !isVampSelected || !canAffordSilver || isCursed; }
+    // Updates the player info panel during gameplay (INCLUDING Movement Button disabling)
+    function updatePlayerInfoPanel(player, turn, currentAP, resources) {
+        // Ensure elements exist and data is valid before trying to update them
+        if (!player || !resources || !currentClassDetailsName || !currentClassDescription || !currentClassAbilitiesList || !infoSilverBullet || !statusBarPlayer || !statusBarAP || !statusBarTurn) {
+            console.error("Info Panel Error: One or more required elements not found or invalid data provided.");
+            // Optionally display error state in UI
+            statusBarPlayer.textContent = 'Error'; statusBarAP.textContent = '??'; statusBarTurn.textContent = '??';
+            return; // Exit if essential elements/data are missing
+        }
+
+        // --- Update Class Details ---
+        const data = CLASS_DATA[player.class];
+        if (data) {
+            currentClassDetailsName.innerHTML = `<strong>Class:</strong> ${player.class}`;
+            currentClassDescription.textContent = data.description;
+            currentClassAbilitiesList.innerHTML = ''; // Clear previous abilities
+            data.abilities.forEach(ability => {
+                const li = document.createElement('li');
+                const isUsed = resources.abilitiesUsed?.includes(ability.name); // Check if ability name is in used list
+                li.innerHTML = `<strong>${ability.name}:</strong> ${ability.description}`; // Display narrative desc
+                if (isUsed) {
+                    li.style.opacity = '0.5';
+                    li.style.textDecoration = 'line-through';
+                }
+                // TODO: Add click listeners for *active* abilities if they should be clickable
+                currentClassAbilitiesList.appendChild(li);
+            });
+        } else {
+            // Handle case where class data might be missing
+            currentClassDetailsName.innerHTML = `<strong>Class:</strong> ${player.class || 'Unknown'}`;
+            currentClassDescription.textContent = "Class data not found.";
+            currentClassAbilitiesList.innerHTML = '';
+        }
+
+        // --- Update Status Bar ---
+        infoSilverBullet.textContent = resources.silverBullet > 0 ? `Available (${resources.silverBullet})` : "Used";
+        statusBarPlayer.textContent = player.name;
+        statusBarAP.textContent = currentAP;
+        statusBarTurn.textContent = turn;
+
+        // --- Update Action Button States ---
+        const isVampSelected = !!currentGameState.selectedVampireId;
+        const selectedVamp = findVampireById(currentGameState.selectedVampireId); // Find selected vampire object
+        const isCursed = selectedVamp?.cursed; // Check if the selected vampire is cursed
+        const movesTakenThisTurn = selectedVamp?.movesThisTurn || 0; // Get moves taken
+
+        // Shoot / Silver Bullet / Throw Buttons
+        const canAffordShoot = currentAP >= AP_COST.SHOOT;
+        const canAffordThrowBase = currentAP >= AP_COST.THROW_HAZARD;
+        const canAffordSilver = currentAP >= AP_COST.SILVER_BULLET && resources.silverBullet > 0;
+
+        if (btnShoot) btnShoot.disabled = !isVampSelected || !canAffordShoot || isCursed;
+        if (btnThrow) btnThrow.disabled = !isVampSelected || !canAffordThrowBase || isCursed;
+        if (btnSilverBullet) btnSilverBullet.disabled = !isVampSelected || !canAffordSilver || isCursed;
+
+        // Movement D-Pad Buttons (NEW LOGIC)
+        const canAffordMoveOrPivot = currentAP >= AP_COST.MOVE; // Both cost 1 AP base
+        // Can move forward if: Not cursed OR (is cursed AND hasn't moved yet)
+        const canMoveForward = !isCursed || movesTakenThisTurn < 1;
+
+        // Disable based on selection, AP, facing, and curse move limit
+        if(btnMoveN) btnMoveN.disabled = !isVampSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'N' && !canMoveForward);
+        if(btnMoveE) btnMoveE.disabled = !isVampSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'E' && !canMoveForward);
+        if(btnMoveS) btnMoveS.disabled = !isVampSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'S' && !canMoveForward);
+        if(btnMoveW) btnMoveW.disabled = !isVampSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'W' && !canMoveForward);
+
+        // TODO: Disable/enable other actions (Dispel, Class Actives)
+    }
     function updateUI() { if (!currentGameState?.players?.length || !currentGameState.playerResources?.length) return; const idx = currentGameState.currentPlayerIndex; if (idx < 0 || idx >= currentGameState.players.length || idx >= currentGameState.playerResources.length) { console.error("Error: Invalid idx.", currentGameState); return; } const player = currentGameState.players[idx]; const resources = currentGameState.playerResources[idx]; if (player && resources) updatePlayerInfoPanel(player, currentGameState.turn, currentGameState.currentAP, resources); else console.error("Error fetching player/resources."); }
 
     // --- Game State & Undo Logic ---
@@ -251,11 +325,136 @@ document.addEventListener('DOMContentLoaded', () => {
     function executePivot(vampire, newFacing) { if (!vampire || !DIRECTIONS.includes(newFacing)) return false; if (currentGameState.currentAP < AP_COST.PIVOT) { addToLog("No AP."); return false; } saveStateToHistory(); vampire.facing = newFacing; currentGameState.currentAP -= AP_COST.PIVOT; addToLog(`${vampire.id} pivoted ${newFacing}. (${currentGameState.currentAP} AP)`); renderBoard(currentGameState); updateUI(); return true; }
     function executeShoot(vampire, isSilverBullet = false) { if (!vampire) return false; const cost = isSilverBullet ? AP_COST.SILVER_BULLET : AP_COST.SHOOT; if (currentGameState.currentAP < cost) { addToLog(`No AP.`); return false; } if (vampire.cursed) { addToLog("Cursed cannot shoot."); return false; } const res = currentGameState.playerResources[vampire.player]; if (isSilverBullet && res.silverBullet <= 0) { addToLog("No SB."); return false; } saveStateToHistory(); const shooterIdx = vampire.player; const shooterCls = currentGameState.players[shooterIdx].class; let currCoord = vampire.coord; let msg = `Shot off board.`; let hit = false; addToLog(`${vampire.id} ${isSilverBullet ? 'fires SB' : 'shoots'} ${vampire.facing}...`); if (isSilverBullet) res.silverBullet--; currentGameState.currentAP -= cost; for (let i = 0; i < 9; i++) { const nextCoord = getAdjacentCoord(currCoord, vampire.facing); if (!nextCoord) { msg = `Shot off board.`; break; } currCoord = nextCoord; const target = findPieceAtCoord(currCoord); if (target) { const tType = target.type; const tPiece = target.piece; if (tType === 'hazard' && (tPiece.type === 'Tombstone' || tPiece.type === 'Dynamite')) { if (tPiece.type === 'Tombstone' && shooterCls === 'Bounty Hunter') { addToLog(`Passes Tombstone.`); continue; } msg = `Blocked by ${tPiece.type}.`; hit = true; if (tPiece.type === 'Dynamite') { msg += ` EXPLODES!`; const idx = currentGameState.board.hazards.findIndex(h => h.coord === currCoord); if (idx > -1) currentGameState.board.hazards.splice(idx, 1); /* TODO: Explosion */ addToLog("Dynamite TBD."); } break; } if (tType === 'vampire') { hit = true; if (isSilverBullet && tPiece.player !== shooterIdx) { msg = `SB HIT & ELIMINATED ${tPiece.id}!`; currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.id !== tPiece.id); /* TODO: Check elim */ } else if (shooterCls === 'Bounty Hunter' && tPiece.player !== shooterIdx && !tPiece.cursed) { msg = `HIT ${tPiece.id}. CURSED!`; const targetV = findVampireById(tPiece.id); if (targetV) targetV.cursed = true; } else { msg = `Hit ${tPiece.id}.`; } break; } if (tType === 'bloodwell') { hit = true; /* TODO: Check Sheriff protection */ msg = `DESTROYED BW ${tPiece.id}!`; currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== tPiece.id); /* TODO: Check elim */ break; } if (tType === 'hazard' && (tPiece.type === 'Carcass' || tPiece.type === 'Grave Dust')) { addToLog(`Passes ${tPiece.type}.`); continue; } } } addToLog(msg + ` (${currentGameState.currentAP} AP)`); if (isSilverBullet && !hit) addToLog("SB did not hit target."); renderBoard(currentGameState); updateUI(); /* TODO: Check win/loss */ return true; }
     function executeThrow(vampire, hazardType, targetCoord) { if (!vampire) return false; const cost = hazardType === 'Dynamite' ? AP_COST.THROW_DYNAMITE : AP_COST.THROW_HAZARD; if (currentGameState.currentAP < cost) { addToLog(`No AP.`); return false; } if (vampire.cursed) { addToLog("Cursed cannot throw."); return false; } if (!currentGameState.hazardPool || (currentGameState.hazardPool[hazardType] || 0) <= 0) { addToLog(`No ${hazardType}.`); return false; } const dist = getDistance(vampire.coord, targetCoord); if (dist === 0 || dist > 3) { addToLog(`Bad distance.`); return false; } const targetPiece = findPieceAtCoord(targetCoord); if (targetPiece && !(hazardType === 'Grave Dust' && targetPiece.type === 'vampire')) { addToLog(`Target blocked.`); return false; } /* TODO: Path validation */ saveStateToHistory(); currentGameState.hazardPool[hazardType]--; currentGameState.board.hazards.push({ type: hazardType, coord: targetCoord }); currentGameState.currentAP -= cost; addToLog(`${vampire.id} threw ${hazardType} to ${targetCoord}. (${currentGameState.currentAP} AP)`); if (hazardType === 'Grave Dust' && targetPiece?.type === 'vampire') { const targetV = findVampireById(targetPiece.piece.id); if (targetV && !targetV.cursed) { targetV.cursed = true; addToLog(`${targetV.id} CURSED by GD!`); } } renderBoard(currentGameState); updateUI(); return true; }
-    function nextTurn() { if (currentGameState.actionState?.pendingAction) { addToLog("Cancel/complete action first."); return; } saveStateToHistory(); const prevIdx = currentGameState.currentPlayerIndex; const prevPlayer = currentGameState.players[prevIdx]; /* TODO: Swift Justice UI/Logic */ let nextIdx = (prevIdx + 1) % numberOfPlayers; let loopCheck = 0; while (currentGameState.players[nextIdx]?.eliminated && loopCheck < numberOfPlayers) { nextIdx = (nextIdx + 1) % numberOfPlayers; loopCheck++; } const activePlayers = currentGameState.players.filter(p => !p.eliminated); if (activePlayers.length <= 1 && loopCheck >= numberOfPlayers) { console.error("Turn advance failed!"); addToLog("Turn Error!"); undoLastAction(); return; } currentGameState.currentPlayerIndex = nextIdx; if (nextIdx <= prevIdx) currentGameState.turn++; const pIdx = currentGameState.currentPlayerIndex; if (currentGameState.turn === 1) { if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][pIdx]; else if (numberOfPlayers === 3) currentGameState.currentAP = 6; else if (numberOfPlayers === 2) currentGameState.currentAP = 5; else currentGameState.currentAP = 5; } else currentGameState.currentAP = 5; /* TODO: Blood Brothers */ currentGameState.selectedVampireId = null; currentGameState.actionState = { pendingAction: null, selectedHazardType: null }; clearHighlights(); btnUndo.disabled = true; if (currentGameState.board?.vampires) currentGameState.board.vampires.forEach(v => v.movesThisTurn = 0); renderBoard(currentGameState); updateUI(); const currPlayer = currentGameState.players[currentGameState.currentPlayerIndex]; addToLog(`--- Turn ${currentGameState.turn} - ${currPlayer.name}'s turn (${currPlayer.class}). AP: ${currentGameState.currentAP} ---`); /* TODO: Check Victory */ }
+    function nextTurn() {
+        // Check if any actions are pending (like selecting throw target)
+        if (currentGameState.actionState?.pendingAction) {
+            addToLog("Cannot end turn while an action is pending. Cancel or complete the action.");
+            return;
+        }
+
+        // Save state before ending turn (allows undoing the 'end turn' itself)
+        saveStateToHistory();
+
+        const previousPlayerIndex = currentGameState.currentPlayerIndex;
+        const previousPlayer = currentGameState.players[previousPlayerIndex];
+
+        // --- Apply end-of-turn effects ---
+        // TODO: Implement Sheriff Swift Justice UI/Logic
+        if (previousPlayer?.class === 'Sheriff' && !previousPlayer.eliminated) {
+            addToLog("Sheriff's Swift Justice may apply (Manual Check / UI TBD).");
+        }
+        // TODO: Add other end-of-turn effects
+
+        // Advance Player Index (Looping and skipping eliminated)
+        let nextPlayerIndex = (previousPlayerIndex + 1) % numberOfPlayers;
+        let loopCheck = 0;
+        while (currentGameState.players[nextPlayerIndex]?.eliminated && loopCheck < numberOfPlayers) {
+            nextPlayerIndex = (nextPlayerIndex + 1) % numberOfPlayers;
+            loopCheck++;
+        }
+        const activePlayers = currentGameState.players.filter(p => !p.eliminated);
+        if (activePlayers.length <= 1 && loopCheck >= numberOfPlayers) {
+            console.error("Error: Could not find next active player! Possible game end state missed?");
+            addToLog("Error advancing turn!");
+            undoLastAction(); // Revert the end turn attempt
+            return;
+        }
+        currentGameState.currentPlayerIndex = nextPlayerIndex;
+
+
+        // Increment turn number if we wrapped around to player 0
+        if (currentGameState.currentPlayerIndex === 0 && previousPlayerIndex !== 0 && numberOfPlayers > 1) { // Added check for >1 player
+             currentGameState.turn++;
+        } else if (numberOfPlayers === 1 && currentGameState.currentPlayerIndex === previousPlayerIndex) {
+             // Handle single player scenario if needed, maybe don't increment turn?
+             // Or the game should end? For now, do nothing special.
+        } else if (currentGameState.currentPlayerIndex < previousPlayerIndex) {
+             // Wrapped around in >2 player game
+             currentGameState.turn++;
+        }
+
+
+       // Set AP for the new player
+        const playerIndex = currentGameState.currentPlayerIndex;
+        // Reset AP based on rules
+        if (currentGameState.turn === 1) { // Only check turn 1 for scaling
+             if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][playerIndex];
+             else if (numberOfPlayers === 3) currentGameState.currentAP = 6;
+             else if (numberOfPlayers === 2) currentGameState.currentAP = 5;
+             else currentGameState.currentAP = 5; // Fallback
+        } else {
+             currentGameState.currentAP = 5; // Standard AP for all turns after 1
+        }
+        // TODO: Add Vigilante Blood Brothers check here & potentially add +1 AP
+
+        // --- Reset turn-specific state ---
+        currentGameState.selectedVampireId = null;
+        currentGameState.actionState = { pendingAction: null, selectedHazardType: null };
+        clearHighlights();
+        if(movementBar) movementBar.classList.add('hidden'); // <-- HIDE MOVEMENT BAR HERE
+        btnUndo.disabled = true;
+        // Reset movesThisTurn for ALL vampires at the start of a new turn
+        if (currentGameState.board?.vampires) {
+            currentGameState.board.vampires.forEach(v => v.movesThisTurn = 0);
+        }
+        // gameHistory = []; // Clearing history means cannot undo across turns - KEEPING history for now
+
+        // Update UI for new player
+        renderBoard(currentGameState); // Rerender to remove selection highlights etc.
+        updateUI(); // Update panels and button states
+        const currentPlayer = currentGameState.players[currentGameState.currentPlayerIndex];
+        addToLog(`--- Turn ${currentGameState.turn} - ${currentPlayer.name}'s turn (${currentPlayer.class}). AP: ${currentGameState.currentAP} ---`);
+        // TODO: Check Victory condition here (only 1 player not eliminated)
+   }
 
     // --- Event Listener Handlers ---
     function handleBoardClick(event) { const squareEl = event.target.closest('.grid-square'); if (!squareEl) return; const coord = squareEl.dataset.coord; if (!currentGameState?.actionState) return; const pending = currentGameState.actionState.pendingAction; if (pending === 'throw-select-target') { const type = currentGameState.actionState.selectedHazardType; const vamp = findVampireById(currentGameState.selectedVampireId); if (squareEl.classList.contains('valid-target')) executeThrow(vamp, type, coord); else addToLog("Invalid target. Throw cancelled."); currentGameState.actionState = { pendingAction: null, selectedHazardType: null }; clearHighlights(); } else if (pending === 'move-select-target') { const vamp = findVampireById(currentGameState.selectedVampireId); if (vamp && squareEl.classList.contains('valid-target')) executeMove(vamp, coord); else addToLog("Invalid target. Move cancelled."); currentGameState.actionState = { pendingAction: null }; clearHighlights(); } else { handleVampireSelection(event); } }
-    function handleVampireSelection(event) { const vampEl = event.target.closest('.vampire'); if (vampEl) { const vampId = vampEl.dataset.id; const ownerIdx = parseInt(vampEl.dataset.player); if (ownerIdx === currentGameState.currentPlayerIndex) { if (currentGameState.selectedVampireId !== vampId) { currentGameState.selectedVampireId = vampId; renderBoard(currentGameState); updateUI(); console.log(`Selected ${vampId}`); } } else { addToLog("Cannot select opponent."); if (currentGameState.selectedVampireId) { currentGameState.selectedVampireId = null; renderBoard(currentGameState); updateUI(); } } } else if (event.target.classList.contains('grid-square')) { if (currentGameState.selectedVampireId && !currentGameState.actionState?.pendingAction) { currentGameState.selectedVampireId = null; renderBoard(currentGameState); updateUI(); clearHighlights(); console.log("Deselected."); } } }
+    // Handles selecting/deselecting a vampire
+    function handleVampireSelection(event) {
+    // This function is called when no other action is pending
+    const clickedVampireElement = event.target.closest('.vampire');
+
+    if (clickedVampireElement) {
+        // Clicked on a vampire piece
+        const vampireId = clickedVampireElement.dataset.id;
+        const ownerIndex = parseInt(clickedVampireElement.dataset.player);
+
+        // Check if it belongs to the current player
+        if (ownerIndex === currentGameState.currentPlayerIndex) {
+            // Clicked own vampire - select it if not already selected
+            if (currentGameState.selectedVampireId !== vampireId) {
+                console.log(`Selected vampire ${vampireId}`);
+                currentGameState.selectedVampireId = vampireId;
+                if(movementBar) movementBar.classList.remove('hidden'); // <-- SHOW Movement Bar
+                renderBoard(currentGameState); // Update selection highlight
+                updateUI(); // Update button states
+            }
+            // Optional: If clicking the already selected vampire, deselect?
+            // else { currentGameState.selectedVampireId = null; if(movementBar) movementBar.classList.add('hidden'); renderBoard... updateUI... }
+
+        } else {
+            // Clicked opponent's vampire
+            addToLog("Cannot select opponent's vampire.");
+            // Deselect currently selected friendly vampire if any
+             if (currentGameState.selectedVampireId) {
+                 currentGameState.selectedVampireId = null;
+                 if(movementBar) movementBar.classList.add('hidden'); // <-- HIDE Movement Bar
+                 renderBoard(currentGameState);
+                 updateUI();
+             }
+        }
+    } else if (event.target.closest('.grid-square')) { // Use closest to handle clicks inside square
+        // Clicked on an empty square (or hazard/BW) - deselect current vampire
+        if (currentGameState.selectedVampireId) {
+            console.log("Deselecting vampire by clicking elsewhere.");
+            currentGameState.selectedVampireId = null;
+            if(movementBar) movementBar.classList.add('hidden'); // <-- HIDE Movement Bar
+            renderBoard(currentGameState); // Re-render to remove highlight
+            updateUI();
+            clearHighlights(); // Clear any potential lingering highlights
+        }
+    }
+}
 
     // --- Functions for Throw Action ---
     function populateHazardPicker() { hazardPickerOptions.innerHTML = ''; if (!currentGameState?.hazardPool || typeof currentGameState.currentAP === 'undefined') { console.error("Cannot populate picker: Invalid state."); addToLog("Error prepping throw."); return; } const pool = currentGameState.hazardPool; const ap = currentGameState.currentAP; const createBtn = (type, icon, cost) => { const btn = document.createElement('button'); btn.dataset.hazardType = type; const count = pool[type] || 0; btn.innerHTML = `<span class="hazard-icon">${icon}</span> ${type} <span class="hazard-cost">(${cost} AP)</span>`; btn.disabled = count <= 0 || ap < cost; btn.title = `${count} available`; hazardPickerOptions.appendChild(btn); }; createBtn('Tombstone', '🪦', AP_COST.THROW_HAZARD); createBtn('Carcass', '💀', AP_COST.THROW_HAZARD); createBtn('Grave Dust', '💩', AP_COST.THROW_HAZARD); createBtn('Dynamite', '💥', AP_COST.THROW_DYNAMITE); }
@@ -336,7 +535,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Initialization ---
-    function initializeGame() { console.log("Initializing game..."); gameHistory = []; const layouts = LAYOUT_DATA[numberOfPlayers]; if (!layouts?.length) { alert(`Error: No layouts for ${numberOfPlayers}P!`); showScreen('playerCount'); return; } const layoutIdx = Math.floor(Math.random() * layouts.length); const layout = layouts[layoutIdx]; const layoutName = `${numberOfPlayers}P Layout #${layoutIdx + 1}`; console.log(`Selected ${layoutName}`); currentGameState = { players: playerData.map(p => ({ name: p.name, class: p.class, eliminated: false })), board: { vampires: JSON.parse(JSON.stringify(layout.vampires.map(v => ({...v, cursed: false, movesThisTurn: 0})))), bloodwells: JSON.parse(JSON.stringify(layout.bloodwells)), hazards: JSON.parse(JSON.stringify(layout.hazards)) }, hazardPool: { 'Tombstone': 4 - layout.hazards.filter(h => h.type === 'Tombstone').length, 'Carcass': 4 - layout.hazards.filter(h => h.type === 'Carcass').length, 'Grave Dust': 4 - layout.hazards.filter(h => h.type === 'Grave Dust').length, 'Dynamite': 3 }, playerResources: playerData.map(() => ({ silverBullet: 1, abilitiesUsed: [] })), turn: 1, currentPlayerIndex: 0, currentAP: 0, selectedVampireId: null, actionState: { pendingAction: null, selectedHazardType: null } }; const pIdx = currentGameState.currentPlayerIndex; if (currentGameState.turn === 1) { if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][pIdx]; else if (numberOfPlayers === 3) currentGameState.currentAP = 6; else if (numberOfPlayers === 2) currentGameState.currentAP = 5; else currentGameState.currentAP = 5; } generateGrid(); renderBoard(currentGameState); const player = currentGameState.players[pIdx]; if (!player) { console.error("Init fail."); return; } const resources = currentGameState.playerResources[pIdx]; updatePlayerInfoPanel(player, currentGameState.turn, currentGameState.currentAP, resources); logList.innerHTML = `<li>Game Started: ${layoutName}</li>`; gameLog.scrollTop = 0; btnUndo.disabled = true; gameBoard.removeEventListener('click', handleBoardClick); gameBoard.addEventListener('click', handleBoardClick); btnUndo.removeEventListener('click', undoLastAction); btnUndo.addEventListener('click', undoLastAction); btnEndTurn.removeEventListener('click', nextTurn); btnEndTurn.addEventListener('click', nextTurn); showScreen('gameplay'); addToLog(`--- Turn ${currentGameState.turn} - ${player.name}'s turn (${player.class}). AP: ${currentGameState.currentAP} ---`); }
+    function initializeGame() { console.log("Initializing game..."); gameHistory = [];
+    const layouts = LAYOUT_DATA[numberOfPlayers]; if (!layouts?.length) { alert(`Error: No layouts for ${numberOfPlayers}P!`); showScreen('playerCount'); return; }
+    const layoutIdx = Math.floor(Math.random() * layouts.length);
+    const layout = layouts[layoutIdx];
+    const layoutName = `${numberOfPlayers}P Layout #${layoutIdx + 1}`;
+    console.log(`Selected ${layoutName}`);
+    currentGameState = { players: playerData.map(p => ({ name: p.name, class: p.class, eliminated: false })),
+    board: { vampires: JSON.parse(JSON.stringify(layout.vampires.map(v => ({...v, cursed: false,movesThisTurn: 0})))), bloodwells: JSON.parse(JSON.stringify(layout.bloodwells)), hazards: JSON.parse(JSON.stringify(layout.hazards)) }, hazardPool: { 'Tombstone': 4 - layout.hazards.filter(h => h.type === 'Tombstone').length, 'Carcass': 4 - layout.hazards.filter(h => h.type === 'Carcass').length, 'Grave Dust': 4 - layout.hazards.filter(h => h.type === 'Grave Dust').length, 'Dynamite': 3 }, playerResources: playerData.map(() => ({ silverBullet: 1, abilitiesUsed: [] })), turn: 1, currentPlayerIndex: 0, currentAP: 0, selectedVampireId: null, actionState: { pendingAction: null, selectedHazardType: null } }; const pIdx = currentGameState.currentPlayerIndex; if (currentGameState.turn === 1) { if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][pIdx]; else if (numberOfPlayers === 3) currentGameState.currentAP = 6; else if (numberOfPlayers === 2) currentGameState.currentAP = 5; else currentGameState.currentAP = 5; } generateGrid(); renderBoard(currentGameState); const player = currentGameState.players[pIdx]; if (!player) { console.error("Init fail."); return; } const resources = currentGameState.playerResources[pIdx]; updatePlayerInfoPanel(player, currentGameState.turn, currentGameState.currentAP, resources); logList.innerHTML = `<li>Game Started: ${layoutName}</li>`;
+    gameLog.scrollTop = 0;
+    btnUndo.disabled = true;
+    if(movementBar) movementBar.classList.add('hidden');
+    gameBoard.removeEventListener('click', handleBoardClick);
+    gameBoard.addEventListener('click', handleBoardClick);
+    btnUndo.removeEventListener('click', undoLastAction);
+    btnUndo.addEventListener('click', undoLastAction);
+    btnEndTurn.removeEventListener('click', nextTurn);
+    btnEndTurn.addEventListener('click', nextTurn); showScreen('gameplay'); addToLog(`--- Turn ${currentGameState.turn} - ${player.name}'s turn (${player.class}). AP: ${currentGameState.currentAP} ---`); }
 
     // --- 5. Attach Event Listeners (Executed ONCE on script load) --- // Note: Original numbering kept, this is Section 4 of pasting
 
@@ -350,6 +565,49 @@ document.addEventListener('DOMContentLoaded', () => {
             showScreen('playerSetup');
         });
     });
+
+    // Movement D-Pad Button Listeners (NEW)
+    // Helper function to handle clicks on any movement arrow
+    const handleMovementButtonClick = (direction) => {
+        console.log(`Movement button clicked: ${direction}`); // For debugging
+        // Ensure game state is ready
+        if (!currentGameState || !currentGameState.board || !currentGameState.players) {
+             console.error("Movement click failed: Game state not ready.");
+             return;
+        }
+        // Find the selected vampire
+        const selectedVamp = findVampireById(currentGameState.selectedVampireId);
+        if (!selectedVamp) {
+            addToLog("Select a Vampire first.");
+            return;
+        }
+
+        // Check if the clicked direction matches the vampire's current facing
+        if (direction === selectedVamp.facing) {
+             // --- Attempt MOVE action ---
+             addToLog(`Attempting Move ${direction}...`);
+             const targetCoord = getAdjacentCoord(selectedVamp.coord, selectedVamp.facing);
+             if (targetCoord) {
+                  // executeMove function handles AP checks, validation, state change, rendering, UI update
+                  executeMove(selectedVamp, targetCoord);
+             } else {
+                  addToLog("Cannot move forward off the board.");
+             }
+        } else {
+             // --- Attempt PIVOT action ---
+             addToLog(`Attempting Pivot to ${direction}...`);
+             // executePivot function handles AP checks, state change, rendering, UI update
+             executePivot(selectedVamp, direction);
+        }
+    };
+    
+
+    // Attach the handler to each d-pad button
+    // Use optional chaining on button references in case HTML elements aren't found
+    btnMoveN?.addEventListener('click', () => handleMovementButtonClick('N'));
+    btnMoveE?.addEventListener('click', () => handleMovementButtonClick('E'));
+    btnMoveS?.addEventListener('click', () => handleMovementButtonClick('S'));
+    btnMoveW?.addEventListener('click', () => handleMovementButtonClick('W'));
 
     classButtons.forEach(button => {
         button.addEventListener('click', () => { // This listener enables btnNext
