@@ -191,7 +191,78 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Functions for Throw Action ---
     function populateHazardPicker() { hazardPickerOptions.innerHTML = ''; if (!currentGameState?.hazardPool || typeof currentGameState.currentAP === 'undefined') { console.error("Cannot populate picker: Invalid state."); addToLog("Error prepping throw."); return; } const pool = currentGameState.hazardPool; const ap = currentGameState.currentAP; const createBtn = (type, icon, cost) => { const btn = document.createElement('button'); btn.dataset.hazardType = type; const count = pool[type] || 0; btn.innerHTML = `<span class="hazard-icon">${icon}</span> ${type} <span class="hazard-cost">(${cost} AP)</span>`; btn.disabled = count <= 0 || ap < cost; btn.title = `${count} available`; hazardPickerOptions.appendChild(btn); }; createBtn('Tombstone', '🪦', AP_COST.THROW_HAZARD); createBtn('Carcass', '💀', AP_COST.THROW_HAZARD); createBtn('Grave Dust', '💩', AP_COST.THROW_HAZARD); createBtn('Dynamite', '💥', AP_COST.THROW_DYNAMITE); }
     function handleHazardSelection(hazardType) { console.log("Selected hazard:", hazardType); const cost = hazardType === 'Dynamite' ? AP_COST.THROW_DYNAMITE : AP_COST.THROW_HAZARD; if (!currentGameState?.hazardPool || !currentGameState.actionState) return; if ((currentGameState.hazardPool[hazardType] || 0) <= 0) { addToLog(`No ${hazardType}.`); return; } if (currentGameState.currentAP < cost) { addToLog(`Not enough AP.`); return; } currentGameState.actionState.pendingAction = 'throw-select-target'; currentGameState.actionState.selectedHazardType = hazardType; popups.hazardPicker.style.display = 'none'; /* Use reference from popups object */ highlightThrowTargets(); addToLog(`Throwing ${hazardType}. Select target.`); }
-    function highlightThrowTargets() { clearHighlights(); const vamp = findVampireById(currentGameState.selectedVampireId); if (!vamp || !currentGameState?.actionState) return; const startCoord = vamp.coord; const type = currentGameState.actionState.selectedHazardType; if (!type) return; document.querySelectorAll('.grid-square').forEach(sq => { const targetCoord = sq.dataset.coord; const dist = getDistance(startCoord, targetCoord); let isValid = false; if (dist > 0 && dist <= 3) { /* TODO: Path validation */ const targetPiece = findPieceAtCoord(targetCoord); if (!targetPiece || (type === 'Grave Dust' && targetPiece.type === 'vampire')) isValid = true; } if (isValid) sq.classList.add('valid-target'); /* else sq.classList.add('invalid-target'); */ }); }
+    // Calculates and highlights valid squares for the selected throw action
+    function highlightThrowTargets() {
+        clearHighlights(); // Clear previous highlights first
+        const selectedVamp = findVampireById(currentGameState?.selectedVampireId);
+
+        // Ensure a vampire is selected and the action state is correctly set
+        if (!selectedVamp || !currentGameState?.actionState?.selectedHazardType) {
+             console.error("Cannot highlight throw targets: Missing selected vampire or hazard type.");
+             return;
+        }
+
+        const startCoord = selectedVamp.coord;
+        const facing = selectedVamp.facing;
+        const hazardType = currentGameState.actionState.selectedHazardType;
+        if (!startCoord || !facing || !hazardType) {
+             console.error("Cannot highlight throw targets: Missing start coordinate, facing, or hazard type.");
+             return; // Ensure we have needed info
+        }
+
+        let currentCheckCoord = startCoord; // Start from the vampire's square for path checking
+        let pathClear = true; // Assume path is clear initially
+
+        // Check squares 1, 2, and 3 steps away IN FACING DIRECTION
+        for (let dist = 1; dist <= 3; dist++) {
+            const targetCoord = getAdjacentCoord(currentCheckCoord, facing);
+
+            if (!targetCoord) { // Fell off the board
+                pathClear = false; // Path is blocked by edge
+                break; // Stop checking further
+            }
+
+            // If the path was already blocked by a piece on a previous iteration, stop.
+            if (!pathClear) {
+                break;
+            }
+
+            const pieceAtTarget = findPieceAtCoord(targetCoord);
+
+            // Check if THIS square is a valid LANDING spot
+            let isValidLandingSpot = false;
+            if (!pieceAtTarget) { // Empty is always a valid landing spot
+                isValidLandingSpot = true;
+            } else if (hazardType === 'Grave Dust' && pieceAtTarget.type === 'vampire') { // GD onto Vamp is valid
+                isValidLandingSpot = true;
+            } // All other occupied squares are invalid landing spots
+
+            // Add highlight if it's a valid landing spot AND the path was clear up to the previous square
+            if (isValidLandingSpot) {
+                 const targetSquareElement = gameBoard.querySelector(`[data-coord="${targetCoord}"]`);
+                 if(targetSquareElement) {
+                     targetSquareElement.classList.add('valid-target');
+                     console.log(`Highlighting ${targetCoord} as valid target.`);
+                 }
+            } else {
+                 // Optionally mark as invalid landing spot visually if needed
+                 // const targetSquareElement = gameBoard.querySelector(`[data-coord="${targetCoord}"]`);
+                 // if(targetSquareElement) targetSquareElement.classList.add('invalid-target');
+                 console.log(`Square ${targetCoord} is not a valid landing spot for ${hazardType}.`);
+            }
+
+            // Now check if the piece AT the target square blocks the path for *subsequent* squares
+            // Vamps, BWs, and Carcasses block the path according to rules.
+            if (pieceAtTarget && (pieceAtTarget.type === 'vampire' || pieceAtTarget.type === 'bloodwell' || pieceAtTarget.piece.type === 'Carcass')) {
+                console.log(`Path blocked at ${targetCoord} by ${pieceAtTarget.piece?.type || pieceAtTarget.type}. Stopping check.`);
+                pathClear = false; // Path is blocked beyond this square
+                // We still might have highlighted THIS square if it was GD->Vamp, but cannot proceed further.
+            }
+
+            // Move "current check" forward for the next loop iteration's path check
+            currentCheckCoord = targetCoord;
+        }
+    }
 
     // --- Initialization ---
     function initializeGame() { console.log("Initializing game..."); gameHistory = []; const layouts = LAYOUT_DATA[numberOfPlayers]; if (!layouts?.length) { alert(`Error: No layouts for ${numberOfPlayers}P!`); showScreen('playerCount'); return; } const layoutIdx = Math.floor(Math.random() * layouts.length); const layout = layouts[layoutIdx]; const layoutName = `${numberOfPlayers}P Layout #${layoutIdx + 1}`; console.log(`Selected ${layoutName}`); currentGameState = { players: playerData.map(p => ({ name: p.name, class: p.class, eliminated: false })), board: { vampires: JSON.parse(JSON.stringify(layout.vampires.map(v => ({...v, cursed: false, movesThisTurn: 0})))), bloodwells: JSON.parse(JSON.stringify(layout.bloodwells)), hazards: JSON.parse(JSON.stringify(layout.hazards)) }, hazardPool: { 'Tombstone': 4 - layout.hazards.filter(h => h.type === 'Tombstone').length, 'Carcass': 4 - layout.hazards.filter(h => h.type === 'Carcass').length, 'Grave Dust': 4 - layout.hazards.filter(h => h.type === 'Grave Dust').length, 'Dynamite': 3 }, playerResources: playerData.map(() => ({ silverBullet: 1, abilitiesUsed: [] })), turn: 1, currentPlayerIndex: 0, currentAP: 0, selectedVampireId: null, actionState: { pendingAction: null, selectedHazardType: null } }; const pIdx = currentGameState.currentPlayerIndex; if (currentGameState.turn === 1) { if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][pIdx]; else if (numberOfPlayers === 3) currentGameState.currentAP = 6; else if (numberOfPlayers === 2) currentGameState.currentAP = 5; else currentGameState.currentAP = 5; } generateGrid(); renderBoard(currentGameState); const player = currentGameState.players[pIdx]; if (!player) { console.error("Init fail."); return; } const resources = currentGameState.playerResources[pIdx]; updatePlayerInfoPanel(player, currentGameState.turn, currentGameState.currentAP, resources); logList.innerHTML = `<li>Game Started: ${layoutName}</li>`; gameLog.scrollTop = 0; btnUndo.disabled = true; gameBoard.removeEventListener('click', handleBoardClick); gameBoard.addEventListener('click', handleBoardClick); btnUndo.removeEventListener('click', undoLastAction); btnUndo.addEventListener('click', undoLastAction); btnEndTurn.removeEventListener('click', nextTurn); btnEndTurn.addEventListener('click', nextTurn); showScreen('gameplay'); addToLog(`--- Turn ${currentGameState.turn} - ${player.name}'s turn (${player.class}). AP: ${currentGameState.currentAP} ---`); }
