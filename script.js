@@ -691,25 +691,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Back Button (Player Setup) Listener - REVISED LOGIC
     btnBack.addEventListener('click', () => {
-        // Logic to go back during setup
-        // When going back, remove the class the player *being left* had selected (if any)
-        // so it's available again for the player we are returning to.
-        const classPreviouslySelectedByThisPlayer = playerData[currentPlayerSetupIndex]?.class;
-        if (classPreviouslySelectedByThisPlayer) {
-            const indexInSelected = selectedClasses.indexOf(classPreviouslySelectedByThisPlayer);
-            if (indexInSelected > -1) {
-                selectedClasses.splice(indexInSelected, 1); // Make it available again
-                console.log("Removed class upon Back:", classPreviouslySelectedByThisPlayer, selectedClasses);
-            }
-        }
-
+        console.log("Back button clicked");
 
         if (currentPlayerSetupIndex > 0) {
-            // Go back to previous player's setup screen
-            updatePlayerSetupScreen(currentPlayerSetupIndex - 1);
+            // Determine the new index we are going back TO
+            const newPlayerIndex = currentPlayerSetupIndex - 1;
+
+            // --- Revised Logic ---
+            // Rebuild the selectedClasses array based ONLY on players BEFORE the one we are going back to.
+            // This ensures only confirmed previous selections block buttons.
+            selectedClasses = []; // Start fresh
+            for (let i = 0; i <= newPlayerIndex; i++) { // Loop up to AND INCLUDING the new player index being setup
+                 // We actually only care about classes selected *before* the current setup player
+                 if (i < newPlayerIndex && playerData[i]?.class) {
+                    selectedClasses.push(playerData[i].class);
+                 }
+                 // Also clear the data for players *after* the one we are returning to
+                 if (i > newPlayerIndex && playerData[i]) {
+                      playerData[i] = { name: `P${i + 1}`, class: null };
+                 }
+            }
+             // Clear the data for the player we just left (whose choice shouldn't count anymore)
+             // This was moved from the old logic, ensure it happens
+             if (playerData[currentPlayerSetupIndex]) {
+                 playerData[currentPlayerSetupIndex] = { name: `P${currentPlayerSetupIndex + 1}`, class: null };
+             }
+
+            console.log("Rebuilt selectedClasses for Back:", selectedClasses);
+            // --- End Revised Logic ---
+
+            // Go back to previous player's setup screen using the new index
+            updatePlayerSetupScreen(newPlayerIndex);
+
         } else {
-            // Go back to player count selection screen
+            // If already on Player 1, going back goes to player count selection
              playerData = []; // Clear all player data
              selectedClasses = []; // Clear selected classes
             showScreen('playerCount');
