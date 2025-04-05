@@ -1284,17 +1284,76 @@ btnNext.addEventListener('click', () => {
     }
 });
 
-    // Gameplay Screen Listeners
+    // --- Event Listener Handlers --- // (Functions like handleBoardClick, handleVampireSelection are defined earlier)
+
+    // --- Initialization --- // (initializeGame function defined earlier)
+
+    // --- Attach Event Listeners (Executed ONCE after all functions defined) ---
+
+    // Setup Screens Listeners (These attach correctly when the script loads)
+    playerCountButtons.forEach(button => button.addEventListener('click', () => { numberOfPlayers = parseInt(button.dataset.count); playerData = new Array(numberOfPlayers); selectedClasses = []; updatePlayerSetupScreen(0); showScreen('playerSetup'); }));
+    classButtons.forEach(button => button.addEventListener('click', () => { if (button.disabled) return; let sel = classSelectionContainer.querySelector('.selected'); if (sel) sel.classList.remove('selected'); button.classList.add('selected'); const cls = button.dataset.class; if (playerData[currentPlayerSetupIndex]) playerData[currentPlayerSetupIndex].class = cls; displayClassDetails(cls); }));
+    playerNameInput.addEventListener('input', () => { if(playerData[currentPlayerSetupIndex]) playerData[currentPlayerSetupIndex].name = playerNameInput.value.trim() || `P${currentPlayerSetupIndex + 1}`; });
+    btnBack.addEventListener('click', () => { /* ... (Simplified logic from previous step, removing selectedClasses) ... */ if (currentPlayerSetupIndex > 0) updatePlayerSetupScreen(currentPlayerSetupIndex - 1); else { playerData = []; showScreen('playerCount'); } }); // Simplified: Doesn't need to track selectedClasses manually
+    btnNext.addEventListener('click', () => { /* ... (Simplified logic from previous step, removing selectedClasses) ... */ const data = playerData[currentPlayerSetupIndex]; if (!data || !data.class) { alert(`Select class for P${currentPlayerSetupIndex + 1}!`); return; } if (!data.name) data.name = `P${currentPlayerSetupIndex + 1}`; if (currentPlayerSetupIndex < numberOfPlayers - 1) updatePlayerSetupScreen(currentPlayerSetupIndex + 1); else initializeGame(); });
+
+    // Gameplay Screen Listeners (Attached ONCE when script loads)
     btnToggleLog.addEventListener('click', () => { gameLog.classList.toggle('log-hidden'); });
     btnBackToSetup.addEventListener('click', () => { if (confirm("Return to setup? Game progress will be lost.")) { /* Reset logic */ numberOfPlayers = 0; currentPlayerSetupIndex = 0; playerData = []; selectedClasses = []; currentGameState = {}; gameHistory = []; console.log("Returning to setup - game state cleared."); showScreen('playerCount'); } });
 
-    // Action Buttons listeners
+    // --- ADDED DEBUG LOG HERE ---
+    console.log(">>> Attaching Action Button Listeners now...");
+    // --- END OF ADDED DEBUG LOG ---
+
+    // Action Buttons listeners (Attached ONCE when script loads)
+    if(btnMoveFwd) btnMoveFwd.addEventListener('click', () => {
+        console.log("Move Fwd button CLICKED"); // Keep this debug log
+        const vamp = findVampireById(currentGameState.selectedVampireId);
+        if (vamp) {
+            const targetCoord = getAdjacentCoord(vamp.coord, vamp.facing);
+            if (targetCoord) {
+                executeMove(vamp, targetCoord); // Call the execute function
+            } else {
+                addToLog("Cannot move forward off the board.");
+            }
+        } else { addToLog("Select Vampire to Move."); }
+    });
+
+    if(btnPivotL) btnPivotL.addEventListener('click', () => {
+         console.log("Pivot Left button CLICKED"); // Keep this debug log
+         const vamp = findVampireById(currentGameState.selectedVampireId);
+         if (vamp) {
+            const newFacing = getNewFacing(vamp.facing, 'L');
+            executePivot(vamp, newFacing); // Call the execute function
+        } else { addToLog("Select Vampire to Pivot."); }
+    });
+
+     if(btnPivotR) btnPivotR.addEventListener('click', () => {
+         console.log("Pivot Right button CLICKED"); // Keep this debug log
+         const vamp = findVampireById(currentGameState.selectedVampireId);
+         if (vamp) {
+            const newFacing = getNewFacing(vamp.facing, 'R');
+            executePivot(vamp, newFacing); // Call the execute function
+        } else { addToLog("Select Vampire to Pivot."); }
+    });
+
+     if(btnPivot180) btnPivot180.addEventListener('click', () => {
+         console.log("Pivot 180 button CLICKED"); // Keep this debug log
+         const vamp = findVampireById(currentGameState.selectedVampireId);
+         if (vamp) {
+            const newFacing = getNewFacing(vamp.facing, '180');
+            executePivot(vamp, newFacing); // Call the execute function
+        } else { addToLog("Select Vampire to Pivot."); }
+    });
+
+    // Existing Action Button Listeners
     btnShoot.addEventListener('click', () => { const vamp = findVampireById(currentGameState.selectedVampireId); if (vamp) executeShoot(vamp, false); else addToLog("Select Vampire to Shoot."); });
     btnSilverBullet.addEventListener('click', () => { const vamp = findVampireById(currentGameState.selectedVampireId); if(!currentGameState || !currentGameState.playerResources) return; const res = currentGameState.playerResources[currentGameState.currentPlayerIndex]; if (vamp && res.silverBullet > 0) { if (confirm("Use Silver Bullet?")) executeShoot(vamp, true); } else if (!vamp) addToLog("Select Vampire to use Silver Bullet."); else addToLog("No Silver Bullet left."); });
     btnThrow.addEventListener('click', () => { const vamp = findVampireById(currentGameState.selectedVampireId); if (!vamp) { addToLog("Select Vampire to Throw."); return; } if (vamp.cursed) { addToLog("Cursed cannot throw."); return; } if (!currentGameState || typeof currentGameState.currentAP === 'undefined' || currentGameState.currentAP < AP_COST.THROW_HAZARD) { addToLog("Not enough AP to initiate Throw."); return; } populateHazardPicker(); hazardPickerPopup.style.display = 'flex'; currentGameState.actionState.pendingAction = 'throw-select-hazard'; addToLog("Select hazard type to throw."); });
     btnCancelThrow.addEventListener('click', () => { hazardPickerPopup.style.display = 'none'; currentGameState.actionState = { pendingAction: null, selectedHazardType: null }; clearHighlights(); addToLog("Throw cancelled."); });
     hazardPickerOptions.addEventListener('click', (event) => { const btn = event.target.closest('button'); if (btn?.dataset.hazardType) handleHazardSelection(btn.dataset.hazardType); });
-    // Note: Listeners for board clicks, Undo, and EndTurn are attached inside initializeGame now
+    // Note: Listeners for board clicks, Undo, and EndTurn are attached inside initializeGame
+
 
     // --- Initial Load ---
     showScreen('playerCount'); // Start the application by showing the player count selection
