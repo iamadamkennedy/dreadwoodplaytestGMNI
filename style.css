@@ -441,3 +441,49 @@ button:disabled {
     text-align: center; /* Center the message */
     min-height: 1em; /* Reserve space even when hidden */
 }
+
+/* --- Movement Bar (D-Pad) Styles --- */
+
+#movement-bar {
+    display: grid; /* Use Grid for layout */
+    grid-template-columns: repeat(3, 45px); /* 3 columns, fixed size */
+    grid-template-rows: repeat(3, 45px); /* 3 rows, fixed size */
+    gap: 2px; /* Small gap between buttons */
+    width: fit-content; /* Make container only as wide as needed */
+    margin: 25px auto 20px auto; /* Center the d-pad horizontally, add vertical margin */
+    border: none; /* Remove border if inherited from .button-container potentially */
+    padding: 0; /* Remove padding if inherited */
+    justify-items: center; /* Center items within grid cells */
+    align-items: center; /* Center items within grid cells */
+}
+
+.movement-buttons button.move-button { /* Specificity for movement buttons */
+    padding: 0; /* Remove default padding */
+    width: 100%; /* Fill grid cell */
+    height: 100%; /* Fill grid cell */
+    font-size: 1.8em; /* Larger arrows */
+    line-height: 45px; /* Vertically center (match height) */
+    background-color: #d8d8d8; /* Light grey background */
+    color: #333; /* Dark grey arrow */
+    border: 1px solid #aaa;
+    min-width: auto; /* Override potential min-width from base button style */
+}
+
+.movement-buttons button.move-button:hover:not(:disabled) {
+    background-color: #c8c8c8; /* Slightly darker grey on hover */
+}
+
+.movement-buttons button.move-button:disabled {
+    background-color: #e8e8e8; /* Lighter when disabled */
+    color: #bbb;
+    border-color: #ccc;
+}
+
+/* Place buttons in the grid */
+#move-n { grid-row: 1; grid-column: 2; } /* Top row, middle column */
+#move-w { grid-row: 2; grid-column: 1; } /* Middle row, left column */
+#move-e { grid-row: 2; grid-column: 3; } /* Middle row, right column */
+#move-s { grid-row: 3; grid-column: 2; } /* Bottom row, middle column */
+
+/* Optional: Style the middle empty cell if needed */
+/* #movement-bar > div:nth-child(5) { } */ /* Example if you added a placeholder div */
