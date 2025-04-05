@@ -238,63 +238,69 @@ function displayClassDetails(className) {
 
 // Updates the player setup screen UI for the correct player
 // Updates the player setup screen UI for the correct player (FIXED Back Button Bug)
+// Updates the player setup screen UI for the correct player
 function updatePlayerSetupScreen(playerIndex) {
     const playerNum = playerIndex + 1;
-    currentPlayerSetupIndex = playerIndex; // Update global index
+    currentPlayerSetupIndex = playerIndex;
 
     console.log(`Setting up screen for Player ${playerNum}`);
 
-    // Ensure player data slot exists, reset selected class for this player index
+    // Reset temporary selections for the new player
+    // Initialize player data slot if it doesn't exist or reset class
     if (!playerData[playerIndex]) {
          playerData[playerIndex] = { name: `P${playerNum}`, class: null };
     } else {
-        playerData[playerIndex].class = null; // Reset class selection when revisiting this player's setup
+        // Clear previous class selection when revisiting via Back or loading new player
+        playerData[playerIndex].class = null;
     }
 
-    // Set name input value
-    playerNameInput.value = (playerData[playerIndex].name && playerData[playerIndex].name !== `P${playerNum}`) ? playerData[playerIndex].name : '';
+    playerNameInput.value = playerData[playerIndex].name !== `P${playerNum}` ? playerData[playerIndex].name : '';
     playerNameInput.placeholder = `P${playerNum} Name (Optional)`;
-
-    // Update titles and labels
     playerSetupTitle.textContent = `Player ${playerNum} Setup`;
     playerNameLabel.textContent = `Player ${playerNum} Name:`;
 
-    // --- Determine disabled classes based on OTHER players' choices ---
-    const disabledClasses = [];
-    for (let i = 0; i < numberOfPlayers; i++) {
-         // If looking at a DIFFERENT player AND they have selected a class
-         if (i !== playerIndex && playerData[i]?.class) {
-             disabledClasses.push(playerData[i].class);
-         }
-    }
-    // ---
-
-    // Reset button states
+    // Reset and update class buttons status (selected and enabled/disabled)
     let previouslySelectedButton = classSelectionContainer.querySelector('.selected');
     if (previouslySelectedButton) {
         previouslySelectedButton.classList.remove('selected');
     }
+    // Class Selection Buttons
     classButtons.forEach(button => {
-        const className = button.dataset.class;
-        // Disable button if class is in our calculated disabled list
-        button.disabled = disabledClasses.includes(className);
-        button.style.opacity = button.disabled ? '0.5' : '1';
-        // Re-select the button if this player had previously chosen it (before going back/next)
-        // Note: We reset playerData[playerIndex].class above, so this won't highlight on first load/back
-        // if (playerData[playerIndex].class === className) {
-        //     button.classList.add('selected');
-        // }
+        button.addEventListener('click', () => {
+            if (button.disabled) return; // Ignore clicks on disabled buttons
+
+            // Deselect previously selected button for this player
+            let currentlySelected = classSelectionContainer.querySelector('.selected');
+            if (currentlySelected) {
+                currentlySelected.classList.remove('selected');
+            }
+
+            // Select the new button
+            button.classList.add('selected');
+            const selectedClass = button.dataset.class;
+            if (playerData[currentPlayerSetupIndex]) {
+                 playerData[currentPlayerSetupIndex].class = selectedClass; // Store selection
+            } else {
+                console.error("Error: playerData not initialized for current index!"); // Should not happen
+            }
+
+            console.log(`Player ${currentPlayerSetupIndex + 1} selected class: ${selectedClass}`);
+            displayClassDetails(selectedClass); // Update details display
+
+            // **NEW:** Enable the Next/Start button now that a class is selected
+            btnNext.disabled = false;
+        });
     });
 
-    displayClassDetails(null); // Reset details view
-    // ADD THIS LINE to hide any previous error message:
-    const errorMsgElement = document.getElementById('class-error-msg');
-    if (errorMsgElement) errorMsgElement.style.display = 'none';
+    // Reset class details display
+    displayClassDetails(null);
 
-    // Show/Hide Back button
-    btnBack.style.display = (playerIndex === 0) ? 'none' : 'inline-block';
-    // Update Next/Start Game button text
+    // Update navigation buttons
+    btnBack.style.display = (playerIndex === 0) ? 'none' : 'inline-block'; // Hide Back for P1
     btnNext.textContent = (playerIndex === numberOfPlayers - 1) ? 'Start Game' : 'Next';
+
+    // **NEW:** Disable Next/Start button initially until a class is selected
+    btnNext.disabled = true;
 }
 
 // Adds a message to the game log panel
@@ -1309,38 +1315,33 @@ function clearHighlights() {
         }
     });
 // Next / Start Game Button Listener - Uses Inline Error, No Alert
+// Next / Start Game Button
 btnNext.addEventListener('click', () => {
+    // No need to check for class selection here anymore,
+    // because the button is disabled until a class IS selected.
     console.log("Next/Start Game button clicked");
-    const errorMsgElement = document.getElementById('class-error-msg'); // Get error message element
-    // Ensure the error message element exists before trying to use it
-    if (errorMsgElement) {
-        errorMsgElement.style.display = 'none'; // Hide error initially
-        errorMsgElement.textContent = ''; // Clear previous message
-    } else {
-         console.error("Element #class-error-msg not found!");
-    }
-
     const currentPlayerData = playerData[currentPlayerSetupIndex];
-    if (!currentPlayerData) { console.error("Error: Player data not initialized"); return; }
 
-    // Validate: Class must be selected
-    if (!currentPlayerData.class) {
-        // alert(`Please select a class for Player ${currentPlayerSetupIndex + 1}!`); // REMOVED ALERT
-        if (errorMsgElement) {
-            errorMsgElement.textContent = `Please select a class for Player ${currentPlayerSetupIndex + 1}!`; // Set text
-            errorMsgElement.style.display = 'block'; // Show error message
-        } else {
-             alert(`Please select a class for Player ${currentPlayerSetupIndex + 1}!`); // Fallback alert if element missing
-        }
-        return; // Stop processing
+    if (!currentPlayerData) {
+         console.error("Error: Player data not initialized for index", currentPlayerSetupIndex);
+         return;
     }
 
      // Ensure name is set (even if default)
-     if (!currentPlayerData.name) {
-         currentPlayerData.name = `P${currentPlayerSetupIndex + 1}`; // Use default if empty
+     if (!currentPlayerData.name || currentPlayerData.name.trim() === '') {
+         currentPlayerData.name = `P${currentPlayerSetupIndex + 1}`;
      }
 
-    // --- We no longer manage selectedClasses array here ---
+    // Add selected class to the list to prevent reuse by others
+    // Ensure class is actually selected (should always be true if button enabled)
+    if (currentPlayerData.class && !selectedClasses.includes(currentPlayerData.class)) {
+         selectedClasses.push(currentPlayerData.class);
+         console.log("Added class to selected list:", currentPlayerData.class, selectedClasses);
+    } else if (!currentPlayerData.class) {
+         console.error("Next clicked but no class selected - button should have been disabled!");
+         return; // Stop just in case
+    }
+
 
     // Check if more players need setup
     if (currentPlayerSetupIndex < numberOfPlayers - 1) {
