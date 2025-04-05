@@ -95,7 +95,7 @@ button:disabled {
 .btn-class[data-class="Sheriff"] { background-color: #4682b4; } /* Steel Blue */
 .btn-class[data-class="Vigilante"] { background-color: #696969; } /* Dim Gray */
 .btn-class[data-class="Outlaw"] { background-color: #b22222; } /* Firebrick */
-.btn-class[data-class="Bounty Hunter"] { background-color: #556b2f; } /* Dark Olive Green */
+.btn-class[data-class="Bounty Hunter"] { background-color: #228B22; } /* Forest Green */
 
 .btn-class.selected {
     outline: 3px solid gold;
@@ -306,60 +306,62 @@ button:disabled {
 
 .bloodwell {
     border-radius: 10%;
-    border: 3px dashed transparent; /* Thicker border, color set by player class below */
+    border: 3px dashed transparent; /* Base border - color set below */
     font-size: 1.8em; /* Larger icon */
     z-index: 5; /* Below vampires */
     opacity: 1; /* Fully opaque */
     color: crimson; /* Bold red icon */
-    background-color: black; /* Black background */
-    /* Inherits position, width, height, centering etc. from .piece */
+    background-color: black; /* Black background */ /* Inherits position, width, height, centering etc. from .piece */ /* Ensure text (icon) is centered if needed */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1;
 }
 
-/* Player-specific Bloodwell Border Colors */
-.bloodwell.player0 { border-color: #4682b4; } /* Sheriff Blue */
-.bloodwell.player1 { border-color: #696969; } /* Vigilante Gray */
-.bloodwell.player2 { border-color: #b22222; } /* Outlaw Red */
-.bloodwell.player3 { border-color: #556b2f; } /* BH Green */
-/* Add more if supporting > 4 players, though game rules are 2-4 */
+/* Player-specific Bloodwell Border Colors using Class Color Name */
+.bloodwell.color-sheriff { border-color: #4682b4; } /* Steel Blue */
+.bloodwell.color-vigilante { border-color: #696969; } /* Dim Gray */
+.bloodwell.color-outlaw { border-color: #b22222; } /* Firebrick */
+.bloodwell.color-bounty-hunter { border-color: #228B22; } /* Forest Green (New BH Color) */
 
 .hazard {
     border-radius: 0; /* Square */
-     border: 1px solid #555; /* Default border */
+    border: 1px solid #555; /* Default border (can be overridden) */
     font-size: 1.6em; /* Base icon size */
-     z-index: 1; /* Below other pieces */
-     opacity: 1; /* Fully opaque */
-     color: rgba(0,0,0,0.9); /* Default dark icon color */
-    /* Inherits position, width, height, centering etc. from .piece */
+    z-index: 1; /* Below other pieces */
+    opacity: 1; /* Fully opaque */
+    color: rgba(0,0,0,0.9); /* Default dark icon color */ /* Ensure text (icon) is centered */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1; /* Inherits position, width, height etc. from .piece */
 }
 
 /* Class Colors (Used for backgrounds on pieces) */
 .color-sheriff { background-color: rgba(70, 130, 180, 0.7); } /* SteelBlue */
 .color-vigilante { background-color: rgba(105, 105, 105, 0.7); } /* DimGray */
 .color-outlaw { background-color: rgba(178, 34, 34, 0.7); } /* Firebrick */
-.color-bounty-hunter { background-color: rgba(85, 107, 47, 0.7); } /* DarkOliveGreen */
+.color-bounty-hunter { background-color: rgba(34, 139, 34, 0.7); } /* Forest Green w/ Alpha */
 
 /* Hazard specific appearances */
 .hazard-tombstone {
     background-color: transparent;
-    border: none;
-    font-size: 2em; /* Larger icon */
+    border: none; font-size: 2.4em; /* Increased size */
     color: #333; /* Dark icon */
 }
 .hazard-carcass {
     background-color: #D2B48C; /* Tan background */
     border: none;
-    color: black; /* Ensure skull is visible */
-     /* font-size: 1.6em; */ /* Inherits base hazard size unless overridden */
+    color: black; /* Ensure skull is visible */ /* Inherits 1.6em font-size from .hazard unless overridden */
 }
 .hazard-grave-dust {
     background-color: mediumpurple; /* Purple background */
-    color: white; /* Light icon for contrast */
-    /* border: 1px solid #555; */ /* Keep or remove border? Keeping for now */
+    color: white; /* Light icon for contrast */ /* Keeps default border unless removed */
 }
 .hazard-dynamite {
     background-color: #ff4500; /* Keep orangered */
     color: white; /* Keep white icon */
-    font-size: 2em; /* Larger icon */
+    font-size: 2em; /* Increased size */
     border: none;
 }
 
