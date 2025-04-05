@@ -115,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const playerNameInput = document.getElementById('input-player-name');
     const classSelectionContainer = document.getElementById('class-selection-buttons');
     const classButtons = classSelectionContainer.querySelectorAll('.btn-class');
+    const btnBackToStart = document.getElementById('btn-back-to-start');
     const classDetailsName = document.getElementById('class-name'); // Setup details
     const classDetailsDescription = document.getElementById('class-description'); // Setup details
     const classDetailsAbilities = document.getElementById('class-abilities'); // Setup details
@@ -165,7 +166,48 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- UI Helper Functions ---
     function showScreen(screenId) { Object.values(screens).forEach(screen => screen.classList.remove('active')); if (screens[screenId]) screens[screenId].classList.add('active'); else console.error(`Screen "${screenId}" not found.`); console.log(`Showing screen: ${screenId}`); }
     function displayClassDetails(className) { const data = CLASS_DATA[className]; const nameEl = document.getElementById('class-name'); const descEl = document.getElementById('class-description'); const abilitiesEl = document.getElementById('class-abilities'); const containerEl = document.getElementById('class-details-container'); if (data) { nameEl.innerHTML = `<strong>Class:</strong> ${className}`; descEl.textContent = data.description; abilitiesEl.innerHTML = ''; data.abilities.forEach(ability => { const li = document.createElement('li'); li.innerHTML = `<strong>${ability.name}:</strong> ${ability.description}`; abilitiesEl.appendChild(li); }); containerEl.style.display = 'block'; } else { nameEl.innerHTML = `<strong>Class:</strong> ---`; descEl.textContent = 'Select a class...'; abilitiesEl.innerHTML = '<li>---</li>'; } }
-    function updatePlayerSetupScreen(playerIndex) { const playerNum = playerIndex + 1; currentPlayerSetupIndex = playerIndex; console.log(`Setting up for P${playerNum}`); if (!playerData[playerIndex]) playerData[playerIndex] = { name: `P${playerNum}`, class: null }; else playerData[playerIndex].class = null; playerNameInput.value = playerData[playerIndex].name !== `P${playerNum}` ? playerData[playerIndex].name : ''; playerNameInput.placeholder = `P${playerNum} Name (Optional)`; playerSetupTitle.textContent = `Player ${playerNum} Setup`; playerNameLabel.textContent = `Player ${playerNum} Name:`; let selBtn = classSelectionContainer.querySelector('.selected'); if (selBtn) selBtn.classList.remove('selected'); classButtons.forEach(button => { const cls = button.dataset.class; button.disabled = selectedClasses.includes(cls); button.style.opacity = button.disabled ? '0.5' : '1'; }); displayClassDetails(null); btnBack.style.display = (playerIndex === 0) ? 'none' : 'inline-block'; btnNext.textContent = (playerIndex === numberOfPlayers - 1) ? 'Start Game' : 'Next'; btnNext.disabled = true; /* Start disabled */ }
+    // Updates the player setup screen UI for the correct player
+    function updatePlayerSetupScreen(playerIndex) {
+        const playerNum = playerIndex + 1;
+        currentPlayerSetupIndex = playerIndex;
+
+        console.log(`Setting up screen for Player ${playerNum}`);
+
+        // Initialize player data slot if it doesn't exist or reset class
+        if (!playerData[playerIndex]) {
+            playerData[playerIndex] = { name: `P${playerNum}`, class: null };
+        } else {
+            playerData[playerIndex].class = null; // Reset class selection when revisiting
+        }
+
+        playerNameInput.value = playerData[playerIndex].name !== `P${playerNum}` ? playerData[playerIndex].name : '';
+        playerNameInput.placeholder = `P${playerNum} Name (Optional)`;
+        playerSetupTitle.textContent = `Player ${playerNum} Setup`;
+        playerNameLabel.textContent = `Player ${playerNum} Name:`; // Ensure label updates if needed
+
+        // Reset and update class buttons status
+        let previouslySelectedButton = classSelectionContainer.querySelector('.selected');
+        if (previouslySelectedButton) {
+            previouslySelectedButton.classList.remove('selected');
+        }
+        classButtons.forEach(button => {
+            const className = button.dataset.class;
+            button.disabled = selectedClasses.includes(className); // Disable already chosen classes
+            button.style.opacity = button.disabled ? '0.5' : '1';
+        });
+
+        // Reset class details display
+        displayClassDetails(null);
+
+        // Update navigation buttons visibility and text
+        const isFirstPlayer = (playerIndex === 0);
+        if (btnBack) btnBack.style.display = isFirstPlayer ? 'none' : 'inline-block'; // Hide Back for P1
+        if (btnBackToStart) btnBackToStart.style.display = isFirstPlayer ? 'none' : 'inline-block'; // Also hide Back to Start for P1
+        if (btnNext) {
+            btnNext.textContent = (playerIndex === numberOfPlayers - 1) ? 'Start Game' : 'Next';
+            btnNext.disabled = true; // Start disabled until class selected
+        }
+    }
     function addToLog(message) { const li = document.createElement('li'); li.textContent = message; while (logList.children.length > 50) logList.removeChild(logList.firstChild); logList.appendChild(li); if (gameLog && !gameLog.classList.contains('log-hidden')) gameLog.scrollTop = gameLog.scrollHeight; console.log("Log:", message); }
     function generateGrid() { gameBoard.innerHTML = ''; for (let r = 1; r <= 9; r++) { for (let c = 1; c <= 9; c++) { const square = document.createElement('div'); const colLetter = String.fromCharCode(64 + c); const coord = `${colLetter}${r}`; square.classList.add('grid-square'); square.dataset.coord = coord; gameBoard.appendChild(square); } } console.log("Generated grid."); }
     function getPlayerColorClass(playerIndex) { const player = currentGameState.players?.[playerIndex]; return player ? (CLASS_DATA[player.class]?.color || '') : ''; }
@@ -565,6 +607,22 @@ document.addEventListener('DOMContentLoaded', () => {
             showScreen('playerSetup');
         });
     });
+
+    // Listener for the new "Back to Start" button
+    if (btnBackToStart) { // Check if the button exists
+        btnBackToStart.addEventListener('click', () => {
+            if (confirm("Return to player count selection? All setup progress will be lost.")) {
+                // Reset setup state completely
+                numberOfPlayers = 0;
+                currentPlayerSetupIndex = 0;
+                playerData = [];
+                selectedClasses = [];
+                // Hide player setup and show player count screen
+                showScreen('playerCount');
+                console.log("Returned to player count screen. Setup state reset.");
+            }
+        });
+    }
 
     // Movement D-Pad Button Listeners (NEW)
     // Helper function to handle clicks on any movement arrow
