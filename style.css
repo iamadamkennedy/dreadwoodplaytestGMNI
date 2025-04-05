@@ -263,11 +263,14 @@ button:disabled {
     line-height: 1; /* Adjust line height for icon centering */
 }
 
+/* --- Piece/Hazard Styles --- */
+/* ... (Keep .piece style) ... */
+
 /* Facing Indicators (Larger, Bolder Arrow Text using ::before) */
 .vampire::before {
     content: ''; /* Base rule */
     position: absolute;
-    font-size: 1.1em; /* << INCREASED FONT SIZE */
+    font-size: 1.1em; /* << INCREASED FONT SIZE (Adjust more if needed) */
     font-weight: bold; /* Make it bolder */
     color: rgba(0,0,0,0.8); /* Darker for better contrast */
     text-shadow: 1px 1px 1px rgba(255,255,255,0.5); /* Optional shadow */
@@ -280,6 +283,8 @@ button:disabled {
 .vampire[data-facing="E"]::before { content: '▶'; right: 2px; top: 50%; transform: translateY(-50%); }
 .vampire[data-facing="W"]::before { content: '◀'; left: 2px; top: 50%; transform: translateY(-50%); }
 
+/* ... (Keep .vampire, .vampire.selected, .vampire.cursed styles) ... */
+/* ... (Keep .bloodwell, .hazard styles etc.) ... */
 
 .vampire {
     border-radius: 50%;
