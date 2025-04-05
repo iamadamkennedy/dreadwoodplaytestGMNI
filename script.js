@@ -192,11 +192,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function populateHazardPicker() { hazardPickerOptions.innerHTML = ''; if (!currentGameState?.hazardPool || typeof currentGameState.currentAP === 'undefined') { console.error("Cannot populate picker: Invalid state."); addToLog("Error prepping throw."); return; } const pool = currentGameState.hazardPool; const ap = currentGameState.currentAP; const createBtn = (type, icon, cost) => { const btn = document.createElement('button'); btn.dataset.hazardType = type; const count = pool[type] || 0; btn.innerHTML = `<span class="hazard-icon">${icon}</span> ${type} <span class="hazard-cost">(${cost} AP)</span>`; btn.disabled = count <= 0 || ap < cost; btn.title = `${count} available`; hazardPickerOptions.appendChild(btn); }; createBtn('Tombstone', '🪦', AP_COST.THROW_HAZARD); createBtn('Carcass', '💀', AP_COST.THROW_HAZARD); createBtn('Grave Dust', '💩', AP_COST.THROW_HAZARD); createBtn('Dynamite', '💥', AP_COST.THROW_DYNAMITE); }
     function handleHazardSelection(hazardType) { console.log("Selected hazard:", hazardType); const cost = hazardType === 'Dynamite' ? AP_COST.THROW_DYNAMITE : AP_COST.THROW_HAZARD; if (!currentGameState?.hazardPool || !currentGameState.actionState) return; if ((currentGameState.hazardPool[hazardType] || 0) <= 0) { addToLog(`No ${hazardType}.`); return; } if (currentGameState.currentAP < cost) { addToLog(`Not enough AP.`); return; } currentGameState.actionState.pendingAction = 'throw-select-target'; currentGameState.actionState.selectedHazardType = hazardType; popups.hazardPicker.style.display = 'none'; /* Use reference from popups object */ highlightThrowTargets(); addToLog(`Throwing ${hazardType}. Select target.`); }
     // Calculates and highlights valid squares for the selected throw action
+    // Calculates and highlights valid squares for the selected throw action (Updated Path Rules)
     function highlightThrowTargets() {
         clearHighlights(); // Clear previous highlights first
         const selectedVamp = findVampireById(currentGameState?.selectedVampireId);
 
-        // Ensure a vampire is selected and the action state is correctly set
+        // Ensure required state is available
         if (!selectedVamp || !currentGameState?.actionState?.selectedHazardType) {
              console.error("Cannot highlight throw targets: Missing selected vampire or hazard type.");
              return;
@@ -205,17 +206,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const startCoord = selectedVamp.coord;
         const facing = selectedVamp.facing;
         const hazardType = currentGameState.actionState.selectedHazardType;
-        if (!startCoord || !facing || !hazardType) {
-             console.error("Cannot highlight throw targets: Missing start coordinate, facing, or hazard type.");
-             return; // Ensure we have needed info
-        }
+        if (!startCoord || !facing || !hazardType) return; // Ensure we have needed info
 
-        let currentCheckCoord = startCoord; // Start from the vampire's square for path checking
+        let currentPathCoord = startCoord; // Tracks the square check is moving from
         let pathClear = true; // Assume path is clear initially
 
         // Check squares 1, 2, and 3 steps away IN FACING DIRECTION
         for (let dist = 1; dist <= 3; dist++) {
-            const targetCoord = getAdjacentCoord(currentCheckCoord, facing);
+            const targetCoord = getAdjacentCoord(currentPathCoord, facing);
 
             if (!targetCoord) { // Fell off the board
                 pathClear = false; // Path is blocked by edge
@@ -224,12 +222,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // If the path was already blocked by a piece on a previous iteration, stop.
             if (!pathClear) {
+                 console.log(`Path already blocked before reaching distance ${dist}`);
                 break;
             }
 
             const pieceAtTarget = findPieceAtCoord(targetCoord);
 
-            // Check if THIS square is a valid LANDING spot
+            // Determine if THIS square is a valid LANDING spot
             let isValidLandingSpot = false;
             if (!pieceAtTarget) { // Empty is always a valid landing spot
                 isValidLandingSpot = true;
@@ -237,30 +236,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 isValidLandingSpot = true;
             } // All other occupied squares are invalid landing spots
 
-            // Add highlight if it's a valid landing spot AND the path was clear up to the previous square
+            // Add highlight if it's a valid landing spot AND path was clear *up to this point*
             if (isValidLandingSpot) {
                  const targetSquareElement = gameBoard.querySelector(`[data-coord="${targetCoord}"]`);
                  if(targetSquareElement) {
                      targetSquareElement.classList.add('valid-target');
-                     console.log(`Highlighting ${targetCoord} as valid target.`);
+                     // console.log(`Highlighting ${targetCoord} as valid target.`); // Optional debug
                  }
             } else {
-                 // Optionally mark as invalid landing spot visually if needed
-                 // const targetSquareElement = gameBoard.querySelector(`[data-coord="${targetCoord}"]`);
-                 // if(targetSquareElement) targetSquareElement.classList.add('invalid-target');
                  console.log(`Square ${targetCoord} is not a valid landing spot for ${hazardType}.`);
             }
 
             // Now check if the piece AT the target square blocks the path for *subsequent* squares
-            // Vamps, BWs, and Carcasses block the path according to rules.
-            if (pieceAtTarget && (pieceAtTarget.type === 'vampire' || pieceAtTarget.type === 'bloodwell' || pieceAtTarget.piece.type === 'Carcass')) {
-                console.log(`Path blocked at ${targetCoord} by ${pieceAtTarget.piece?.type || pieceAtTarget.type}. Stopping check.`);
-                pathClear = false; // Path is blocked beyond this square
-                // We still might have highlighted THIS square if it was GD->Vamp, but cannot proceed further.
+            // Updated Rule: Vampires, Bloodwells, Tombstones, Dynamite block the path.
+            if (pieceAtTarget && (
+                pieceAtTarget.type === 'vampire' ||
+                pieceAtTarget.type === 'bloodwell' ||
+                (pieceAtTarget.type === 'hazard' && (pieceAtTarget.piece.type === 'Tombstone' || pieceAtTarget.piece.type === 'Dynamite'))
+               )) {
+                console.log(`Path blocked at ${targetCoord} by ${pieceAtTarget.piece?.type || pieceAtTarget.type}. Stopping check beyond here.`);
+                pathClear = false; // Path is blocked *beyond* this square
+                // NOTE: We don't 'break' here immediately. We finish processing *this* square
+                // (e.g., highlighting it if it was GD->Vamp), but the flag prevents
+                // processing squares further away in the next iteration.
             }
 
-            // Move "current check" forward for the next loop iteration's path check
-            currentCheckCoord = targetCoord;
+            // Move "current path check" forward for the next iteration
+            currentPathCoord = targetCoord;
         }
     }
 
