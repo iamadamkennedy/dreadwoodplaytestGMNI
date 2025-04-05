@@ -195,8 +195,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const targetSquare = gameBoard.querySelector(`[data-coord="${bw.coord}"]`);
             if (targetSquare) {
                 const bwElement = document.createElement('div');
-                // const playerClass = gameState.players[bw.player]?.class; // No longer needed for background
-                // const classColor = CLASS_DATA[playerClass]?.color || ''; // No longer needed for background
+                // Inside the bloodwells.forEach loop...
+            const playerClass = gameState.players[bw.player]?.class; // Make sure we get the class name
+            const classColor = CLASS_DATA[playerClass]?.color || ''; // Get the corresponding color class name
+
+            // Add base class AND the specific class color name for border styling
+            bwElement.classList.add('piece', 'bloodwell', classColor);
+            // DO NOT ADD the player${bw.player} class anymore
 
                 // --- MODIFIED LINES ---
                 bwElement.classList.add('piece', 'bloodwell'); // Add base classes (NO color class here)
