@@ -363,7 +363,7 @@ button:disabled {
     color: white; /* Keep white icon */
     font-size: 3em; /* Increased size (adjust if needed) */
     border: none;
-    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; /* Black outline */
+    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; /* White outline */
     text-stroke-width: 1px;
     text-stroke-color: black;
 }
