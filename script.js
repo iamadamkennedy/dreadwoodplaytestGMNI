@@ -542,73 +542,68 @@ function clearHighlights() {
     // --- Action Execution Functions ---
 
     function executeMove(vampire, targetCoord) {
-        // --- ADDED LOG: Check status at START of executeMove ---
-        console.log(`executeMove called for ${vampire.id}. Cursed: ${vampire.cursed}, MovesThisTurn: ${vampire.movesThisTurn}`);
-    
         // --- Validation ---
         if (currentGameState.currentAP < AP_COST.MOVE) { addToLog("Not enough AP to Move."); return false; }
-    
-        // Cursed Check: Rule is only 1 MOVE *action* per turn if cursed.
+        // Cursed Check (Enforces 1 move limit per turn)
         if (vampire.cursed) {
-            console.log("Vampire IS Cursed. Checking move limit."); // ADDED LOG
             if (vampire.movesThisTurn >= 1) {
                 addToLog(`Cursed ${vampire.id} has already moved this turn. Cannot move again.`);
-                console.log("Move denied: Already moved while cursed."); // ADDED LOG
                 return false; // Deny move
             }
             addToLog(`Cursed ${vampire.id} attempting its move for the turn.`);
-        } else {
-            console.log("Vampire is NOT Cursed. Move allowed (pending other checks)."); // ADDED LOG
         }
-    
         // Target & Path Checks
         const expectedTarget = getAdjacentCoord(vampire.coord, vampire.facing);
         if (targetCoord !== expectedTarget) { addToLog(`Invalid move target. Must move 1 square forward (${vampire.facing}).`); return false; }
-        const pieceAtTarget = findPieceAtCoord(targetCoord); // What's currently at the destination
+        const pieceAtTarget = findPieceAtCoord(targetCoord);
         if (pieceAtTarget && (pieceAtTarget.type === 'vampire' || pieceAtTarget.type === 'bloodwell' || (pieceAtTarget.type === 'hazard' && pieceAtTarget.piece.type === 'Carcass'))) { addToLog(`Cannot move onto occupied square ${targetCoord}.`); return false; }
         // --- End Validation ---
-    
+
         saveStateToHistory(); // Save state *before* the move
-    
+
         // --- Update State ---
         const oldCoord = vampire.coord;
         vampire.coord = targetCoord; // Move the vampire
         currentGameState.currentAP -= AP_COST.MOVE; // Deduct AP
         vampire.movesThisTurn = (vampire.movesThisTurn || 0) + 1; // Increment move counter
-    
-        addToLog(`${vampire.id} moved ${oldCoord} -> <span class="math-inline">\{targetCoord\}\. \(</span>{currentGameState.currentAP} AP left)`);
-    
+
+        // --- Fix Log Message --- (Ensure this fix is applied)
+        addToLog(`${vampire.id} moved ${oldCoord} -> ${targetCoord}. (${currentGameState.currentAP} AP left)`);
+        // --- End Log Message Fix ---
+
         // --- Check Landing Effects ---
-        // 1. Landing on Grave Dust (check pieceAtTarget BEFORE move happened)
+        // 1. Landing on Grave Dust
         if (pieceAtTarget?.type === 'hazard' && pieceAtTarget.piece.type === 'Grave Dust' && !vampire.cursed) {
-             console.log("Applying curse from landing on Grave Dust."); // ADDED LOG
+            console.log("Applying curse from landing on Grave Dust.");
              vampire.cursed = true;
              addToLog(`${vampire.id} landed on Grave Dust and is now CURSED!`);
         }
-    
-        // 2. Bloodbath Cure Check (AFTER move is complete)
-        if (vampire.cursed) { // Check if it WAS cursed upon landing
-            console.log(`Checking Bloodbath for ${vampire.id} at ${targetCoord} (was cursed).`); // ADDED LOG
-            const landedOnBW = currentGameState.board.bloodwells.find(bw => bw.coord === targetCoord);
-            const isHazardAlsoPresent = currentGameState.board.hazards.some(h => h.coord === targetCoord);
-    
-            if (landedOnBW && landedOnBW.player === vampire.player && !isHazardAlsoPresent) {
-                console.log("Bloodbath conditions MET! Curing curse and resetting moves."); // ADDED LOG
+
+        // 2. Bloodbath Cure Check (Universal - Any Clean BW)
+        if (vampire.cursed) { // Only check if the vampire was cursed when it moved
+            console.log(`Checking Bloodbath for ${vampire.id} at ${targetCoord} (was cursed).`);
+            const landedOnBW = currentGameState.board.bloodwells.find(bw => bw.coord === targetCoord); // Check specifically for *any* bloodwell here
+            const isHazardAlsoPresent = currentGameState.board.hazards.some(h => h.coord === targetCoord); // Check if ANY hazard is here
+
+            // --- UPDATED CONDITION: Removed owner check ---
+            // Conditions: Landed on ANY Bloodwell AND no hazard is present
+            if (landedOnBW && !isHazardAlsoPresent) {
+            // --- END UPDATED CONDITION ---
+                console.log("Bloodbath conditions MET! Curing curse and resetting moves.");
                 vampire.cursed = false; // Lift the curse!
                 vampire.movesThisTurn = 0; // Reset move counter immediately upon cure
-                addToLog(`${vampire.id} performed Bloodbath at ${targetCoord} and is CURED!`);
+                const bwOwner = currentGameState.players[landedOnBW.player]?.name || 'Unknown Player';
+                addToLog(`${vampire.id} performed Bloodbath on ${bwOwner}'s Bloodwell at ${targetCoord} and is CURED!`);
             } else {
-                 console.log(`Bloodbath conditions NOT met. Is BW: ${!!landedOnBW}, Own BW: ${landedOnBW?.player === vampire.player}, No Hazard: ${!isHazardAlsoPresent}`); // ADDED LOG
+                 // Log why it failed, useful for debugging
+                 console.log(`Bloodbath conditions NOT met. Is BW: ${!!landedOnBW}, Own BW check skipped, No Hazard: ${!isHazardAlsoPresent}`);
             }
-        } else {
-             // Log added for clarity if cure check is skipped because wasn't cursed upon landing
-             // console.log(`Skipping Bloodbath check for ${vampire.id} as it wasn't cursed upon landing.`);
         }
         // --- End Landing Effects ---
-    
+
         // Log final status after potential cure/curse
-        console.log(`executeMove END for ${vampire.id}. Cursed: ${vampire.cursed}, MovesThisTurn: ${vampire.movesThisTurn}`); // ADDED LOG
-    
+        console.log(`executeMove END for ${vampire.id}. Cursed: ${vampire.cursed}, MovesThisTurn: ${vampire.movesThisTurn}`);
+
         // Update UI
         renderBoard(currentGameState);
         updateUI();
