@@ -355,8 +355,9 @@ button:disabled {
     color: black; /* Ensure skull is visible */ /* Inherits 1.6em font-size from .hazard unless overridden */
 }
 .hazard-grave-dust {
-    background-color: mediumpurple; /* Purple background */
-    color: white; /* Light icon for contrast */ /* Keeps default border unless removed */
+    background-color: plum; /* Lighter purple: #DDA0DD */
+    color: #333; /* Darker icon color */
+    /* border: 1px solid #555; */ /* Keep or remove border? Optional */
 }
 .hazard-dynamite {
     background-color: #ff4500; /* Keep orangered */
@@ -487,3 +488,8 @@ button:disabled {
 
 /* Optional: Style the middle empty cell if needed */
 /* #movement-bar > div:nth-child(5) { } */ /* Example if you added a placeholder div */
+
+/* Hide movement bar by default */
+#movement-bar.hidden {
+    display: none;
+}
