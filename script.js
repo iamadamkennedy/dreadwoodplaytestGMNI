@@ -1009,7 +1009,17 @@ function initializeGame() {
     if(btnHelp) {
         btnHelp.addEventListener('click', () => {
             console.log("Help button clicked");
-            showScreen('howToPlay'); // Use the key added to the screens object
+            // Show the popup first
+            showScreen('howToPlay'); // Should use popups['howToPlay'].style.display = 'flex'; from revised showScreen
+
+            // Find the scrollable content area inside the popup
+            const howToPlayContent = popups.howToPlay?.querySelector('.how-to-play-content');
+
+            // Reset its scroll position to the top
+            if (howToPlayContent) {
+                howToPlayContent.scrollTop = 0;
+                console.log("Reset How-to-Play scroll position.");
+            }
         });
     }
 
