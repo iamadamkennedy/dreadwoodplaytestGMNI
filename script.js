@@ -315,6 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 vampElement.dataset.id = vamp.id; vampElement.dataset.player = vamp.player; vampElement.dataset.facing = vamp.facing;
                 if (vamp.id === gameState.selectedVampireId) vampElement.classList.add('selected');
                 if (vamp.cursed) vampElement.classList.add('cursed');
+                vampElement.textContent = `P${vamp.player + 1}`;
                 targetSquare.appendChild(vampElement); // Use vampElement here
             } else {
                  console.warn(`Square not found for vampire ${vamp.id} at ${vamp.coord}`);
