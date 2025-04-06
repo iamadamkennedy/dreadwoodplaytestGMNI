@@ -404,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // TODO: Disable/enable Class Active Ability buttons/elements based on AP cost and used status
     }
-    
+
     function updateUI() { if (!currentGameState?.players?.length || !currentGameState.playerResources?.length) return; const idx = currentGameState.currentPlayerIndex; if (idx < 0 || idx >= currentGameState.players.length || idx >= currentGameState.playerResources.length) { console.error("Error: Invalid idx.", currentGameState); return; } const player = currentGameState.players[idx]; const resources = currentGameState.playerResources[idx]; if (player && resources) updatePlayerInfoPanel(player, currentGameState.turn, currentGameState.currentAP, resources); else console.error("Error fetching player/resources."); }
 
     // --- Game State & Undo Logic ---
@@ -678,25 +678,103 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Initialization ---
-    function initializeGame() { console.log("Initializing game..."); gameHistory = [];
-    const layouts = LAYOUT_DATA[numberOfPlayers]; if (!layouts?.length) { alert(`Error: No layouts for ${numberOfPlayers}P!`); showScreen('playerCount'); return; }
+// --- Initialization ---
+function initializeGame() {
+    console.log("Initializing game...");
+    gameHistory = [];
+    
+    const layouts = LAYOUT_DATA[numberOfPlayers];
+    if (!layouts?.length) {
+        alert(`Error: No layouts for ${numberOfPlayers}P!`);
+        showScreen('playerCount');
+        return;
+    }
+    
     const layoutIdx = Math.floor(Math.random() * layouts.length);
     const layout = layouts[layoutIdx];
     const layoutName = `${numberOfPlayers}P Layout #${layoutIdx + 1}`;
     console.log(`Selected ${layoutName}`);
-    currentGameState = { players: playerData.map(p => ({ name: p.name, class: p.class, eliminated: false })),
-    board: { vampires: JSON.parse(JSON.stringify(layout.vampires.map(v => ({...v, cursed: false,movesThisTurn: 0})))), bloodwells: JSON.parse(JSON.stringify(layout.bloodwells)), hazards: JSON.parse(JSON.stringify(layout.hazards)) }, hazardPool: { 'Tombstone': 4 - layout.hazards.filter(h => h.type === 'Tombstone').length, 'Black Widow': 4 - layout.hazards.filter(h => h.type === 'Black Widow').length, 'Grave Dust': 4 - layout.hazards.filter(h => h.type === 'Grave Dust').length, 'Dynamite': 3 }, playerResources: playerData.map(() => ({ silverBullet: 1, abilitiesUsed: [] })), turn: 1, currentPlayerIndex: 0, currentAP: 0, selectedVampireId: null, actionState: { pendingAction: null, selectedHazardType: null } }; const pIdx = currentGameState.currentPlayerIndex; if (currentGameState.turn === 1) { if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][pIdx]; else if (numberOfPlayers === 3) currentGameState.currentAP = 6; else if (numberOfPlayers === 2) currentGameState.currentAP = 5; else currentGameState.currentAP = 5; } generateGrid(); renderBoard(currentGameState); const player = currentGameState.players[pIdx]; if (!player) { console.error("Init fail."); return; } const resources = currentGameState.playerResources[pIdx]; updatePlayerInfoPanel(player, currentGameState.turn, currentGameState.currentAP, resources); logList.innerHTML = `<li>Game Started: ${layoutName}</li>`;
+    
+    currentGameState = {
+        players: playerData.map(p => ({
+            name: p.name,
+            class: p.class,
+            eliminated: false
+        })),
+        board: {
+            vampires: JSON.parse(JSON.stringify(layout.vampires.map(v => ({
+                ...v,
+                cursed: false,
+                movesThisTurn: 0
+            }))),
+            bloodwells: JSON.parse(JSON.stringify(layout.bloodwells)),
+            hazards: JSON.parse(JSON.stringify(layout.hazards))
+        },
+        hazardPool: {
+            'Tombstone': 4 - layout.hazards.filter(h => h.type === 'Tombstone').length,
+            'Black Widow': 4 - layout.hazards.filter(h => h.type === 'Black Widow').length,
+            'Grave Dust': 4 - layout.hazards.filter(h => h.type === 'Grave Dust').length,
+            'Dynamite': 3
+        },
+        playerResources: playerData.map(() => ({
+            silverBullet: 1,
+            abilitiesUsed: []
+        })),
+        turn: 1,
+        currentPlayerIndex: 0,
+        currentAP: 0,
+        selectedVampireId: null,
+        actionState: {
+            pendingAction: null,
+            selectedHazardType: null
+        }
+    };
+    
+    const pIdx = currentGameState.currentPlayerIndex;
+    if (currentGameState.turn === 1) {
+        if (numberOfPlayers === 4) 
+            currentGameState.currentAP = [4, 5, 6, 8][pIdx];
+        else if (numberOfPlayers === 3) 
+            currentGameState.currentAP = 6;
+        else if (numberOfPlayers === 2) 
+            currentGameState.currentAP = 5;
+        else 
+            currentGameState.currentAP = 5;
+    }
+    
+    function someFunction() {
+        console.log(`*** Calculated Initial AP: ${currentGameState.currentAP} (for player index ${playerIndex}, num players ${numberOfPlayers}) ***`);
+    }
+
+    generateGrid();
+    renderBoard(currentGameState);
+    
+    const player = currentGameState.players[pIdx];
+    if (!player) {
+        console.error("Init fail.");
+        return;
+    }
+    
+    const resources = currentGameState.playerResources[pIdx];
+    updatePlayerInfoPanel(player, currentGameState.turn, currentGameState.currentAP, resources);
+    
+    logList.innerHTML = `<li>Game Started: ${layoutName}</li>`;
     gameLog.scrollTop = 0;
     btnUndo.disabled = true;
-    if(movementBar) movementBar.classList.add('hidden');
+    
+    if (movementBar) 
+        movementBar.classList.add('hidden');
+    
     gameBoard.removeEventListener('click', handleBoardClick);
     gameBoard.addEventListener('click', handleBoardClick);
     btnUndo.removeEventListener('click', undoLastAction);
     btnUndo.addEventListener('click', undoLastAction);
     btnEndTurn.removeEventListener('click', nextTurn);
-    btnEndTurn.addEventListener('click', nextTurn); showScreen('gameplay'); addToLog(`--- Turn ${currentGameState.turn} - ${player.name}'s turn (${player.class}). AP: ${currentGameState.currentAP} ---`); }
-
+    btnEndTurn.addEventListener('click', nextTurn);
+    
+    showScreen('gameplay');
+    addToLog(`--- Turn ${currentGameState.turn} - ${player.name}'s turn (${player.class}). AP: ${currentGameState.currentAP} ---`);
+}
     // --- 5. Attach Event Listeners (Executed ONCE on script load) --- // Note: Original numbering kept, this is Section 4 of pasting
 
     // Setup Screens Listeners
