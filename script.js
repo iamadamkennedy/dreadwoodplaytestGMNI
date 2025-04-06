@@ -114,12 +114,12 @@ document.addEventListener('DOMContentLoaded', () => {
         playerCount: document.getElementById('screen-player-count'),
         playerSetup: document.getElementById('screen-player-setup'),
         gameplay: document.getElementById('screen-gameplay'),
-        howToPlay: document.getElementById('screen-how-to-play')
     };
     const popups = {
        elimination: document.getElementById('popup-elimination'),
        victory: document.getElementById('popup-victory'),
-       hazardPicker: document.getElementById('hazard-picker') // Reference the hazard picker popup
+       hazardPicker: document.getElementById('hazard-picker'), // Reference the hazard picker popup
+       howToPlay: document.getElementById('screen-how-to-play')
     };
 
     const movementBar = document.getElementById('movement-bar');
@@ -198,21 +198,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- UI Helper Functions ---
     // Switches the visible screen & tracks last screen before Help
+    // Switches the visible screen OR displays a popup overlay
     function showScreen(screenId) {
-        const targetScreen = screens[screenId];
-        if (targetScreen) {
-            // Before changing, record the outgoing screen unless it's the help screen
-            const currentActive = document.querySelector('.screen.active');
-            if (currentActive && currentActive.id !== 'screen-how-to-play') {
-                lastActiveScreenId = currentActive.id; // Record where we were
+        const targetScreenElement = screens[screenId]; // Is it a main screen?
+        const targetPopupElement = popups[screenId];   // Is it a popup?
+
+        if (targetScreenElement) {
+            // --- Showing a Main Screen ---
+            // Record the current active screen BEFORE switching (unless it's a popup)
+            const currentActiveScreen = document.querySelector('.screen.active:not(.popup)'); // Find active screen that isn't a popup
+            if (currentActiveScreen && currentActiveScreen.id !== screenId) {
+                lastActiveScreenId = currentActiveScreen.id;
                 console.log(`Stored last screen: ${lastActiveScreenId}`);
             }
 
-            Object.values(screens).forEach(screen => screen.classList.remove('active'));
-            targetScreen.classList.add('active');
+            // Hide other main screens and show the target
+            Object.values(screens).forEach(screen => screen?.classList.remove('active')); // Use optional chaining
+            targetScreenElement.classList.add('active');
             console.log(`Showing screen: ${screenId}`);
+
+            // Ensure popups are hidden when switching main screens
+            Object.values(popups).forEach(popup => { if(popup) popup.style.display = 'none'; });
+
+        } else if (targetPopupElement) {
+            // --- Showing a Popup ---
+            // Record which main screen is active underneath
+            const currentActiveScreen = document.querySelector('.screen.active:not(.popup)');
+            if (currentActiveScreen) {
+                lastActiveScreenId = currentActiveScreen.id;
+                console.log(`Stored last screen before popup: ${lastActiveScreenId}`);
+            } else {
+                // Fallback if no main screen is active somehow? Should not happen in normal flow.
+                lastActiveScreenId = 'gameplay'; // Default to gameplay?
+                console.warn(`No active main screen found when showing popup ${screenId}. Storing fallback: ${lastActiveScreenId}`);
+            }
+
+            // Show the target popup using direct style (matching hazard picker)
+            targetPopupElement.style.display = 'flex';
+            console.log(`Showing popup: ${screenId}`);
+
         } else {
-            console.error(`Screen with id "${screenId}" not found.`);
+            // ID not found in screens or popups
+            console.error(`Screen/Popup with id "${screenId}" not found.`);
+            // Potentially show an error message or default screen
         }
     }
     function displayClassDetails(className) { const data = CLASS_DATA[className]; const nameEl = document.getElementById('class-name'); const descEl = document.getElementById('class-description'); const abilitiesEl = document.getElementById('class-abilities'); const containerEl = document.getElementById('class-details-container'); if (data) { nameEl.innerHTML = `<strong>Class:</strong> ${className}`; descEl.textContent = data.description; abilitiesEl.innerHTML = ''; data.abilities.forEach(ability => { const li = document.createElement('li'); li.innerHTML = `<strong>${ability.name}:</strong> ${ability.description}`; abilitiesEl.appendChild(li); }); containerEl.style.display = 'block'; } else { nameEl.innerHTML = `<strong>Class:</strong> ---`; descEl.textContent = 'Select a class...'; abilitiesEl.innerHTML = '<li>---</li>'; } }
@@ -985,11 +1013,14 @@ function initializeGame() {
         });
     }
 
-    // Back from How-to-Play Listener
+    // Back from How-to-Play Listener (Simpler - Just Hide Popup)
     if(btnBackToGame) {
         btnBackToGame.addEventListener('click', () => {
-            console.log("Back to Game button clicked, returning to:", lastActiveScreenId);
-            showScreen(lastActiveScreenId || 'gameplay'); // Return to last screen or gameplay default
+            console.log("Back to Game button clicked, hiding HowToPlay popup.");
+            if (popups.howToPlay) {
+                popups.howToPlay.style.display = 'none'; // Hide the popup
+            }
+            // The underlying screen (stored in lastActiveScreenId) should still be active.
         });
     }
     // Movement D-Pad Button Listeners (NEW)
