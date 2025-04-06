@@ -123,6 +123,13 @@ button:disabled {
     outline: 3px solid gold;
     box-shadow: 0 0 10px gold;
 }
+
+/* Darker Backgrounds for Selected State */
+.btn-class[data-class="Sheriff"].selected { background-color: #366a94; } /* Darker Steel Blue */
+.btn-class[data-class="Vigilante"].selected { background-color: #505050; } /* Darker Dim Gray */
+.btn-class[data-class="Outlaw"].selected { background-color: #8f1c1c; } /* Darker Firebrick */
+.btn-class[data-class="Bounty Hunter"].selected { background-color: #1c701c; } /* Darker Forest Green */
+
 .btn-class:disabled { /* Override default disabled if needed for visual cue */
      background-color: #a9a9a9; /* Dark Gray for disabled */
      opacity: 0.7;
