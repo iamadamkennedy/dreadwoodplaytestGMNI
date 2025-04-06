@@ -742,11 +742,7 @@ function initializeGame() {
             currentGameState.currentAP = 5;
     }
     
-    console.log(`*** Calculated Initial AP: ${currentGameState.currentAP} (for player index ${playerIndex}, num players ${numberOfPlayers}) ***`);
-    
-    function someFunction() {
-        console.log(`*** Calculated Initial AP: ${currentGameState.currentAP} (for player index ${playerIndex}, num players ${numberOfPlayers}) ***`);
-    }
+    console.log(`*** Calculated Initial AP: ${currentGameState.currentAP} (for player index ${pIdx}, num players ${numberOfPlayers}) ***`);
     
     generateGrid();
     renderBoard(currentGameState);
