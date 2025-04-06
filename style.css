@@ -371,10 +371,11 @@ button:disabled {
     border: none; font-size: 3em;
     color: #333; /* Dark icon */
 }
-.hazard-carcass {
+.hazard-black-widow {
     background-color: #D2B48C; /* Tan background */
     border: none;
-    color: black; /* Ensure skull is visible */ /* Inherits 1.6em font-size from .hazard unless overridden */
+    color: black; /* Ensure spider icon is visible */
+    font-size: 3em; /* Increased size (adjust if needed) */
 }
 .hazard-grave-dust {
     background-color: plum; /* Lighter purple: #DDA0DD */
