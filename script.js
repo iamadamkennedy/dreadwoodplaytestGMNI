@@ -294,6 +294,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Board Rendering & Gameplay UI Update ---
 
     // Renders pieces on the board based on game state (Updated for Bloodwell Styling)
+    // --- Board Rendering & Gameplay UI Update ---
+
+    // Renders pieces on the board based on game state (Corrected Variable Scopes)
     function renderBoard(gameState) {
         // console.log("Rendering board state..."); // Reduce console noise
         document.querySelectorAll('.piece').forEach(p => p.remove()); // Clear existing pieces
@@ -304,69 +307,60 @@ document.addEventListener('DOMContentLoaded', () => {
         gameState.board.vampires?.forEach(vamp => {
             const targetSquare = gameBoard.querySelector(`[data-coord="${vamp.coord}"]`);
             if (targetSquare) {
+                // CORRECT: Define and use vampElement *only* within this loop's scope
                 const vampElement = document.createElement('div');
                 const playerClass = gameState.players[vamp.player]?.class;
                 const classColor = CLASS_DATA[playerClass]?.color || '';
                 vampElement.classList.add('piece', 'vampire', classColor);
                 vampElement.dataset.id = vamp.id; vampElement.dataset.player = vamp.player; vampElement.dataset.facing = vamp.facing;
-                // Facing indicator added by CSS ::before rule now
-                // vampElement.textContent = arrow; // Remove or comment out if setting text below
                 if (vamp.id === gameState.selectedVampireId) vampElement.classList.add('selected');
                 if (vamp.cursed) vampElement.classList.add('cursed');
+                targetSquare.appendChild(vampElement); // Use vampElement here
             } else {
                  console.warn(`Square not found for vampire ${vamp.id} at ${vamp.coord}`);
             }
-        });
+        }); // End of Vampire loop scope for vampElement
 
         // Render Bloodwells
         gameState.board.bloodwells?.forEach(bw => {
             const targetSquare = gameBoard.querySelector(`[data-coord="${bw.coord}"]`);
             if (targetSquare) {
+                // CORRECT: Define and use bwElement within this loop's scope
                 const bwElement = document.createElement('div');
-                // Inside the bloodwells.forEach loop...
-            const playerClass = gameState.players[bw.player]?.class; // Make sure we get the class name
-            const classColor = CLASS_DATA[playerClass]?.color || ''; // Get the corresponding color class name
-
-            // Add base class AND the specific class color name for border styling
-            bwElement.classList.add('piece', 'bloodwell', classColor);
-            // DO NOT ADD the player${bw.player} class anymore
-
-                // --- MODIFIED LINES ---
-                bwElement.classList.add('piece', 'bloodwell'); // Add base classes (NO color class here)
-                bwElement.classList.add(`player${bw.player}`); // Add player index class (e.g., 'player0', 'player1') for border color CSS rule
-                // --- END MODIFICATION ---
-
+                const playerClass = gameState.players[bw.player]?.class;
+                const classColor = CLASS_DATA[playerClass]?.color || '';
+                // Add base class AND the specific class color name for border styling
+                bwElement.classList.add('piece', 'bloodwell', classColor);
+                // DO NOT ADD player index class (we switched back to classColor for border)
                 bwElement.dataset.id = bw.id;
                 bwElement.dataset.player = bw.player;
                 bwElement.textContent = '🩸'; // Blood drop icon
-                vampElement.textContent = `P${vamp.player + 1}`;
-                
-                targetSquare.appendChild(bwElement);
+                targetSquare.appendChild(bwElement); // Use bwElement here
             } else {
                  console.warn(`Square not found for bloodwell ${bw.id} at ${bw.coord}`);
             }
-        });
+        }); // End of Bloodwell loop scope for bwElement
 
         // Render Hazards
         gameState.board.hazards?.forEach(hazard => {
             const targetSquare = gameBoard.querySelector(`[data-coord="${hazard.coord}"]`);
             if (targetSquare) {
+                 // CORRECT: Define and use hazardElement within this loop's scope
                 const hazardElement = document.createElement('div');
                 hazardElement.classList.add('piece', 'hazard');
                 const typeClass = `hazard-${hazard.type.toLowerCase().replace(' ','-')}`;
                 hazardElement.classList.add(typeClass);
-                // Inside the hazards.forEach loop...
                 let icon = '?';
                 if (hazard.type === 'Tombstone') icon = '🪦';
-                else if (hazard.type === 'Black Widow') icon = '🕷️'; // <-- Changed type and icon
+                else if (hazard.type === 'Black Widow') icon = '🕷️'; // Corrected type
                 else if (hazard.type === 'Grave Dust') icon = '💩';
                 else if (hazard.type === 'Dynamite') icon = '💥';
                 hazardElement.textContent = icon;
-                targetSquare.appendChild(hazardElement);
+                targetSquare.appendChild(hazardElement); // Use hazardElement here
             } else {
                  console.warn(`Square not found for hazard at ${hazard.coord}`);
             }
-        });
+        }); // End of Hazard loop scope for hazardElement
     }
     
     // Updates the player info panel during gameplay (REWRITTEN for new layout/content)
