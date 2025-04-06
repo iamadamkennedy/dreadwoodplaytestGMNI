@@ -167,14 +167,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const hazardPickerOptions = document.getElementById('hazard-picker-options');
     const btnCancelThrow = document.getElementById('btn-cancel-throw');
 
-    // --- ADD THIS BLOCK FOR DEBUGGING DOM REFERENCES --- // Keep this block for now
+    // Inside the "DOMContentLoaded" listener, after DOM References section...
+
+    // --- Checking Gameplay Info Panel DOM References ---
     console.log("--- Checking Gameplay Info Panel DOM References ---");
-    console.log("currentClassDetailsName:", !!currentClassDetailsName); // Check if truthy
-    // console.log("currentClassDescription:", currentClassDescription); // Line Removed/Commented
-    console.log("currentClassAbilitiesList:", !!currentClassAbilitiesList);
-    console.log("infoSilverBullet:", !!infoSilverBullet);
-    console.log("statusBarPlayer:", !!statusBarPlayer);
-    console.log("statusBarAP:", !!statusBarAP);
+    // Line for currentClassDetailsName removed
+    console.log('  currentClassAbilitiesList:', !!currentClassAbilitiesList);
+    console.log('  infoSilverBullet:', !!infoSilverBullet);
+    console.log('  statusBarPlayer:', !!statusBarPlayer);
+    console.log('  statusBarAP:', !!statusBarAP);
     console.log("--- End Check ---");
     // --- END DEBUG BLOCK ---
 
