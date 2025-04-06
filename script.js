@@ -1141,26 +1141,26 @@ function checkPlayerElimination(playerIndex) {
  * @param {number} playerIndex - The index of the eliminated player.
  */
 function handlePlayerElimination(playerIndex) {
-    if (!currentGameState || !currentGameState.players[playerIndex] || currentGameState.players[playerIndex].eliminated) {
-        return; // Prevent double handling
-    }
+    // ... (code to check if already eliminated, set flag, log) ...
 
-    const playerName = currentGameState.players[playerIndex].name;
-    currentGameState.players[playerIndex].eliminated = true; // Mark as eliminated in player data
-
-    addToLog(`--- PLAYER ELIMINATED: ${playerName} ---`);
-    console.log(`Handling elimination for Player <span class="math-inline">\{playerIndex\} \(</span>{playerName})`);
-
-    // Remove remaining pieces from the board state
-    currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.player !== playerIndex);
-    currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.player !== playerIndex);
-    // Note: Hazards are not player-specific, they remain.
+    const playerName = currentGameState.players[playerIndex].name; // Name fetched here
+    // currentGameState.players[playerIndex].eliminated = true; // Flag set here
+    // addToLog(`--- PLAYER ELIMINATED: ${playerName} ---`); // Logged here
 
     // Display the elimination popup
-    const elimPopup = popups.elimination; // Using the popups object defined earlier
+    const elimPopup = popups.elimination;
     const elimMsg = document.getElementById('elimination-message');
+
+    // --- Possible Issue Area ---
     if (elimPopup && elimMsg) {
-        elimMsg.textContent = `<span class="math-inline">\{playerName\} \(</span>{currentGameState.players[playerIndex].class}) has been eliminated!`;
+        // Add these console logs to check the variables right before setting text:
+        console.log("Populating elimination popup for player index:", playerIndex);
+        console.log("Player Name:", playerName);
+        console.log("Player Class:", currentGameState.players[playerIndex]?.class); // Using optional chaining just in case
+
+        // Ensure you are using backticks ` ` for the template literal
+        elimMsg.textContent = `${playerName} (${currentGameState.players[playerIndex].class}) has been eliminated!`;
+
         elimPopup.style.display = 'flex'; // Show the popup
     } else {
         console.error("Elimination popup elements not found!");
