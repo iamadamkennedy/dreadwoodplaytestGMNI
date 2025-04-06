@@ -187,10 +187,10 @@ button:disabled {
     background-color: #fff;
     padding: 30px;
     border-radius: 8px;
-    text-align: center;
+    text-align: center; /* Keep center for buttons maybe */
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    max-width: 400px;
-    width: 80%;
+    max-width: 600px; /* << INCREASED WIDTH */
+    width: 90%; /* Maybe increase percentage slightly too */
 }
 
 /* --- Gameplay Screen Styles --- */
@@ -587,9 +587,9 @@ button:disabled {
 }
 
 /* How to Play Screen Styling */
-#screen-how-to-play {
-    text-align: left; /* Align text left for readability */
-    padding: 10px 20px; /* Add some padding */
+#screen-how-to-play .how-to-play-content { /* Or just .how-to-play-content if specific enough */
+    text-align: left;
+    /* ... other styles like max-height, overflow, padding ... */
 }
 .how-to-play-content {
     max-height: 60vh; /* Limit height and allow scrolling if needed */
