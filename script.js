@@ -1183,22 +1183,28 @@ function checkGameEnd() {
     if (activePlayers.length === 1) {
         // Game Over - We have a winner!
         const winner = activePlayers[0];
-        console.log(`Game Over! Winner: ${winner.name}`);
-        addToLog(`*** GAME OVER! <span class="math-inline">\{winner\.name\} \(</span>{winner.class}) WINS! ***`);
+        console.log(`Game Over! Winner: ${winner.name}`); // Check console log too
+        addToLog(`*** GAME OVER! ${winner.name} (${winner.class}) WINS! ***`);
 
         // Display victory popup
         const victoryPopup = popups.victory;
         const victoryMsg = document.getElementById('victory-message');
+
+        // --- Possible Issue Area ---
         if (victoryPopup && victoryMsg) {
-            victoryMsg.textContent = `<span class="math-inline">\{winner\.name\} \(</span>{winner.class}) claims the Dreadwood!`;
+            // Add this console log to check the winner object right before setting text:
+            console.log("Populating victory popup. Winner object:", winner);
+
+            // Ensure you are using backticks ` ` for the template literal
+            victoryMsg.textContent = `${winner.name} (${winner.class}) claims the Dreadwood!`;
+
             victoryPopup.style.display = 'flex';
         } else {
             console.error("Victory popup elements not found!");
         }
-        // Disable further actions? Or rely on restart button? For now, just show popup.
-        // Could disable End Turn, action buttons etc. here.
-        btnEndTurn.disabled = true; // Example: Disable end turn on victory
+        // --- End Possible Issue Area ---
 
+        btnEndTurn.disabled = true;
         return true; // Game has ended
     } else if (activePlayers.length === 0) {
         // Should not happen with "last faction standing" rule, but handle defensively
