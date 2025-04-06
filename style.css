@@ -414,34 +414,34 @@ button:disabled {
 /* Player Info & Status Bar */
 #player-info {
     display: flex;
-    /* Remove justify-content: space-between; if present */
-    /* Remove align-items: flex-start; if present */
-    flex-direction: column; /* <-- ADD THIS LINE */
-    align-items: center; /* Center items horizontally now */
-    gap: 15px; /* Adjust gap as needed */
+    flex-direction: column; /* Ensures items stack vertically */
+    align-items: center; /* Center items horizontally */
+    gap: 15px;
     margin-top: 20px;
-    flex-wrap: wrap; /* Keep wrap just in case */
+    flex-wrap: wrap;
 }
 
-/* Ensure children take appropriate width */
 #status-bar,
-#game-controls,
+#game-controls, /* Apply width to controls block too */
 #current-class-details {
      width: 100%; /* Make blocks take full width */
-     max-width: 450px; /* Optional: Limit max width for aesthetics */
-     margin-left: auto; /* Center the blocks if max-width is used */
+     max-width: 450px; /* Optional: Limit max width */
+     margin-left: auto; /* Center the blocks */
      margin-right: auto;
 }
 
  /* Adjust button container within game controls if needed */
  #game-controls.button-container {
-     margin-top: 10px; /* Reduce top margin if needed */
-     margin-bottom: 10px; /* Add bottom margin if needed */
-     width: auto; /* Override width: 100% for button container itself */
+     margin-top: 10px;
+     margin-bottom: 10px;
+     width: auto; /* Override width: 100% for button container */
      max-width: none;
      margin-left: 0;
      margin-right: 0;
+     /* Ensure buttons inside center */
+     justify-content: center;
  }
+ 
 #current-class-details h3, #current-class-details h4 {
     margin-top: 10px; margin-bottom: 5px;
 } /* Add some heading margin */
