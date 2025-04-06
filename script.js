@@ -316,6 +316,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Updates the player info panel during gameplay (REWRITTEN for new layout/content)
     function updatePlayerInfoPanel(player, turn, currentAP, resources) {
+        // --- ADD THIS DEBUG BLOCK ---
+        console.log('--- updatePlayerInfoPanel START ---');
+        console.log('Received player:', JSON.stringify(player)); // Log received player data
+        console.log('Received resources:', JSON.stringify(resources)); // Log received resources data
+        console.log('Received turn:', turn);
+        console.log('Received currentAP:', currentAP);
+        // Log the DOM refs *again* right before the check uses them
+        console.log('Check DOM Ref status:');
+        console.log('  currentClassDetailsName:', !!currentClassDetailsName); // Check if truthy
+        console.log('  currentClassAbilitiesList:', !!currentClassAbilitiesList);
+        console.log('  infoSilverBullet:', !!infoSilverBullet);
+        console.log('  statusBarPlayer:', !!statusBarPlayer);
+        console.log('  statusBarAP:', !!statusBarAP);
+        console.log('--- End Debug Checks ---');
+        // --- END DEBUG BLOCK ---
         // Ensure elements exist and data is valid
         if (!player || !resources || !currentClassDetailsName || !currentClassAbilitiesList || !infoSilverBullet || !statusBarPlayer || !statusBarAP) {
             console.error("Info Panel Error: One or more required elements not found or invalid data provided.");
