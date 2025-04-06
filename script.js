@@ -144,7 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const actionBar = document.getElementById('action-bar');
     const gameBoard = document.getElementById('game-board');
     const playerInfoDisplay = document.getElementById('player-info');
-    const currentClassDetailsName = document.getElementById('info-class-name'); // Gameplay details
     const currentClassAbilitiesList = document.getElementById('info-class-abilities'); // Gameplay details
     const infoSilverBullet = document.getElementById('info-silver-bullet');
     const statusBarPlayer = document.getElementById('status-player');
@@ -324,7 +323,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Received currentAP:', currentAP);
         // Log the DOM refs *again* right before the check uses them
         console.log('Check DOM Ref status:');
-        console.log('  currentClassDetailsName:', !!currentClassDetailsName); // Check if truthy
         console.log('  currentClassAbilitiesList:', !!currentClassAbilitiesList);
         console.log('  infoSilverBullet:', !!infoSilverBullet);
         console.log('  statusBarPlayer:', !!statusBarPlayer);
@@ -332,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('--- End Debug Checks ---');
         // --- END DEBUG BLOCK ---
         // Ensure elements exist and data is valid
-        if (!player || !resources || !currentClassDetailsName || !currentClassAbilitiesList || !infoSilverBullet || !statusBarPlayer || !statusBarAP) {
+        if (!player || !resources || !currentClassAbilitiesList || !infoSilverBullet || !statusBarPlayer || !statusBarAP) {
             console.error("Info Panel Error: One or more required elements not found or invalid data provided.");
             statusBarPlayer.textContent = 'Error'; statusBarAP.textContent = '??';
             // Clear details on error
