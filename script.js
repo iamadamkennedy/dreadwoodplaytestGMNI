@@ -457,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const shooterClass = currentGameState.players[shooterPlayerIndex].class;
         let currentCoord = vampire.coord;
         let hitMessage = `Shot from ${vampire.coord} facing ${vampire.facing} travelled off board.`;
-        let shotResolved = false; // Flag to indicate the shot hit something and stopped
+        let shotResolved = false;
 
         addToLog(`${vampire.id} ${isSilverBullet ? 'fires a Silver Bullet' : 'shoots'} facing ${vampire.facing}...`);
 
@@ -467,69 +467,67 @@ document.addEventListener('DOMContentLoaded', () => {
         currentGameState.currentAP -= cost;
 
         // Trace path square by square
-        for (let i = 0; i < 9 && !shotResolved; i++) { // Stop loop once resolved
+        for (let i = 0; i < 9 && !shotResolved; i++) {
             const nextCoord = getAdjacentCoord(currentCoord, vampire.facing);
-            if (!nextCoord) { // Fell off board
-                hitMessage = `Shot from ${vampire.coord} went off the board.`;
-                shotResolved = true; // Shot ends
-                break;
-            }
-            currentCoord = nextCoord; // Advance check to next square
+            if (!nextCoord) { hitMessage = `Shot from ${vampire.coord} went off the board.`; shotResolved = true; break; }
+            currentCoord = nextCoord;
 
             const pieceAtCoord = findPieceAtCoord(currentCoord);
             if (pieceAtCoord) {
                 const targetType = pieceAtCoord.type;
                 const targetPiece = pieceAtCoord.piece;
 
-                // 1. Check blocking hazards/obstacles first
-                if (targetType === 'hazard' && (targetPiece.type === 'Tombstone' || targetPiece.type === 'Dynamite')) {
-                    if (targetPiece.type === 'Tombstone' && shooterClass === 'Bounty Hunter') {
-                        addToLog(`Passes through Tombstone at ${currentCoord} (Sharpshooter).`);
-                        continue; // Bounty Hunter shoots through, loop continues
-                    }
-                    // Silver bullet vs Vamp behind Tombstone Check (NEW)
-                    if (isSilverBullet && targetPiece.type === 'Tombstone') {
-                        const vampBehind = currentGameState.board.vampires.find(v => v.coord === currentCoord && v.player !== shooterPlayerIndex);
-                        if (vampBehind) {
-                             hitMessage = `Silver Bullet shattered Tombstone at ${currentCoord}, but ${vampBehind.id} was protected! (SB Wasted)`;
-                             // Remove Tombstone
-                             currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
-                             shotResolved = true; break;
+                // --- Check Hazard Interactions ---
+                if (targetType === 'hazard') {
+                    // Rule: Tombstone blocks LoS/Path (stops shot), unless BH. Destroys Tombstone. Special SB case.
+                    if (targetPiece.type === 'Tombstone') {
+                        if (shooterClass === 'Bounty Hunter') {
+                            addToLog(`Passes through Tombstone at ${currentCoord} (Sharpshooter).`);
+                            continue; // Bounty Hunter ignores, shot continues
+                        } else {
+                            // Non-BH hit Tombstone
+                            const vampBehind = currentGameState.board.vampires.find(v => v.coord === currentCoord && v.player !== shooterPlayerIndex);
+                            if (isSilverBullet && vampBehind) {
+                                // Special Case: SB hits Tombstone shielding enemy Vamp
+                                hitMessage = `Silver Bullet shattered Tombstone at ${currentCoord}, but ${vampBehind.id} was protected! (SB Wasted)`;
+                            } else {
+                                // Standard Hit: Destroy Tombstone
+                                hitMessage = `Shot DESTROYED Tombstone at ${currentCoord}!`;
+                            }
+                            // Remove Tombstone in both non-BH cases where it's hit
+                            currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
+                            shotResolved = true; break; // Shot stops here
                         }
                     }
-                    // Standard block or Dynamite hit
-                    hitMessage = `Shot blocked by ${targetPiece.type} at ${currentCoord}.`;
-                    if (targetPiece.type === 'Dynamite') {
-                        hitMessage += ` Dynamite EXPLODES!`;
+                    // Rule: Dynamite blocks LoS/Path, Explodes when hit.
+                    else if (targetPiece.type === 'Dynamite') {
+                        hitMessage = `Shot hit Dynamite at ${currentCoord}. It EXPLODES!`;
+                        shotResolved = true;
                         // --- TODO: Trigger Dynamite Explosion Logic ---
                         const dynamiteIndex = currentGameState.board.hazards.findIndex(h => h.coord === currentCoord);
                         if (dynamiteIndex > -1) currentGameState.board.hazards.splice(dynamiteIndex, 1);
                         addToLog("Dynamite effect logic TBD.");
                         // --- End Dynamite Logic ---
-                    } else if (targetPiece.type === 'Tombstone') {
-                        // If SB hit Tombstone (and no Vamp behind), destroy it
-                        if (isSilverBullet) {
-                            hitMessage = `Silver Bullet shattered Tombstone at ${currentCoord}! (SB Wasted)`;
-                            currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
-                        }
+                        break; // Stop shot path
                     }
-                    shotResolved = true; break; // Stop shot path
+                    // Rule: Black Widow is destroyed when hit, stops shot.
+                    else if (targetPiece.type === 'Black Widow') {
+                        hitMessage = `Shot destroyed Black Widow at ${currentCoord}!`;
+                        currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
+                        shotResolved = true; break; // Stop shot path
+                    }
+                    // Rule: Grave Dust allows pass-through.
+                    else if (targetPiece.type === 'Grave Dust') {
+                         addToLog(`Shot passes through Grave Dust at ${currentCoord}.`);
+                         continue; // Shot continues
+                    }
                 }
-
-                // 2. Check NEW rule: Hit Black Widow
-                if (targetType === 'hazard' && targetPiece.type === 'Black Widow') {
-                    hitMessage = `Shot destroyed Black Widow at ${currentCoord}!`;
-                    // Remove the Black Widow hazard
-                    currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
-                    shotResolved = true; break; // Stop shot path
-                }
-
-                // 3. Hit Vampire
-                if (targetType === 'vampire') {
+                // --- Check Piece Interactions (if not blocked/passed through hazard) ---
+                else if (targetType === 'vampire') {
                     if (isSilverBullet && targetPiece.player !== shooterPlayerIndex) {
                         hitMessage = `Silver Bullet HIT & ELIMINATED enemy ${targetPiece.id} at ${currentCoord}!`;
                         currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.id !== targetPiece.id);
-                        // TODO: Check if targetPlayerIndex is now eliminated
+                        // TODO: Check player elimination
                     } else if (shooterClass === 'Bounty Hunter' && targetPiece.player !== shooterPlayerIndex && !targetPiece.cursed) {
                         hitMessage = `Shot HIT enemy ${targetPiece.id} at ${currentCoord}. Target is CURSED (Marked Man)!`;
                         const targetVamp = findVampireById(targetPiece.id);
@@ -537,37 +535,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         hitMessage = `Shot hit ${targetPiece.id} at ${currentCoord} (no effect).`;
                     }
-                    shotResolved = true; break; // Stop shot after hitting vampire
+                    shotResolved = true; break; // Stop shot
                 }
-
-                // 4. Hit Bloodwell
-                if (targetType === 'bloodwell') {
-                    // TODO: Check Sheriff 'Under My Protection' before destroying
+                else if (targetType === 'bloodwell') {
+                    // TODO: Check Sheriff 'Under My Protection'
                     hitMessage = `Shot DESTROYED Bloodwell ${targetPiece.id} at ${currentCoord}!`;
                     currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== targetPiece.id);
-                    // TODO: Check if targetPlayerIndex is now eliminated
-                    shotResolved = true; break; // Stop shot after hitting bloodwell
-                }
-
-                // 5. Pass through non-blocking hazards (only Grave Dust now)
-                if (targetType === 'hazard' && targetPiece.type === 'Grave Dust') {
-                     addToLog(`Shot passes through Grave Dust at ${currentCoord}.`);
-                     continue; // Shot continues through this
+                    // TODO: Check player elimination
+                    shotResolved = true; break; // Stop shot
                 }
             }
-            // If square was empty, shot continues to next iteration
+            // If square was empty, shot continues
         }
 
         // Final log message and UI update
         addToLog(hitMessage + ` (${currentGameState.currentAP} AP left)`);
-        if (isSilverBullet && !shotResolved) { // Log if SB went off board without hitting anything
-           addToLog("Silver Bullet did not hit anything.");
+        if (isSilverBullet && !shotResolved && hitMessage.includes("off board")) { // Clarify SB miss log
+           addToLog("Silver Bullet did not hit anything before leaving board.");
         }
 
         renderBoard(currentGameState);
         updateUI();
-        // TODO: Check win/loss conditions after shot resolution
-        return true; // Indicate success
+        // TODO: Check win/loss conditions
+        return true; // Indicate action attempt success (even if shot missed/blocked)
     }
     function executeThrow(vampire, hazardType, targetCoord) { if (!vampire) return false; const cost = hazardType === 'Dynamite' ? AP_COST.THROW_DYNAMITE : AP_COST.THROW_HAZARD; if (currentGameState.currentAP < cost) { addToLog(`No AP.`); return false; } if (vampire.cursed) { addToLog("Cursed cannot throw."); return false; } if (!currentGameState.hazardPool || (currentGameState.hazardPool[hazardType] || 0) <= 0) { addToLog(`No ${hazardType}.`); return false; } const dist = getDistance(vampire.coord, targetCoord); if (dist === 0 || dist > 3) { addToLog(`Bad distance.`); return false; } const targetPiece = findPieceAtCoord(targetCoord); if (targetPiece && !(hazardType === 'Grave Dust' && targetPiece.type === 'vampire')) { addToLog(`Target blocked.`); return false; } /* TODO: Path validation */ saveStateToHistory(); currentGameState.hazardPool[hazardType]--; currentGameState.board.hazards.push({ type: hazardType, coord: targetCoord }); currentGameState.currentAP -= cost; addToLog(`${vampire.id} threw ${hazardType} to ${targetCoord}. (${currentGameState.currentAP} AP)`); if (hazardType === 'Grave Dust' && targetPiece?.type === 'vampire') { const targetV = findVampireById(targetPiece.piece.id); if (targetV && !targetV.cursed) { targetV.cursed = true; addToLog(`${targetV.id} CURSED by GD!`); } } renderBoard(currentGameState); updateUI(); return true; }
     function nextTurn() {
