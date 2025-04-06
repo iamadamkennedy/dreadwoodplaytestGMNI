@@ -7,9 +7,15 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <div id="game-container">
         <button id="btn-help" class="help-button" title="How to Play">?</button> <div id="screen-player-count" class="screen active">
+            </div>
+        <div id="screen-player-setup" class="screen">
+            </div>
+        <div id="screen-gameplay" class="screen">
+            </div>
+
+        <div id="screen-player-count" class="screen active">
             <h1>Dreadwood Setup</h1>
             <p>Select the number of players:</p>
             <div class="button-container">
@@ -53,7 +59,6 @@
         </div>
 
         <div id="screen-gameplay" class="screen">
-            <h2>Dreadwood - Gameplay</h2>
 
             <div id="action-bar" class="button-container action-buttons">
                 <button id="action-shoot" title="Shoot (3 AP)">🔫 Shoot</button>
@@ -82,7 +87,8 @@
                 </div>
 
                 <div id="current-class-details" class="setup-section class-details-box">
-                     <h3>Current Player Info:</h3> <ul id="info-class-abilities"><li>---</li></ul><p><strong>Silver Bullet:</strong> <span id="info-silver-bullet">Available</span></p>
+                     <h3>Current Player Info:</h3> <ul id="info-class-abilities"><li>---</li></ul>
+                     <p><strong>Silver Bullet:</strong> <span id="info-silver-bullet">Available</span></p>
                 </div>
             </div> <div id="game-log-container">
                 <button id="btn-toggle-log">Show/Hide Log</button>
@@ -98,39 +104,7 @@
                  <button id="btn-back-to-setup">Back to Setup (Dev)</button>
             </div>
 
-        </div> <div id="screen-how-to-play" class="screen popup"> <div class="popup-content">
-                <h2>How to Play Dreadwood</h2>
-                <div class="how-to-play-content">
-                    <h3>The Goal</h3>
-                    <p>Welcome to the Dreadwood, a haunted frontier stalked by rival vampires! Choose one of four unique factions (like the orderly Sheriffs or chaotic Outlaws) and lead your pair of bloodsuckers to dominance. Your objective is to outlast the competition and be the final faction surviving on the board.</p>
-
-                    <h3>Your Turn</h3>
-                    <p>Each turn, you get Action Points (AP) to spend commanding your two vampires. Use these points thoughtfully for movement, attacks, and setting traps. Once you've used your AP, your turn ends, and the next player goes.</p>
-
-                    <h3>Basic Actions</h3>
-                    <ul>
-                        <li><strong>Pivot:</strong> Change the direction your selected vampire faces to prepare your next move or shot. (1 AP)</li>
-                        <li><strong>Move:</strong> Step one square forward in the direction your vampire is facing. Some obstacles, like sticky Black Widow webs (🕷️), might block your path! (1 AP)</li>
-                        <li><strong>Shoot:</strong> Fire your weapon straight ahead. A well-aimed shot can destroy vital enemy Bloodwells (🩸) or even hit rival vampires (sometimes with special effects!). Certain obstacles like Tombstones (🪦) or volatile Dynamite (💥) will block your shot. (3 AP)</li>
-                        <li><strong>Throw Hazard:</strong> Toss obstacles like blocking Tombstones, entangling Black Widow webs, dangerous Dynamite, or cursing Grave Dust (💩) onto the board (up to 3 squares ahead) to disrupt your foes or create cover. (1 AP / 2 AP for 💥)</li>
-                    </ul>
-
-                    <h3>Key Things to Know</h3>
-                    <ul>
-                        <li><strong>Bloodwells (🩸):</strong> These arcane fonts are your faction's lifeline. Protect yours fiercely! If an enemy destroys all three, your connection is severed, and your faction is eliminated!</li>
-                        <li><strong>Hazards:</strong> Use obstacles to your advantage! Tombstones block shots & throw paths, Black Widow webs stop movement, Grave Dust curses those who tread on it, and Dynamite creates explosive chaos when shot. Learn their effects to outsmart your rivals.</li>
-                        <li><strong>Cursed (Purple Ring):</strong> Step onto Grave Dust or suffer certain attacks, and your vampire becomes cursed! They'll be slowed down (only one move attempt per turn!) and unable to use some actions until they cleanse themselves near the arcane energy of *any* Bloodwell (even an enemy's!).</li>
-                        <li><strong>Silver Bullet (💎):</strong> You get one special bullet per game. It's incredibly potent – a direct hit instantly eliminates an enemy vampire! Make it count. (Uses Shoot action, 3 AP)</li>
-                        <li><strong>Faction Powers:</strong> Don't forget your faction's unique abilities! Using them at the right time can turn the tide of battle.</li>
-                    </ul>
-
-                    <h3>Winning</h3>
-                    <p>Eliminate your rivals by either destroying all their Bloodwells OR by taking out both of their vampires. The last faction standing claims the Dreadwood!</p>
-                    </div>
-                <div class="button-container">
-                     <button id="btn-back-to-game">Back to Game</button>
-                </div>
-            </div></div><div id="popup-elimination" class="popup">
+        </div> <div id="popup-elimination" class="popup">
              <div class="popup-content">
                  <h3 id="elimination-title">Player Eliminated!</h3>
                  <p id="elimination-message">[Player Name] has been eliminated.</p>
@@ -153,7 +127,38 @@
                  <button id="btn-cancel-throw" style="background-color: #6c757d; margin-top: 15px;">Cancel Throw</button>
              </div>
          </div>
-
-    </div><script src="script.js" defer></script>
-</body>
-</html>
+         <div id="screen-how-to-play" class="screen popup"> </div>
+            <h2>How to Play Dreadwood</h2>
+            <div class="how-to-play-content">
+                <h3>The Goal</h3>
+                <p>Welcome to the haunted frontier! Lead your unique pair of vampires from one of four factions (Sheriffs, Vigilantes, Outlaws, or Bounty Hunters). Your goal is simple: be the last vampire faction left standing on the board!</p>
+    
+                <h3>Your Turn</h3>
+                <p>Each turn, you get Action Points (AP) to spend on your two vampires. You decide how to use them!</p>
+    
+                <h3>Basic Actions (Cost AP)</h3>
+                <ul>
+                    <li><strong>Pivot (1 AP):</strong> Change the direction your selected vampire is facing (N, E, S, W).</li>
+                    <li><strong>Move (1 AP):</strong> Move one square forward. Blocked by other Vampires, Bloodwells, and Black Widow webs (🕷️).</li>
+                    <li><strong>Shoot (3 AP):</strong> Fire straight ahead. Destroys Bloodwells (🩸), Black Widows (🕷️), Tombstones (🪦), or Dynamite (💥, which explodes!). Blocked by Tombstones & Dynamite (unless Bounty Hunter vs Tombstone). Passes through Grave Dust (💩). Stops upon hitting Vamps (may apply effects) or BWs.</li>
+                    <li><strong>Throw Hazard (1 AP / 2 AP for 💥):</strong> Toss Tombstone, Black Widow, Grave Dust, or Dynamite up to 3 squares in facing direction onto a valid square (path/target rules apply).</li>
+                </ul>
+    
+                <h3>Key Things to Know</h3>
+                <ul>
+                    <li><strong>Bloodwells (🩸):</strong> Vital! Lose all 3, and your faction is eliminated.</li>
+                    <li><strong>Hazards:</strong> Tombstone/Dynamite block shots & throw paths. Webs block movement. Grave Dust curses if landed on. Dynamite explodes if shot.</li>
+                    <li><strong>Cursed (Purple Ring):</strong> Slowed (max 1 move/turn), cannot Shoot/Throw. Cure by moving onto a clear square adjacent to ANY Bloodwell.</li>
+                    <li><strong>Silver Bullet (💎):</strong> 1 per game (3 AP Shot). Instantly eliminates an enemy Vampire hit.</li>
+                    <li><strong>Faction Powers:</strong> Use your unique passive and active skills!</li>
+                </ul>
+    
+                <h3>Winning</h3>
+                <p>Eliminate opponents by destroying all their Bloodwells OR by taking out both of their Vampires. The last faction standing wins!</p>
+            </div>
+            <div class="button-container">
+                 <button id="btn-back-to-game">Back to Game</button>
+            </div>
+        </div></div><script src="script.js" defer></script>
+    </body>
+    </html>
