@@ -196,6 +196,33 @@ document.addEventListener('DOMContentLoaded', () => {
     function getNewFacing(currentFacing, pivotType) { const currentIndex = DIRECTIONS.indexOf(currentFacing); if (currentIndex === -1) return currentFacing; let newIndex; if (pivotType === 'L') newIndex = (currentIndex - 1 + DIRECTIONS.length) % DIRECTIONS.length; else if (pivotType === 'R') newIndex = (currentIndex + 1) % DIRECTIONS.length; else if (pivotType === '180') newIndex = (currentIndex + 2) % DIRECTIONS.length; else return currentFacing; return DIRECTIONS[newIndex]; }
     function getDistance(coord1, coord2) { const rc1 = getRowColFromCoord(coord1); const rc2 = getRowColFromCoord(coord2); if (!rc1 || !rc2) return Infinity; return Math.abs(rc1.row - rc2.row) + Math.abs(rc1.col - rc2.col); }
 
+    /**
+    //* Gets all valid coordinates within a square radius around a center coordinate.
+    * @param {string} centerCoord - The center coordinate (e.g., 'E5').
+    * @param {number} radius - The distance from the center (1 for 3x3, 2 for 5x5, etc.).
+    * @returns {string[]} An array of valid coordinates within the area.
+    */
+   function getCoordsInArea(centerCoord, radius) {
+       const coords = [];
+       const centerRC = getRowColFromCoord(centerCoord);
+       if (!centerRC) return coords; // Invalid center
+   
+       for (let dr = -radius; dr <= radius; dr++) {
+           for (let dc = -radius; dc <= radius; dc++) {
+               // Optional: Skip the center square itself if needed by rules
+               // if (dr === 0 && dc === 0) continue;
+   
+               const targetRow = centerRC.row + dr;
+               const targetCol = centerRC.col + dc;
+               const targetCoord = getCoordFromRowCol(targetRow, targetCol);
+               if (targetCoord) { // Only add valid board coordinates
+                   coords.push(targetCoord);
+               }
+           }
+       }
+       return coords;
+   }
+
     // --- UI Helper Functions ---
     // Switches the visible screen & tracks last screen before Help
     // Switches the visible screen OR displays a popup overlay
@@ -550,15 +577,68 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                     // Rule: Dynamite blocks LoS/Path, Explodes when hit.
+                    // Rule: Dynamite blocks LoS/Path, Explodes when hit.
                     else if (targetPiece.type === 'Dynamite') {
-                        hitMessage = `Shot hit Dynamite at ${currentCoord}. It EXPLODES!`;
-                        shotResolved = true;
-                        // --- TODO: Trigger Dynamite Explosion Logic ---
-                        const dynamiteIndex = currentGameState.board.hazards.findIndex(h => h.coord === currentCoord);
-                        if (dynamiteIndex > -1) currentGameState.board.hazards.splice(dynamiteIndex, 1);
-                        addToLog("Dynamite effect logic TBD.");
-                        // --- End Dynamite Logic ---
-                        break; // Stop shot path
+                        const explosionCoord = currentCoord; // Store where the dynamite was
+                        hitMessage = `Shot hit Dynamite at ${explosionCoord}. It EXPLODES!`;
+                        shotResolved = true; // Mark shot as resolved
+
+                        console.log(`Dynamite hit at ${explosionCoord}. Triggering explosion.`);
+                        addToLog(`Dynamite EXPLODES at ${explosionCoord}!`);
+
+                        // --- Start Implemented Dynamite Explosion Logic ---
+
+                        // 1. Remove the Dynamite itself from the board *before* checking area
+                        //    (Make sure 'currentGameState' is accessible here)
+                        currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== explosionCoord);
+
+                        // 2. Get the 3x3 area coordinates around the explosion center
+                        //    (Requires the 'getCoordsInArea' helper function defined elsewhere)
+                        const explosionAreaCoords = getCoordsInArea(explosionCoord, 1); // radius 1 = 3x3 area
+                        console.log("Explosion Area Coords:", explosionAreaCoords); // For debugging
+
+                        // 3. Iterate through each coordinate in the blast area
+                        explosionAreaCoords.forEach(coordInBlast => {
+                            // Optional Rule Check: Should the center square be affected?
+                            // if (coordInBlast === explosionCoord) return; // Uncomment to skip the exact center
+
+                            // Find if any piece exists at this coordinate in the blast
+                            const pieceInBlast = findPieceAtCoord(coordInBlast);
+
+                            if (pieceInBlast) {
+                                const affectedPiece = pieceInBlast.piece;
+                                const affectedType = pieceInBlast.type;
+
+                                // Apply Effects based on what was hit in the blast
+                                // Rule Assumption: Explosion destroys Bloodwells and other Hazards. Vamp effect TBD.
+
+                                if (affectedType === 'bloodwell') {
+                                    console.log(`Explosion destroyed Bloodwell ${affectedPiece.id} at ${coordInBlast}`);
+                                    addToLog(`Explosion destroyed Bloodwell ${affectedPiece.id} at ${coordInBlast}!`);
+                                    // Remove the bloodwell from the game state
+                                    currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== affectedPiece.id);
+                                    // TODO: Check player elimination immediately after BW destruction here
+                                }
+                                // Make sure not to try and destroy the original Dynamite again if center is included
+                                else if (affectedType === 'hazard' && affectedPiece.coord !== explosionCoord) {
+                                    console.log(`Explosion destroyed Hazard (${affectedPiece.type}) at ${coordInBlast}`);
+                                    addToLog(`Explosion destroyed Hazard (${affectedPiece.type}) at ${coordInBlast}!`);
+                                    // Remove the hazard from the game state
+                                    currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== affectedPiece.coord);
+                                }
+                                else if (affectedType === 'vampire') {
+                                    // TODO: Determine explosion effect on Vampires based on game rules
+                                    //       (Could be Curse, Damage, Elimination, or nothing)
+                                    console.log(`Explosion hit Vampire ${affectedPiece.id} at ${coordInBlast}. (Effect TBD)`);
+                                    addToLog(`Explosion hit Vampire ${affectedPiece.id} at ${coordInBlast}. (Effect TBD)`);
+                                }
+                            }
+                            // else: Nothing was at this coordinate in the blast
+                        });
+                        // --- End Implemented Dynamite Explosion Logic ---
+
+                        // The shot stops after hitting and exploding the dynamite
+                        break;
                     }
                     // Rule: Black Widow is destroyed when hit, stops shot.
                     else if (targetPiece.type === 'Black Widow') {
