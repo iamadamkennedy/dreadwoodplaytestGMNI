@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedClasses = []; // Keep track of classes chosen so far in setup
     let currentGameState = {}; // Main object holding all game info
     let gameHistory = []; // Stores previous game states for Undo
+    let lastActiveScreenId = 'playerCount'; // Track where help was opened from
 
     // --- 2. Constants ---
     const AP_COST = {
@@ -104,10 +105,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 3. DOM Element References --- // Note: Original numbering kept for internal reference, this is Section 2 of pasting sequence
     // Screens & Popups
+    const btnHelp = document.getElementById('btn-help');
+    const screenHowToPlay = document.getElementById('screen-how-to-play');
+    const btnBackToGame = document.getElementById('btn-back-to-game');
     const screens = {
         playerCount: document.getElementById('screen-player-count'),
         playerSetup: document.getElementById('screen-player-setup'),
         gameplay: document.getElementById('screen-gameplay'),
+        howToPlay: document.getElementById('screen-how-to-play')
     };
     const popups = {
        elimination: document.getElementById('popup-elimination'),
@@ -190,7 +195,24 @@ document.addEventListener('DOMContentLoaded', () => {
     function getDistance(coord1, coord2) { const rc1 = getRowColFromCoord(coord1); const rc2 = getRowColFromCoord(coord2); if (!rc1 || !rc2) return Infinity; return Math.abs(rc1.row - rc2.row) + Math.abs(rc1.col - rc2.col); }
 
     // --- UI Helper Functions ---
-    function showScreen(screenId) { Object.values(screens).forEach(screen => screen.classList.remove('active')); if (screens[screenId]) screens[screenId].classList.add('active'); else console.error(`Screen "${screenId}" not found.`); console.log(`Showing screen: ${screenId}`); }
+    // Switches the visible screen & tracks last screen before Help
+    function showScreen(screenId) {
+        const targetScreen = screens[screenId];
+        if (targetScreen) {
+            // Before changing, record the outgoing screen unless it's the help screen
+            const currentActive = document.querySelector('.screen.active');
+            if (currentActive && currentActive.id !== 'screen-how-to-play') {
+                lastActiveScreenId = currentActive.id; // Record where we were
+                console.log(`Stored last screen: ${lastActiveScreenId}`);
+            }
+
+            Object.values(screens).forEach(screen => screen.classList.remove('active'));
+            targetScreen.classList.add('active');
+            console.log(`Showing screen: ${screenId}`);
+        } else {
+            console.error(`Screen with id "${screenId}" not found.`);
+        }
+    }
     function displayClassDetails(className) { const data = CLASS_DATA[className]; const nameEl = document.getElementById('class-name'); const descEl = document.getElementById('class-description'); const abilitiesEl = document.getElementById('class-abilities'); const containerEl = document.getElementById('class-details-container'); if (data) { nameEl.innerHTML = `<strong>Class:</strong> ${className}`; descEl.textContent = data.description; abilitiesEl.innerHTML = ''; data.abilities.forEach(ability => { const li = document.createElement('li'); li.innerHTML = `<strong>${ability.name}:</strong> ${ability.description}`; abilitiesEl.appendChild(li); }); containerEl.style.display = 'block'; } else { nameEl.innerHTML = `<strong>Class:</strong> ---`; descEl.textContent = 'Select a class...'; abilitiesEl.innerHTML = '<li>---</li>'; } }
     // Updates the player setup screen UI for the correct player
     function updatePlayerSetupScreen(playerIndex) {
@@ -953,7 +975,21 @@ function initializeGame() {
             }
         });
     }
+    // Help Button Listener
+    if(btnHelp) {
+        btnHelp.addEventListener('click', () => {
+            console.log("Help button clicked");
+            showScreen('howToPlay'); // Use the key added to the screens object
+        });
+    }
 
+    // Back from How-to-Play Listener
+    if(btnBackToGame) {
+        btnBackToGame.addEventListener('click', () => {
+            console.log("Back to Game button clicked, returning to:", lastActiveScreenId);
+            showScreen(lastActiveScreenId || 'gameplay'); // Return to last screen or gameplay default
+        });
+    }
     // Movement D-Pad Button Listeners (NEW)
     // Helper function to handle clicks on any movement arrow
     const handleMovementButtonClick = (direction) => {
