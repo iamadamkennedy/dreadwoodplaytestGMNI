@@ -680,7 +680,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- Initialization ---
 function initializeGame() {
+    console.log("Entering initializeGame. playerData:", JSON.stringify(playerData)); // <-- ADD THIS
     console.log("Initializing game...");
+    // ... rest of function
     gameHistory = [];
     
     const layouts = LAYOUT_DATA[numberOfPlayers];
@@ -747,15 +749,25 @@ function initializeGame() {
     generateGrid();
     renderBoard(currentGameState);
     
+    // Inside initializeGame...
     const player = currentGameState.players[pIdx];
-    if (!player) {
-        console.error("Init fail.");
-        return;
-    }
-    
+    if (!player) { console.error("Init fail: Player not found at index", pIdx); return; } // Safety check
     const resources = currentGameState.playerResources[pIdx];
+    if (!resources) { console.error("Init fail: Resources not found at index", pIdx); return; } // Safety check
+
+    // --- ADD THIS LOG ---
+    console.log('Data FOR updatePlayerInfoPanel:', {
+        pIdx: pIdx,
+        player: player,
+        resources: resources,
+        turn: currentGameState.turn,
+        ap: currentGameState.currentAP
+    });
+    // --- END LOG ---
+
     updatePlayerInfoPanel(player, currentGameState.turn, currentGameState.currentAP, resources);
-    
+    // ... rest of function
+      
     logList.innerHTML = `<li>Game Started: ${layoutName}</li>`;
     gameLog.scrollTop = 0;
     btnUndo.disabled = true;
