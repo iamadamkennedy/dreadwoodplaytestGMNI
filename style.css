@@ -564,3 +564,54 @@ button:disabled {
 #movement-bar.hidden {
     display: none;
 }
+/* Help Button Styling */
+.help-button {
+    position: absolute; /* Position relative to game-container */
+    top: 15px;
+    right: 20px;
+    font-size: 1.2em;
+    font-weight: bold;
+    width: 35px; /* Small size */
+    height: 35px;
+    padding: 0;
+    border-radius: 50%; /* Circular */
+    background-color: #6c757d; /* Grey to match back button */
+    color: white;
+    border: 1px solid #5a6268;
+    z-index: 10; /* Ensure it's above other static content */
+    line-height: 33px; /* Adjust for vertical centering */
+    text-align: center;
+}
+.help-button:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+
+/* How to Play Screen Styling */
+#screen-how-to-play {
+    text-align: left; /* Align text left for readability */
+    padding: 10px 20px; /* Add some padding */
+}
+.how-to-play-content {
+    max-height: 60vh; /* Limit height and allow scrolling if needed */
+    overflow-y: auto;
+    margin-bottom: 20px; /* Space before back button */
+    border: 1px solid #eee;
+    padding: 15px;
+    background-color: #fdfdfd;
+}
+#screen-how-to-play h3 {
+    margin-top: 15px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 3px;
+}
+#screen-how-to-play ul {
+    list-style: disc;
+    margin-left: 25px;
+}
+ #screen-how-to-play li {
+    margin-bottom: 8px;
+}
+#btn-back-to-game {
+     /* Optional: Style differently if desired */
+}
