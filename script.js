@@ -16,45 +16,44 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add other action costs (Dispel, Bite Fuse, Abilities) here later
     };
     const DIRECTIONS = ['N', 'E', 'S', 'W'];
-    const CLASS_DATA = { // Includes Narrative Descriptions & Colors
+    const CLASS_DATA = { // Added techDesc, type, apCost
         "Sheriff": {
             color: "color-sheriff",
-            description: "A faction of Vampires enforcing order in a chaotic frontier.",
+            description: "A faction of Vampires enforcing order in a chaotic frontier.", // Narrative
             abilities: [
-                { name: "Under My Protection (Passive)", description: "The Sheriff shields nearby Bloodwells with an unholy vigilance, making them difficult targets." },
-                { name: "Swift Justice (Passive)", description: "Justice waits for no dawn; one Sheriff presses forward relentlessly at the end of each turn." },
-                { name: "Order Restored (Active, 1/game)", description: "(3 AP) Even death cannot stop the Sheriff's law; call back a fallen comrade from the abyss for one last stand." }
+                { name: "Under My Protection", type: "Passive", apCost: 0, description: "The Sheriff shields nearby Bloodwells...", techDesc: "Bloodwells in 3x3 grid centered on Sheriff are immune to standard Shots (not Hand Cannon)." },
+                { name: "Swift Justice", type: "Passive", apCost: 0, description: "Justice waits for no dawn...", techDesc: "End of Turn: May move one non-cursed Sheriff 1 square forward (0 AP)." },
+                { name: "Order Restored", type: "Active", apCost: 3, description: "(3 AP) Even death cannot stop...", techDesc: "1/game: Revive one eliminated Sheriff adjacent to own Vamp/BW." } // Note: Removed "(Active, 1/game)" from name, now tracked by type/resource state
             ]
         },
         "Vigilante": {
             color: "color-vigilante",
-            description: "A faction of Vampires seeking justice, using teamwork to punish wrongdoers.",
+            description: "A faction of Vampires seeking justice...", // Narrative
             abilities: [
-                { name: "Side by Side (Passive)", description: "These Blood Brothers act as one, seamlessly sharing their actions and energy throughout the turn." },
-                { name: "Blood Brothers (Passive)", description: "When fighting close together, their shared resolve grants them unnatural speed and an extra surge of action." },
-                { name: "Vengeance is Mine (Active, 1/game)", description: "(0 AP) Harm my kin, feel my wrath! An attack fuels an overwhelming counter-assault next turn." }
+                { name: "Side by Side", type: "Passive", apCost: 0, description: "These Blood Brothers act as one...", techDesc: "Player's AP pool is shared between both Vampires." },
+                { name: "Blood Brothers", type: "Passive", apCost: 0, description: "When fighting close together...", techDesc: "Start of Turn: +1 AP if Vamps are within 3x3 grid and both act this turn." },
+                { name: "Vengeance is Mine", type: "Active", apCost: 0, description: "(0 AP) Harm my kin, feel my wrath!...", techDesc: "1/game: After own piece is shot, gain 7 AP next turn." }
             ]
         },
         "Outlaw": {
             color: "color-outlaw",
-            description: "A faction of Vampires thriving on chaos, disrupting and escaping with speed.",
+            description: "A faction of Vampires thriving on chaos...", // Narrative
             abilities: [
-                { name: "Daring Escape (Passive)", description: "Shoot, grin, and vanish! After hitting a Bloodwell, the Outlaw makes a swift, spectral getaway." },
-                { name: "Hand Cannon (Active, 1/game)", description: "(5 AP) Unleash hellfire from a cursed Hand Cannon, tearing through foes and obstacles alike in a devastating line." },
-                { name: "Rampage (Active, 1/game)", description: "(2 AP) A whirlwind of lead flies left and right as the Outlaw cuts loose!" }
+                { name: "Daring Escape", type: "Passive", apCost: 0, description: "Shoot, grin, and vanish!...", techDesc: "1/turn: After shooting a Bloodwell, may Pivot free & Move up to 2 squares (0 AP)." },
+                { name: "Hand Cannon", type: "Active", apCost: 5, description: "(5 AP) Unleash hellfire...", techDesc: "1/game: Piercing shot (max 5 sq), ignores Hazards (unless Sheriff-prot.). Destroys BW/Hazards hit." },
+                { name: "Rampage", type: "Active", apCost: 2, description: "(2 AP) A whirlwind of lead...", techDesc: "1/game: Shoot simultaneously Left & Right (two standard shots)." }
             ]
         },
         "Bounty Hunter": {
             color: "color-bounty-hunter",
-            description: "A faction of Vampires hunting for profit, using precision to eliminate targets.",
+            description: "A faction of Vampires hunting for profit...", // Narrative
             abilities: [
-                { name: "Sharpshooter (Passive)", description: "No cover is safe; the Hunter's cursed bullets find paths through solid stone." },
-                { name: "Marked Man (Passive)", description: "Every bullet carries a hex, leaving wounded Vampires crippled with a debilitating curse." },
-                { name: "Contract Payoff (Active, 1/game)", description: "(3 AP) Collecting the blood-price for a destroyed Bloodwell brings a surge of energy for the next hunt." }
+                { name: "Sharpshooter", type: "Passive", apCost: 0, description: "No cover is safe...", techDesc: "Shots ignore Tombstones when determining hit/block." },
+                { name: "Marked Man", type: "Passive", apCost: 0, description: "Every bullet carries a hex...", techDesc: "Standard shots hitting enemy Vamps apply Curse (Move 1/turn, No Shoot/Throw)." },
+                { name: "Contract Payoff", type: "Active", apCost: 3, description: "(3 AP) Collecting the blood-price...", techDesc: "1/game: If shot destroys any BW, gain +3 AP (2P) / +5 AP (3P/4P) next turn." }
             ]
         }
     };
-    // --- Layout Data (Updated Examples w/ 8 Hazards, Black Widow) ---
     const LAYOUT_DATA = {
         '2': [
              { // Layout 2P-1 (Adjusted for 8 Hazards: 3T, 3BW, 2G)
