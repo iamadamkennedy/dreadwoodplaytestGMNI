@@ -7,8 +7,13 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <div id="game-container">
+        <button id="btn-help" class="help-button" title="How to Play">?</button> <div id="screen-player-count" class="screen active">
+            </div>
+        <div id="screen-player-setup" class="screen">
+            </div>
+        <div id="screen-gameplay" class="screen">
+            </div>
 
         <div id="screen-player-count" class="screen active">
             <h1>Dreadwood Setup</h1>
@@ -123,7 +128,38 @@
                  <button id="btn-cancel-throw" style="background-color: #6c757d; margin-top: 15px;">Cancel Throw</button>
              </div>
          </div>
-
-    </div><script src="script.js" defer></script>
-</body>
-</html>
+         <div id="screen-how-to-play" class="screen">
+            <h2>How to Play Dreadwood</h2>
+            <div class="how-to-play-content">
+                <h3>The Goal</h3>
+                <p>Welcome to the haunted frontier! Lead your unique pair of vampires from one of four factions (Sheriffs, Vigilantes, Outlaws, or Bounty Hunters). Your goal is simple: be the last vampire faction left standing on the board!</p>
+    
+                <h3>Your Turn</h3>
+                <p>Each turn, you get Action Points (AP) to spend on your two vampires. You decide how to use them!</p>
+    
+                <h3>Basic Actions (Cost AP)</h3>
+                <ul>
+                    <li><strong>Pivot (1 AP):</strong> Change the direction your selected vampire is facing (N, E, S, W).</li>
+                    <li><strong>Move (1 AP):</strong> Move one square forward. Blocked by other Vampires, Bloodwells, and Black Widow webs (🕷️).</li>
+                    <li><strong>Shoot (3 AP):</strong> Fire straight ahead. Destroys Bloodwells (🩸), Black Widows (🕷️), Tombstones (🪦), or Dynamite (💥, which explodes!). Blocked by Tombstones & Dynamite (unless Bounty Hunter vs Tombstone). Passes through Grave Dust (💩). Stops upon hitting Vamps (may apply effects) or BWs.</li>
+                    <li><strong>Throw Hazard (1 AP / 2 AP for 💥):</strong> Toss Tombstone, Black Widow, Grave Dust, or Dynamite up to 3 squares in facing direction onto a valid square (path/target rules apply).</li>
+                </ul>
+    
+                <h3>Key Things to Know</h3>
+                <ul>
+                    <li><strong>Bloodwells (🩸):</strong> Vital! Lose all 3, and your faction is eliminated.</li>
+                    <li><strong>Hazards:</strong> Tombstone/Dynamite block shots & throw paths. Webs block movement. Grave Dust curses if landed on. Dynamite explodes if shot.</li>
+                    <li><strong>Cursed (Purple Ring):</strong> Slowed (max 1 move/turn), cannot Shoot/Throw. Cure by moving onto a clear square adjacent to ANY Bloodwell.</li>
+                    <li><strong>Silver Bullet (💎):</strong> 1 per game (3 AP Shot). Instantly eliminates an enemy Vampire hit.</li>
+                    <li><strong>Faction Powers:</strong> Use your unique passive and active skills!</li>
+                </ul>
+    
+                <h3>Winning</h3>
+                <p>Eliminate opponents by destroying all their Bloodwells OR by taking out both of their Vampires. The last faction standing wins!</p>
+            </div>
+            <div class="button-container">
+                 <button id="btn-back-to-game">Back to Game</button>
+            </div>
+        </div></div><script src="script.js" defer></script>
+    </body>
+    </html>
