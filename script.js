@@ -17,44 +17,46 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add other action costs (Dispel, Bite Fuse, Abilities) here later
     };
     const DIRECTIONS = ['N', 'E', 'S', 'W'];
-    const CLASS_DATA = { // Added techDesc, type, apCost
+    
+    const CLASS_DATA = { // Narrative descriptions updated to ~150 chars for Setup Screen
         "Sheriff": {
             color: "color-sheriff",
-            description: "A faction of Vampires enforcing order in a chaotic frontier.", // Narrative
+            description: "A faction of Vampires enforcing order in a chaotic frontier.",
             abilities: [
-                { name: "Under My Protection", type: "Passive", apCost: 0, description: "The Sheriff shields nearby Bloodwells...", techDesc: "Bloodwells in 3x3 grid centered on Sheriff are immune to standard Shots (not Hand Cannon)." },
-                { name: "Swift Justice", type: "Passive", apCost: 0, description: "Justice waits for no dawn...", techDesc: "End of Turn: May move one non-cursed Sheriff 1 square forward (0 AP)." },
-                { name: "Order Restored", type: "Active", apCost: 3, description: "(3 AP) Even death cannot stop...", techDesc: "1/game: Revive one eliminated Sheriff adjacent to own Vamp/BW." } // Note: Removed "(Active, 1/game)" from name, now tracked by type/resource state
+                { name: "Under My Protection", type: "Passive", apCost: 0, description: "The Sheriff's vigilance shields nearby Bloodwells, making them difficult targets for careless foes seeking an easy shot.", techDesc: "Bloodwells in 3x3 grid centered on Sheriff are immune to standard Shots (not Hand Cannon)." },
+                { name: "Swift Justice", type: "Passive", apCost: 0, description: "Fueled by unwavering purpose, one Sheriff presses forward relentlessly, taking a swift extra step after the turn's actions conclude.", techDesc: "End of Turn: May move one non-cursed Sheriff 1 square forward (0 AP)." },
+                { name: "Order Restored", type: "Active", apCost: 3, description: "Even true death cannot halt the Sheriff's decree! By dark ritual, call back a comrade destroyed in battle to rejoin the fight for order.", techDesc: "1/game: Revive one eliminated Sheriff adjacent to own Vamp/BW." }
             ]
         },
         "Vigilante": {
             color: "color-vigilante",
-            description: "A faction of Vampires seeking justice...", // Narrative
+            description: "A faction of Vampires seeking justice, using teamwork.",
             abilities: [
-                { name: "Side by Side", type: "Passive", apCost: 0, description: "These Blood Brothers act as one...", techDesc: "Player's AP pool is shared between both Vampires." },
-                { name: "Blood Brothers", type: "Passive", apCost: 0, description: "When fighting close together...", techDesc: "Start of Turn: +1 AP if Vamps are within 3x3 grid and both act this turn." },
-                { name: "Vengeance is Mine", type: "Active", apCost: 0, description: "(0 AP) Harm my kin, feel my wrath!...", techDesc: "1/game: After own piece is shot, gain 7 AP next turn." }
+                { name: "Side by Side", type: "Passive", apCost: 0, description: "Bound by blood and vengeance, this driven pair acts as one, drawing from a shared pool of unnatural energy for their actions.", techDesc: "Player's AP pool is shared between both Vampires." },
+                { name: "Blood Brothers", type: "Passive", apCost: 0, description: "Their shared purpose empowers their dark bond when near. Fighting side-by-side fills this ruthless kin with a surge of preternatural energy.", techDesc: "Start of Turn: +1 AP if Vamps are within 3x3 grid and both act this turn." },
+                { name: "Vengeance is Mine", type: "Active", apCost: 0, description: "Harm my kin, feel my wrath tenfold! Wounds suffered only fuel their dark rage, promising overwhelming fury on their next turn.", techDesc: "1/game: After own piece is shot, gain 7 AP next turn." }
             ]
         },
         "Outlaw": {
             color: "color-outlaw",
-            description: "A faction of Vampires thriving on chaos...", // Narrative
+            description: "A faction of Vampires thriving on chaos, disrupting and escaping.",
             abilities: [
-                { name: "Daring Escape", type: "Passive", apCost: 0, description: "Shoot, grin, and vanish!...", techDesc: "1/turn: After shooting a Bloodwell, may Pivot free & Move up to 2 squares (0 AP)." },
-                { name: "Hand Cannon", type: "Active", apCost: 5, description: "(5 AP) Unleash hellfire...", techDesc: "1/game: Piercing shot (max 5 sq), ignores Hazards (unless Sheriff-prot.). Destroys BW/Hazards hit." },
-                { name: "Rampage", type: "Active", apCost: 2, description: "(2 AP) A whirlwind of lead...", techDesc: "1/game: Shoot simultaneously Left & Right (two standard shots)." }
+                { name: "Daring Escape", type: "Passive", apCost: 0, description: "Blast an enemy Bloodwell, then melt into the shadows, using the chaos for a swift, spectral getaway and repositioning.", techDesc: "1/turn: After shooting a Bloodwell, may Pivot free & Move up to 2 squares (0 AP)." },
+                { name: "Hand Cannon", type: "Active", apCost: 5, description: "Unleash unholy hellfire from a modified Hand Cannon! This cursed shot tears through obstacles and stone alike in its destructive path.", techDesc: "1/game: Piercing shot (max 5 sq), ignores Hazards (unless Sheriff-prot.). Destroys BW/Hazards hit." },
+                { name: "Rampage", type: "Active", apCost: 2, description: "Embrace the chaos! The Outlaw spins wildly, unleashing a hail of lead left and right simultaneously to catch foes in a deadly crossfire.", techDesc: "1/game: Shoot simultaneously Left & Right (two standard shots)." }
             ]
         },
         "Bounty Hunter": {
             color: "color-bounty-hunter",
-            description: "A faction of Vampires hunting for profit...", // Narrative
+            description: "A faction of Vampires hunting for profit, using precision.",
             abilities: [
-                { name: "Sharpshooter", type: "Passive", apCost: 0, description: "No cover is safe...", techDesc: "Shots ignore Tombstones when determining hit/block." },
-                { name: "Marked Man", type: "Passive", apCost: 0, description: "Every bullet carries a hex...", techDesc: "Standard shots hitting enemy Vamps apply Curse (Move 1/turn, No Shoot/Throw)." },
-                { name: "Contract Payoff", type: "Active", apCost: 3, description: "(3 AP) Collecting the blood-price...", techDesc: "1/game: If shot destroys any BW, gain +3 AP (2P) / +5 AP (3P/4P) next turn." }
+                { name: "Sharpshooter", type: "Passive", apCost: 0, description: "Tombstones offer no refuge. This Hunter's unnervingly accurate shots find paths through solid stone, leaving no target truly safe.", techDesc: "Shots ignore Tombstones when determining hit/block." },
+                { name: "Marked Man", type: "Passive", apCost: 0, description: "Every bullet carries a debilitating hex. Vampires struck find their unnatural vitality failing, crippling their movement and attacks.", techDesc: "Standard shots hitting enemy Vamps apply Curse (Move 1/turn, No Shoot/Throw)." },
+                { name: "Contract Payoff", type: "Active", apCost: 3, description: "Destroying an enemy Bloodwell brings dark satisfaction and fuels the Hunter with bonus energy for the next strike.", techDesc: "1/game: If shot destroys any BW, gain +3 AP (2P) / +5 AP (3P/4P) next turn." }
             ]
         }
     };
+    // ... (LAYOUT_DATA etc. follow) ...
     const LAYOUT_DATA = {
         '2': [
              { // Layout 2P-1 (Adjusted for 8 Hazards: 3T, 3BW, 2G)
