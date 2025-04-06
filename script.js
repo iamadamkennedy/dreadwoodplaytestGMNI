@@ -169,6 +169,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const hazardPickerOptions = document.getElementById('hazard-picker-options');
     const btnCancelThrow = document.getElementById('btn-cancel-throw');
 
+    // --- ADD THIS BLOCK FOR DEBUGGING DOM REFERENCES ---
+    console.log("--- Checking Gameplay Info Panel DOM References ---");
+    console.log("currentClassDetailsName:", currentClassDetailsName);
+    console.log("currentClassDescription:", currentClassDescription); // Note: We removed the element, so this *should* be null now if ref wasn't removed
+    console.log("currentClassAbilitiesList:", currentClassAbilitiesList);
+    console.log("infoSilverBullet:", infoSilverBullet);
+    console.log("statusBarPlayer:", statusBarPlayer);
+    console.log("statusBarAP:", statusBarAP);
+    // console.log("statusBarTurn:", statusBarTurn); // This element was removed from HTML
+    console.log("--- End Check ---");
+    // --- END DEBUG BLOCK ---
+    
     // --- 4. Function Definitions --- // Note: Original numbering kept, this is Section 3 of pasting
 
     // --- Coordinate Helper Functions ---
