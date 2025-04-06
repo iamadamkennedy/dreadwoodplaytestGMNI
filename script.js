@@ -171,7 +171,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ADD THIS BLOCK FOR DEBUGGING DOM REFERENCES ---
     console.log("--- Checking Gameplay Info Panel DOM References ---");
     console.log("currentClassDetailsName:", currentClassDetailsName);
-    console.log("currentClassDescription:", currentClassDescription); // Note: We removed the element, so this *should* be null now if ref wasn't removed
     console.log("currentClassAbilitiesList:", currentClassAbilitiesList);
     console.log("infoSilverBullet:", infoSilverBullet);
     console.log("statusBarPlayer:", statusBarPlayer);
