@@ -706,10 +706,10 @@ function initializeGame() {
                 ...v,
                 cursed: false,
                 movesThisTurn: 0
-            }))),
-            bloodwells: JSON.parse(JSON.stringify(layout.bloodwells)),
-            hazards: JSON.parse(JSON.stringify(layout.hazards))
-        },
+            })))), // << Comma IS needed here
+            bloodwells: JSON.parse(JSON.stringify(layout.bloodwells)), // << Comma IS needed here
+            hazards: JSON.parse(JSON.stringify(layout.hazards)) // << NO comma needed here
+        }, // << Comma IS needed here before hazardPool
         hazardPool: {
             'Tombstone': 4 - layout.hazards.filter(h => h.type === 'Tombstone').length,
             'Black Widow': 4 - layout.hazards.filter(h => h.type === 'Black Widow').length,
