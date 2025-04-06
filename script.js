@@ -307,11 +307,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const vampElement = document.createElement('div');
                 const playerClass = gameState.players[vamp.player]?.class;
                 const classColor = CLASS_DATA[playerClass]?.color || '';
-                vampElement.classList.add('piece', 'vampire', classColor); // Vampires keep class background
+                vampElement.classList.add('piece', 'vampire', classColor);
                 vampElement.dataset.id = vamp.id; vampElement.dataset.player = vamp.player; vampElement.dataset.facing = vamp.facing;
+                // Facing indicator added by CSS ::before rule now
+                // vampElement.textContent = arrow; // Remove or comment out if setting text below
                 if (vamp.id === gameState.selectedVampireId) vampElement.classList.add('selected');
                 if (vamp.cursed) vampElement.classList.add('cursed');
-                targetSquare.appendChild(vampElement);
             } else {
                  console.warn(`Square not found for vampire ${vamp.id} at ${vamp.coord}`);
             }
@@ -338,6 +339,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 bwElement.dataset.id = bw.id;
                 bwElement.dataset.player = bw.player;
                 bwElement.textContent = '🩸'; // Blood drop icon
+                vampElement.textContent = `P${vamp.player + 1}`;
+                
                 targetSquare.appendChild(bwElement);
             } else {
                  console.warn(`Square not found for bloodwell ${bw.id} at ${bw.coord}`);
