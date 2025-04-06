@@ -613,7 +613,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (isSilverBullet && targetPiece.player !== shooterPlayerIndex) {
                         hitMessage = `Silver Bullet HIT & ELIMINATED enemy ${targetPiece.id} at ${currentCoord}!`;
                         currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.id !== targetPiece.id);
-                        // TODO: Check player elimination
+                        if (checkPlayerElimination(eliminatedVampPlayerIndex)) {
+                            handlePlayerElimination(eliminatedVampPlayerIndex);
+                       }
+                       checkGameEnd(); // Check if game ended after potential elimination
+                       // --- End Check ---
                     } else if (shooterClass === 'Bounty Hunter' && targetPiece.player !== shooterPlayerIndex && !targetPiece.cursed) {
                         hitMessage = `Shot HIT enemy ${targetPiece.id} at ${currentCoord}. Target is CURSED (Marked Man)!`;
                         const targetVamp = findVampireById(targetPiece.id);
@@ -627,7 +631,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     // TODO: Check Sheriff 'Under My Protection'
                     hitMessage = `Shot DESTROYED Bloodwell ${targetPiece.id} at ${currentCoord}!`;
                     currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== targetPiece.id);
-                    // TODO: Check player elimination
+                    checkGameEnd(); // Check if game ended after potential elimination
+                    // --- End Check ---
                     shotResolved = true; break; // Stop shot
                 }
             }
@@ -775,6 +780,36 @@ document.addEventListener('DOMContentLoaded', () => {
             clearHighlights(); // Clear any potential lingering highlights
         }
     }
+}
+
+// Listener for the OK button on the elimination popup
+const btnCloseElimination = document.getElementById('btn-close-elimination');
+if (btnCloseElimination) {
+    btnCloseElimination.addEventListener('click', () => {
+        popups.elimination.style.display = 'none'; // Hide popup
+        // After closing elimination, check again if the game ended (in case that elimination ended the game)
+        checkGameEnd();
+    });
+} else {
+    console.warn("Elimination popup close button not found");
+}
+
+// Listener for the Restart button on the victory popup
+const btnRestartVictory = document.getElementById('btn-restart-victory');
+if (btnRestartVictory) {
+    btnRestartVictory.addEventListener('click', () => {
+        popups.victory.style.display = 'none'; // Hide popup
+        // Use the existing "Back to Setup" logic/button or create a full restart function
+        addToLog("Restarting game...");
+        // Option 1: Simulate click on the dev button
+        // btnBackToSetup.click();
+        // Option 2: Call initializeGame directly (if setup data is still valid) - Less clean reset
+        // initializeGame();
+        // Option 3: Reload the page (simplest full reset)
+        window.location.reload();
+    });
+} else {
+    console.warn("Victory popup restart button not found");
 }
 
     // --- Functions for Throw Action ---
@@ -998,9 +1033,126 @@ function processExplosionQueue(explosionQueue, processedExplosions) {
     // 8. Check for player elimination if any bloodwells were destroyed during the chain
     if (needsEliminationCheck) {
         console.log("Checking elimination status after chain reaction.");
-        // TODO: Call your main win/loss check function here, e.g., checkWinLossConditions();
+        // Inside processExplosionQueue, AFTER the while loop finishes...
+
+        if (needsEliminationCheck) {
+            console.log("Checking elimination status for all players after chain reaction.");
+            addToLog("Checking player elimination status...");
+            let anEliminationOccurred = false;
+            // Check all players to see if the chain reaction eliminated anyone
+            for (let i = 0; i < currentGameState.players.length; i++) {
+                // Only check players not already marked as eliminated
+                if (!currentGameState.players[i].eliminated) {
+                    if (checkPlayerElimination(i)) {
+                        handlePlayerElimination(i);
+                        anEliminationOccurred = true; // Flag that at least one elimination happened
+                    }
+                }
+            }
+            // Now, check if the game ended AFTER handling all eliminations from the chain
+            if (anEliminationOccurred) {
+                checkGameEnd();
+            }
+        }
         addToLog("Checking player elimination status...");
     }
+}
+
+/**
+ * Checks if a specific player should be eliminated based on game state.
+ * @param {number} playerIndex - The index of the player to check.
+ * @returns {boolean} - True if the player is eliminated, false otherwise.
+ */
+function checkPlayerElimination(playerIndex) {
+    if (!currentGameState || !currentGameState.players[playerIndex] || currentGameState.players[playerIndex].eliminated) {
+        return false; // Already eliminated or invalid index
+    }
+
+    const remainingVamps = currentGameState.board.vampires.filter(v => v.player === playerIndex).length;
+    const remainingBloodwells = currentGameState.board.bloodwells.filter(bw => bw.player === playerIndex).length;
+
+    const isEliminated = (remainingVamps === 0 || remainingBloodwells === 0);
+
+    if (isEliminated) {
+        console.log(`Player <span class="math-inline">\{playerIndex\} \(</span>{currentGameState.players[playerIndex].name}) elimination condition met.`);
+    }
+
+    return isEliminated;
+}
+
+/**
+ * Handles the consequences of a player being eliminated.
+ * @param {number} playerIndex - The index of the eliminated player.
+ */
+function handlePlayerElimination(playerIndex) {
+    if (!currentGameState || !currentGameState.players[playerIndex] || currentGameState.players[playerIndex].eliminated) {
+        return; // Prevent double handling
+    }
+
+    const playerName = currentGameState.players[playerIndex].name;
+    currentGameState.players[playerIndex].eliminated = true; // Mark as eliminated in player data
+
+    addToLog(`--- PLAYER ELIMINATED: ${playerName} ---`);
+    console.log(`Handling elimination for Player <span class="math-inline">\{playerIndex\} \(</span>{playerName})`);
+
+    // Remove remaining pieces from the board state
+    currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.player !== playerIndex);
+    currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.player !== playerIndex);
+    // Note: Hazards are not player-specific, they remain.
+
+    // Display the elimination popup
+    const elimPopup = popups.elimination; // Using the popups object defined earlier
+    const elimMsg = document.getElementById('elimination-message');
+    if (elimPopup && elimMsg) {
+        elimMsg.textContent = `<span class="math-inline">\{playerName\} \(</span>{currentGameState.players[playerIndex].class}) has been eliminated!`;
+        elimPopup.style.display = 'flex'; // Show the popup
+    } else {
+        console.error("Elimination popup elements not found!");
+    }
+
+    // Re-render the board to show removed pieces
+    renderBoard(currentGameState);
+    updateUI(); // Update player info (though eliminated player won't have a turn)
+}
+
+/**
+ * Checks if the game has ended (only one player left) and handles victory.
+ * @returns {boolean} - True if the game has ended, false otherwise.
+ */
+function checkGameEnd() {
+    if (!currentGameState || !currentGameState.players) return false;
+
+    const activePlayers = currentGameState.players.filter(p => !p.eliminated);
+
+    if (activePlayers.length === 1) {
+        // Game Over - We have a winner!
+        const winner = activePlayers[0];
+        console.log(`Game Over! Winner: ${winner.name}`);
+        addToLog(`*** GAME OVER! <span class="math-inline">\{winner\.name\} \(</span>{winner.class}) WINS! ***`);
+
+        // Display victory popup
+        const victoryPopup = popups.victory;
+        const victoryMsg = document.getElementById('victory-message');
+        if (victoryPopup && victoryMsg) {
+            victoryMsg.textContent = `<span class="math-inline">\{winner\.name\} \(</span>{winner.class}) claims the Dreadwood!`;
+            victoryPopup.style.display = 'flex';
+        } else {
+            console.error("Victory popup elements not found!");
+        }
+        // Disable further actions? Or rely on restart button? For now, just show popup.
+        // Could disable End Turn, action buttons etc. here.
+        btnEndTurn.disabled = true; // Example: Disable end turn on victory
+
+        return true; // Game has ended
+    } else if (activePlayers.length === 0) {
+        // Should not happen with "last faction standing" rule, but handle defensively
+        console.log("Game Over! No active players left? Draw?");
+        addToLog("*** GAME OVER! DRAW? (No players left) ***");
+        // TODO: Handle draw scenario if needed by rules, maybe show a different popup?
+        return true; // Game has ended (in a weird state)
+    }
+
+    return false; // Game continues
 }
 
 // --- Initialization ---
