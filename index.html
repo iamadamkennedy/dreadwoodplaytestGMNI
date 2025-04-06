@@ -32,7 +32,7 @@
                     <button class="btn-class" data-class="Bounty Hunter">Bounty Hunter</button>
                 </div>
                  </div>
-                 
+
             <div id="class-details-container" class="setup-section class-details-box">
                 <h3>Selected Class Details:</h3>
                 <p id="class-name"><strong>Class:</strong> ---</p>
@@ -63,31 +63,29 @@
                 <button id="action-dispel" title="Dispel Grave Dust (3 AP)" style="display: none;">🪄 Dispel</button>
                  </div>
 
-            <div id="movement-bar" class="button-container movement-buttons">
-                 <button id="move-n" class="move-button" data-direction="N" title="Move/Pivot North (1 AP)">⬆️</button>
-                <button id="move-w" class="move-button" data-direction="W" title="Move/Pivot West (1 AP)">⬅️</button>
-                <button id="move-e" class="move-button" data-direction="E" title="Move/Pivot East (1 AP)">➡️</button>
-                <button id="move-s" class="move-button" data-direction="S" title="Move/Pivot South (1 AP)">⬇️</button>
-            </div>
-
             <div id="game-board-container">
                 <div id="game-board" class="grid-container">
                     </div>
             </div>
+            
+            <div id="movement-bar" class="button-container movement-buttons">
+                <button id="move-n" class="move-button" data-direction="N" title="Move/Pivot North (1 AP)">⬆️</button>
+               <button id="move-w" class="move-button" data-direction="W" title="Move/Pivot West (1 AP)">⬅️</button>
+               <button id="move-e" class="move-button" data-direction="E" title="Move/Pivot East (1 AP)">➡️</button>
+               <button id="move-s" class="move-button" data-direction="S" title="Move/Pivot South (1 AP)">⬇️</button>
+           </div>
 
             <div id="player-info">
+                <div id="status-bar">
+                    <strong>Current Turn:</strong> <span id="status-player">---</span> |
+                    <strong>AP:</strong> <span id="status-ap">X</span>
+                </div>
                 <div id="current-class-details" class="setup-section class-details-box">
                      <h3>Current Player Info:</h3>
                      <p id="info-class-name"><strong>Class:</strong> ---</p>
-                     <p id="info-class-description">---</p>
                      <h4>Abilities:</h4>
                      <ul id="info-class-abilities"><li>---</li></ul>
                      <p><strong>Silver Bullet:</strong> <span id="info-silver-bullet">Available</span></p>
-                </div>
-                <div id="status-bar">
-                    <strong>Current Turn:</strong> <span id="status-player">---</span> |
-                    <strong>AP:</strong> <span id="status-ap">X</span> |
-                    <strong>Turn #:</strong> <span id="status-turn">1</span>
                 </div>
             </div>
 
