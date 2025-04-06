@@ -304,74 +304,107 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Updates the player info panel during gameplay (INCLUDING Movement Button disabling)
+    // Updates the player info panel during gameplay (REWRITTEN for new layout/content)
     function updatePlayerInfoPanel(player, turn, currentAP, resources) {
-        // Ensure elements exist and data is valid before trying to update them
-        if (!player || !resources || !currentClassDetailsName || !currentClassDescription || !currentClassAbilitiesList || !infoSilverBullet || !statusBarPlayer || !statusBarAP || !statusBarTurn) {
+        // Ensure elements exist and data is valid
+        if (!player || !resources || !currentClassDetailsName || !currentClassDescription || !currentClassAbilitiesList || !infoSilverBullet || !statusBarPlayer || !statusBarAP) { // Removed statusBarTurn check
             console.error("Info Panel Error: One or more required elements not found or invalid data provided.");
-            // Optionally display error state in UI
-            statusBarPlayer.textContent = 'Error'; statusBarAP.textContent = '??'; statusBarTurn.textContent = '??';
-            return; // Exit if essential elements/data are missing
-        }
-
-        // --- Update Class Details ---
-        const data = CLASS_DATA[player.class];
-        if (data) {
-            currentClassDetailsName.innerHTML = `<strong>Class:</strong> ${player.class}`;
-            currentClassDescription.textContent = data.description;
-            currentClassAbilitiesList.innerHTML = ''; // Clear previous abilities
-            data.abilities.forEach(ability => {
-                const li = document.createElement('li');
-                const isUsed = resources.abilitiesUsed?.includes(ability.name); // Check if ability name is in used list
-                li.innerHTML = `<strong>${ability.name}:</strong> ${ability.description}`; // Display narrative desc
-                if (isUsed) {
-                    li.style.opacity = '0.5';
-                    li.style.textDecoration = 'line-through';
-                }
-                // TODO: Add click listeners for *active* abilities if they should be clickable
-                currentClassAbilitiesList.appendChild(li);
-            });
-        } else {
-            // Handle case where class data might be missing
-            currentClassDetailsName.innerHTML = `<strong>Class:</strong> ${player.class || 'Unknown'}`;
-            currentClassDescription.textContent = "Class data not found.";
+            statusBarPlayer.textContent = 'Error'; statusBarAP.textContent = '??';
+            // Clear details on error
+            const classDetailsH3 = document.querySelector('#current-class-details h3');
+            if(classDetailsH3) classDetailsH3.textContent = "Error Loading Info";
             currentClassAbilitiesList.innerHTML = '';
+            infoSilverBullet.textContent = "Unknown";
+            return;
         }
 
-        // --- Update Status Bar ---
-        infoSilverBullet.textContent = resources.silverBullet > 0 ? `Available (${resources.silverBullet})` : "Used";
+        // --- Update Status Bar (No Turn #) ---
         statusBarPlayer.textContent = player.name;
         statusBarAP.textContent = currentAP;
-        statusBarTurn.textContent = turn;
+        // statusBarTurn.textContent = turn; // Turn # Removed
 
-        // --- Update Action Button States ---
-        const isVampSelected = !!currentGameState.selectedVampireId;
-        const selectedVamp = findVampireById(currentGameState.selectedVampireId); // Find selected vampire object
-        const isCursed = selectedVamp?.cursed; // Check if the selected vampire is cursed
-        const movesTakenThisTurn = selectedVamp?.movesThisTurn || 0; // Get moves taken
+        // --- Update Class Details Panel ---
+        const classData = CLASS_DATA[player.class];
+        const panelH3 = document.querySelector('#current-class-details h3'); // Get the h3 title element
 
-        // Shoot / Silver Bullet / Throw Buttons
+        if (panelH3) {
+             panelH3.textContent = `${player.class || 'Unknown'} Abilities`; // Set dynamic title
+        }
+        currentClassAbilitiesList.innerHTML = ''; // Clear previous abilities list
+
+        if (classData && classData.abilities) {
+            // Filter abilities
+            const availableActiveAbilities = classData.abilities.filter(a =>
+                a.type === 'Active' && !resources.abilitiesUsed?.includes(a.name) // Filter out used ones
+            );
+            const passiveAbilities = classData.abilities.filter(a => a.type === 'Passive');
+
+            // Render Active Abilities (if any available)
+            if (availableActiveAbilities.length > 0) {
+                const activeHeader = document.createElement('h4');
+                activeHeader.textContent = "Active Abilities";
+                currentClassAbilitiesList.appendChild(activeHeader);
+
+                availableActiveAbilities.forEach(ability => {
+                    const li = document.createElement('li');
+                    const costText = ability.apCost > 0 ? ` (${ability.apCost} AP)` : ""; // Show cost only if > 0
+                    li.innerHTML = `<strong>${ability.name}${costText}:</strong> ${ability.techDesc || ability.description}`; // Use techDesc
+                    // TODO: Add click listeners for usable active abilities
+                    currentClassAbilitiesList.appendChild(li);
+                });
+            }
+
+            // Render Divider (if both types exist and available actives exist)
+            if (availableActiveAbilities.length > 0 && passiveAbilities.length > 0) {
+                currentClassAbilitiesList.appendChild(document.createElement('hr'));
+            }
+
+            // Render Passive Abilities (if any exist)
+            if (passiveAbilities.length > 0) {
+                const passiveHeader = document.createElement('h4');
+                passiveHeader.textContent = "Passive Abilities";
+                currentClassAbilitiesList.appendChild(passiveHeader);
+
+                passiveAbilities.forEach(ability => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>${ability.name}:</strong> ${ability.techDesc || ability.description}`; // Use techDesc
+                    currentClassAbilitiesList.appendChild(li);
+                });
+            }
+
+        } else {
+            // Handle case where class data might be missing
+            const li = document.createElement('li');
+            li.textContent = "Ability data not found.";
+            currentClassAbilitiesList.appendChild(li);
+        }
+
+        // Update Silver Bullet status
+        infoSilverBullet.textContent = resources.silverBullet > 0 ? `Available (${resources.silverBullet})` : "Used";
+
+        // --- Update Action & Movement Button States ---
+        const canAffordMoveOrPivot = currentAP >= AP_COST.MOVE;
         const canAffordShoot = currentAP >= AP_COST.SHOOT;
         const canAffordThrowBase = currentAP >= AP_COST.THROW_HAZARD;
         const canAffordSilver = currentAP >= AP_COST.SILVER_BULLET && resources.silverBullet > 0;
+        const isVampSelected = !!currentGameState.selectedVampireId;
+        const selectedVamp = findVampireById(currentGameState.selectedVampireId);
+        const isCursed = selectedVamp?.cursed;
+        const movesTakenThisTurn = selectedVamp?.movesThisTurn || 0;
+        const canMoveForward = !isCursed || movesTakenThisTurn < 1;
 
         if (btnShoot) btnShoot.disabled = !isVampSelected || !canAffordShoot || isCursed;
         if (btnThrow) btnThrow.disabled = !isVampSelected || !canAffordThrowBase || isCursed;
         if (btnSilverBullet) btnSilverBullet.disabled = !isVampSelected || !canAffordSilver || isCursed;
 
-        // Movement D-Pad Buttons (NEW LOGIC)
-        const canAffordMoveOrPivot = currentAP >= AP_COST.MOVE; // Both cost 1 AP base
-        // Can move forward if: Not cursed OR (is cursed AND hasn't moved yet)
-        const canMoveForward = !isCursed || movesTakenThisTurn < 1;
-
-        // Disable based on selection, AP, facing, and curse move limit
         if(btnMoveN) btnMoveN.disabled = !isVampSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'N' && !canMoveForward);
         if(btnMoveE) btnMoveE.disabled = !isVampSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'E' && !canMoveForward);
         if(btnMoveS) btnMoveS.disabled = !isVampSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'S' && !canMoveForward);
         if(btnMoveW) btnMoveW.disabled = !isVampSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'W' && !canMoveForward);
 
-        // TODO: Disable/enable other actions (Dispel, Class Actives)
+        // TODO: Disable/enable Class Active Ability buttons/elements based on AP cost and used status
     }
+    
     function updateUI() { if (!currentGameState?.players?.length || !currentGameState.playerResources?.length) return; const idx = currentGameState.currentPlayerIndex; if (idx < 0 || idx >= currentGameState.players.length || idx >= currentGameState.playerResources.length) { console.error("Error: Invalid idx.", currentGameState); return; } const player = currentGameState.players[idx]; const resources = currentGameState.playerResources[idx]; if (player && resources) updatePlayerInfoPanel(player, currentGameState.turn, currentGameState.currentAP, resources); else console.error("Error fetching player/resources."); }
 
     // --- Game State & Undo Logic ---
