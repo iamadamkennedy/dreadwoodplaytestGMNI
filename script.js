@@ -428,7 +428,133 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Action Execution Functions ---
     function executeMove(vampire, targetCoord) { if (!vampire) return false; const cost = AP_COST.MOVE; if (currentGameState.currentAP < cost) { addToLog("No AP."); return false; } if (vampire.cursed && (vampire.movesThisTurn || 0) >= 1) { addToLog(`Cursed ${vampire.id} already moved.`); return false; } const expectedTarget = getAdjacentCoord(vampire.coord, vampire.facing); if (targetCoord !== expectedTarget) { addToLog(`Invalid move target.`); return false; } const pieceAtTarget = findPieceAtCoord(targetCoord); if (pieceAtTarget && (pieceAtTarget.type === 'vampire' || pieceAtTarget.type === 'bloodwell' || pieceAtTarget.piece.type === 'Black Widow')) { addToLog(`Blocked by ${pieceAtTarget.piece?.type || pieceAtTarget.type}.`); return false; } saveStateToHistory(); const oldCoord = vampire.coord; vampire.coord = targetCoord; currentGameState.currentAP -= cost; vampire.movesThisTurn = (vampire.movesThisTurn || 0) + 1; addToLog(`${vampire.id} moved ${oldCoord} -> ${targetCoord}. (${currentGameState.currentAP} AP)`); const hazardLandedOn = currentGameState.board.hazards.find(h => h.coord === targetCoord); if (hazardLandedOn?.type === 'Grave Dust' && !vampire.cursed) { console.log("Curse by GD land."); vampire.cursed = true; addToLog(`${vampire.id} CURSED by Grave Dust!`); } if (vampire.cursed) { const landedOnHazard = !!hazardLandedOn; if (!landedOnHazard) { const adjacentCoords = getAllAdjacentCoords(targetCoord); let foundAdjacentBW = false; let adjacentBWCoord = null; for (const adjCoord of adjacentCoords) { const pieceAtAdj = findPieceAtCoord(adjCoord); if (pieceAtAdj?.type === 'bloodwell' && pieceAtAdj.piece.player === vampire.player) { foundAdjacentBW = true; adjacentBWCoord = adjCoord; break; } } if (foundAdjacentBW) { console.log("Bloodbath cure!"); vampire.cursed = false; vampire.movesThisTurn = 0; addToLog(`${vampire.id} CURED by Bloodbath near ${adjacentBWCoord}!`); } } } console.log(`Move End: ${vampire.id}, Cursed: ${vampire.cursed}, Moves: ${vampire.movesThisTurn}`); renderBoard(currentGameState); updateUI(); return true; }
     function executePivot(vampire, newFacing) { if (!vampire || !DIRECTIONS.includes(newFacing)) return false; if (currentGameState.currentAP < AP_COST.PIVOT) { addToLog("No AP."); return false; } saveStateToHistory(); vampire.facing = newFacing; currentGameState.currentAP -= AP_COST.PIVOT; addToLog(`${vampire.id} pivoted ${newFacing}. (${currentGameState.currentAP} AP)`); renderBoard(currentGameState); updateUI(); return true; }
-    function executeShoot(vampire, isSilverBullet = false) { if (!vampire) return false; const cost = isSilverBullet ? AP_COST.SILVER_BULLET : AP_COST.SHOOT; if (currentGameState.currentAP < cost) { addToLog(`No AP.`); return false; } if (vampire.cursed) { addToLog("Cursed cannot shoot."); return false; } const res = currentGameState.playerResources[vampire.player]; if (isSilverBullet && res.silverBullet <= 0) { addToLog("No SB."); return false; } saveStateToHistory(); const shooterIdx = vampire.player; const shooterCls = currentGameState.players[shooterIdx].class; let currCoord = vampire.coord; let msg = `Shot off board.`; let hit = false; addToLog(`${vampire.id} ${isSilverBullet ? 'fires SB' : 'shoots'} ${vampire.facing}...`); if (isSilverBullet) res.silverBullet--; currentGameState.currentAP -= cost; for (let i = 0; i < 9; i++) { const nextCoord = getAdjacentCoord(currCoord, vampire.facing); if (!nextCoord) { msg = `Shot off board.`; break; } currCoord = nextCoord; const target = findPieceAtCoord(currCoord); if (target) { const tType = target.type; const tPiece = target.piece; if (tType === 'hazard' && (tPiece.type === 'Tombstone' || tPiece.type === 'Dynamite')) { if (tPiece.type === 'Tombstone' && shooterCls === 'Bounty Hunter') { addToLog(`Passes Tombstone.`); continue; } msg = `Blocked by ${tPiece.type}.`; hit = true; if (tPiece.type === 'Dynamite') { msg += ` EXPLODES!`; const idx = currentGameState.board.hazards.findIndex(h => h.coord === currCoord); if (idx > -1) currentGameState.board.hazards.splice(idx, 1); /* TODO: Explosion */ addToLog("Dynamite TBD."); } break; } if (tType === 'vampire') { hit = true; if (isSilverBullet && tPiece.player !== shooterIdx) { msg = `SB HIT & ELIMINATED ${tPiece.id}!`; currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.id !== tPiece.id); /* TODO: Check elim */ } else if (shooterCls === 'Bounty Hunter' && tPiece.player !== shooterIdx && !tPiece.cursed) { msg = `HIT ${tPiece.id}. CURSED!`; const targetV = findVampireById(tPiece.id); if (targetV) targetV.cursed = true; } else { msg = `Hit ${tPiece.id}.`; } break; } if (tType === 'bloodwell') { hit = true; /* TODO: Check Sheriff protection */ msg = `DESTROYED BW ${tPiece.id}!`; currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== tPiece.id); /* TODO: Check elim */ break; } if (tType === 'hazard' && (tPiece.type === 'Black Widow' || tPiece.type === 'Grave Dust')) { addToLog(`Passes ${tPiece.type}.`); continue; } } } addToLog(msg + ` (${currentGameState.currentAP} AP)`); if (isSilverBullet && !hit) addToLog("SB did not hit target."); renderBoard(currentGameState); updateUI(); /* TODO: Check win/loss */ return true; }
+    function executeShoot(vampire, isSilverBullet = false) {
+        if (!vampire) { console.error("ExecuteShoot: No vampire."); return false; }
+        const cost = isSilverBullet ? AP_COST.SILVER_BULLET : AP_COST.SHOOT;
+        // Basic validation checks
+        if (currentGameState.currentAP < cost) { addToLog(`Not enough AP.`); return false; }
+        if (vampire.cursed) { addToLog("Cursed cannot shoot."); return false; }
+        const playerResources = currentGameState.playerResources[vampire.player];
+        if (isSilverBullet && playerResources.silverBullet <= 0) { addToLog("No Silver Bullet."); return false; }
+
+        saveStateToHistory(); // Save state *before* shooting
+
+        const shooterPlayerIndex = vampire.player;
+        const shooterClass = currentGameState.players[shooterPlayerIndex].class;
+        let currentCoord = vampire.coord;
+        let hitMessage = `Shot from ${vampire.coord} facing ${vampire.facing} travelled off board.`;
+        let shotResolved = false; // Flag to indicate the shot hit something and stopped
+
+        addToLog(`${vampire.id} ${isSilverBullet ? 'fires a Silver Bullet' : 'shoots'} facing ${vampire.facing}...`);
+
+        if (isSilverBullet) {
+            playerResources.silverBullet--;
+        }
+        currentGameState.currentAP -= cost;
+
+        // Trace path square by square
+        for (let i = 0; i < 9 && !shotResolved; i++) { // Stop loop once resolved
+            const nextCoord = getAdjacentCoord(currentCoord, vampire.facing);
+            if (!nextCoord) { // Fell off board
+                hitMessage = `Shot from ${vampire.coord} went off the board.`;
+                shotResolved = true; // Shot ends
+                break;
+            }
+            currentCoord = nextCoord; // Advance check to next square
+
+            const pieceAtCoord = findPieceAtCoord(currentCoord);
+            if (pieceAtCoord) {
+                const targetType = pieceAtCoord.type;
+                const targetPiece = pieceAtCoord.piece;
+
+                // 1. Check blocking hazards/obstacles first
+                if (targetType === 'hazard' && (targetPiece.type === 'Tombstone' || targetPiece.type === 'Dynamite')) {
+                    if (targetPiece.type === 'Tombstone' && shooterClass === 'Bounty Hunter') {
+                        addToLog(`Passes through Tombstone at ${currentCoord} (Sharpshooter).`);
+                        continue; // Bounty Hunter shoots through, loop continues
+                    }
+                    // Silver bullet vs Vamp behind Tombstone Check (NEW)
+                    if (isSilverBullet && targetPiece.type === 'Tombstone') {
+                        const vampBehind = currentGameState.board.vampires.find(v => v.coord === currentCoord && v.player !== shooterPlayerIndex);
+                        if (vampBehind) {
+                             hitMessage = `Silver Bullet shattered Tombstone at ${currentCoord}, but ${vampBehind.id} was protected! (SB Wasted)`;
+                             // Remove Tombstone
+                             currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
+                             shotResolved = true; break;
+                        }
+                    }
+                    // Standard block or Dynamite hit
+                    hitMessage = `Shot blocked by ${targetPiece.type} at ${currentCoord}.`;
+                    if (targetPiece.type === 'Dynamite') {
+                        hitMessage += ` Dynamite EXPLODES!`;
+                        // --- TODO: Trigger Dynamite Explosion Logic ---
+                        const dynamiteIndex = currentGameState.board.hazards.findIndex(h => h.coord === currentCoord);
+                        if (dynamiteIndex > -1) currentGameState.board.hazards.splice(dynamiteIndex, 1);
+                        addToLog("Dynamite effect logic TBD.");
+                        // --- End Dynamite Logic ---
+                    } else if (targetPiece.type === 'Tombstone') {
+                        // If SB hit Tombstone (and no Vamp behind), destroy it
+                        if (isSilverBullet) {
+                            hitMessage = `Silver Bullet shattered Tombstone at ${currentCoord}! (SB Wasted)`;
+                            currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
+                        }
+                    }
+                    shotResolved = true; break; // Stop shot path
+                }
+
+                // 2. Check NEW rule: Hit Black Widow
+                if (targetType === 'hazard' && targetPiece.type === 'Black Widow') {
+                    hitMessage = `Shot destroyed Black Widow at ${currentCoord}!`;
+                    // Remove the Black Widow hazard
+                    currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
+                    shotResolved = true; break; // Stop shot path
+                }
+
+                // 3. Hit Vampire
+                if (targetType === 'vampire') {
+                    if (isSilverBullet && targetPiece.player !== shooterPlayerIndex) {
+                        hitMessage = `Silver Bullet HIT & ELIMINATED enemy ${targetPiece.id} at ${currentCoord}!`;
+                        currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.id !== targetPiece.id);
+                        // TODO: Check if targetPlayerIndex is now eliminated
+                    } else if (shooterClass === 'Bounty Hunter' && targetPiece.player !== shooterPlayerIndex && !targetPiece.cursed) {
+                        hitMessage = `Shot HIT enemy ${targetPiece.id} at ${currentCoord}. Target is CURSED (Marked Man)!`;
+                        const targetVamp = findVampireById(targetPiece.id);
+                        if(targetVamp) targetVamp.cursed = true;
+                    } else {
+                        hitMessage = `Shot hit ${targetPiece.id} at ${currentCoord} (no effect).`;
+                    }
+                    shotResolved = true; break; // Stop shot after hitting vampire
+                }
+
+                // 4. Hit Bloodwell
+                if (targetType === 'bloodwell') {
+                    // TODO: Check Sheriff 'Under My Protection' before destroying
+                    hitMessage = `Shot DESTROYED Bloodwell ${targetPiece.id} at ${currentCoord}!`;
+                    currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== targetPiece.id);
+                    // TODO: Check if targetPlayerIndex is now eliminated
+                    shotResolved = true; break; // Stop shot after hitting bloodwell
+                }
+
+                // 5. Pass through non-blocking hazards (only Grave Dust now)
+                if (targetType === 'hazard' && targetPiece.type === 'Grave Dust') {
+                     addToLog(`Shot passes through Grave Dust at ${currentCoord}.`);
+                     continue; // Shot continues through this
+                }
+            }
+            // If square was empty, shot continues to next iteration
+        }
+
+        // Final log message and UI update
+        addToLog(hitMessage + ` (${currentGameState.currentAP} AP left)`);
+        if (isSilverBullet && !shotResolved) { // Log if SB went off board without hitting anything
+           addToLog("Silver Bullet did not hit anything.");
+        }
+
+        renderBoard(currentGameState);
+        updateUI();
+        // TODO: Check win/loss conditions after shot resolution
+        return true; // Indicate success
+    }
     function executeThrow(vampire, hazardType, targetCoord) { if (!vampire) return false; const cost = hazardType === 'Dynamite' ? AP_COST.THROW_DYNAMITE : AP_COST.THROW_HAZARD; if (currentGameState.currentAP < cost) { addToLog(`No AP.`); return false; } if (vampire.cursed) { addToLog("Cursed cannot throw."); return false; } if (!currentGameState.hazardPool || (currentGameState.hazardPool[hazardType] || 0) <= 0) { addToLog(`No ${hazardType}.`); return false; } const dist = getDistance(vampire.coord, targetCoord); if (dist === 0 || dist > 3) { addToLog(`Bad distance.`); return false; } const targetPiece = findPieceAtCoord(targetCoord); if (targetPiece && !(hazardType === 'Grave Dust' && targetPiece.type === 'vampire')) { addToLog(`Target blocked.`); return false; } /* TODO: Path validation */ saveStateToHistory(); currentGameState.hazardPool[hazardType]--; currentGameState.board.hazards.push({ type: hazardType, coord: targetCoord }); currentGameState.currentAP -= cost; addToLog(`${vampire.id} threw ${hazardType} to ${targetCoord}. (${currentGameState.currentAP} AP)`); if (hazardType === 'Grave Dust' && targetPiece?.type === 'vampire') { const targetV = findVampireById(targetPiece.piece.id); if (targetV && !targetV.cursed) { targetV.cursed = true; addToLog(`${targetV.id} CURSED by GD!`); } } renderBoard(currentGameState); updateUI(); return true; }
     function nextTurn() {
         // Check if any actions are pending (like selecting throw target)
