@@ -321,7 +321,20 @@ button:disabled {
     z-index: 10; /* Vampires above Bloodwells/Hazards */
     cursor: pointer;
     pointer-events: auto; /* Allow clicks ON vampires */
-    color: rgba(255,255,255,0.7); /* Was for text content, less needed now */
+
+    /* Styles for the P1/P2 text */
+    display: flex; /* Needed for centering */
+    justify-content: center;
+    align-items: center;
+    font-size: 0.9em; /* Adjust size of P1/P2 text */
+    font-weight: bold;
+    color: white; /* White text */
+    /* Add shadow/stroke for contrast against background colors */
+    text-shadow: 0 0 2px black, 0 0 2px black, 0 0 1px black; /* Make white text stand out */
+    /* OR try stroke: */
+    /* -webkit-text-stroke: 0.5px black; */
+    /* text-stroke: 0.5px black; */
+    line-height: 1; /* Ensure vertical centering */
 }
 .vampire.selected {
     outline: 3px solid gold;
