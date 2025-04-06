@@ -372,7 +372,7 @@ button:disabled {
     color: #333; /* Dark icon */
 }
 .hazard-black-widow {
-    background-color: #D2B48C; /* Tan background */
+    background-color: #f7be73; /* Peach background */
     border: none;
     color: black; /* Ensure spider icon is visible */
     font-size: 3em; /* Increased size (adjust if needed) */
@@ -381,6 +381,7 @@ button:disabled {
     background-color: plum; /* Lighter purple: #DDA0DD */
     color: #333; /* Darker icon color */
     /* border: 1px solid #555; */ /* Keep or remove border? Optional */
+    font-size: 3em; /* Increased size (adjust if needed) */
 }
 .hazard-dynamite {
     background-color: #ff4500; /* Keep orangered */
@@ -405,9 +406,40 @@ button:disabled {
     background-color: #fafafa;
     text-align: left;
 }
-#current-class-details h3, #current-class-details h4 { margin-top: 10px; margin-bottom: 5px;} /* Add some heading margin */
-#current-class-details #info-class-abilities { list-style: disc; margin-left: 20px; padding-left: 0; }
-#current-class-details #info-class-abilities li { margin-bottom: 5px; font-size: 0.9em; }
+#current-class-details h3, #current-class-details h4 {
+    margin-top: 10px; margin-bottom: 5px;
+} /* Add some heading margin */
+#current-class-details #info-class-abilities {
+    list-style: disc; margin-left: 20px; padding-left: 0;
+}
+#current-class-details #info-class-abilities li {
+    margin-bottom: 5px; font-size: 0.9em;
+}
+    /* Gameplay Info Panel Headers & Divider */
+    #current-class-details h3 { /* Style for the main "Sheriff Abilities" title */
+        margin-top: 0; /* Remove default top margin if needed */
+        margin-bottom: 15px;
+        text-align: center; /* Center the main title */
+        color: #5a3a3a;
+    }
+    #current-class-details h4 { /* Style for "Active Abilities" / "Passive Abilities" */
+        margin-top: 15px;
+        margin-bottom: 5px;
+        font-size: 0.9em;
+        color: #666;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 3px;
+        text-align: left; /* Align sub-headers left */
+    }
+    #current-class-details hr { /* Style for the divider */
+        border: none;
+        border-top: 1px dashed #ccc;
+        margin: 15px 0;
+    }
+    #current-class-details ul { /* Ensure list has no extra padding interfering */
+        padding-left: 20px; /* Keep space for bullets */
+        margin-top: 5px;
+    }
 
 #status-bar { flex-basis: 100%; text-align: center; font-size: 1.1em; font-weight: bold; padding: 10px; background-color: #eee; border-radius: 4px; margin-top: 10px; }
 #status-bar span { color: #8b4513; display: inline-block; min-width: 20px; text-align: center; }
