@@ -75,17 +75,18 @@
                <button id="move-s" class="move-button" data-direction="S" title="Move/Pivot South (1 AP)">⬇️</button>
            </div>
 
-            <div id="player-info">
+           <div id="player-info">
                 <div id="status-bar">
                     <strong>Current Turn:</strong> <span id="status-player">---</span> |
                     <strong>AP:</strong> <span id="status-ap">X</span>
                 </div>
+                <div id="game-controls" class="button-container">
+                    <button id="btn-undo" disabled>Undo Last Action</button>
+                    <button id="btn-end-turn">End Turn</button>
+                </div>
                 <div id="current-class-details" class="setup-section class-details-box">
-                     <h3>Current Player Info:</h3>
-                     <p id="info-class-name"><strong>Class:</strong> ---</p>
-                     <h4>Abilities:</h4>
-                     <ul id="info-class-abilities"><li>---</li></ul>
-                     <p><strong>Silver Bullet:</strong> <span id="info-silver-bullet">Available</span></p>
+                    <h3>Current Player Info:</h3> <h4>Abilities:</h4> <ul id="info-class-abilities"><li>---</li></ul>
+                    <p><strong>Silver Bullet:</strong> <span id="info-silver-bullet">Available</span></p>
                 </div>
             </div>
 
