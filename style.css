@@ -389,23 +389,39 @@ button:disabled {
     font-size: 3em; /* Increased size (adjust if needed) */
     border: none;
     text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; /* White outline */
-    text-stroke-width: 1px;
-    text-stroke-color: black;
 }
 
 /* Player Info & Status Bar */
-#player-info { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
-/* Apply setup-section styling to current class details */
-#current-class-details {
-    flex: 1; /* Take available space */
-    min-width: 250px; /* Prevent being too squished */
-    margin-top: 0; /* Reset margin */
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background-color: #fafafa;
-    text-align: left;
+#player-info {
+    display: flex;
+    /* Remove justify-content: space-between; if present */
+    /* Remove align-items: flex-start; if present */
+    flex-direction: column; /* <-- ADD THIS LINE */
+    align-items: center; /* Center items horizontally now */
+    gap: 15px; /* Adjust gap as needed */
+    margin-top: 20px;
+    flex-wrap: wrap; /* Keep wrap just in case */
 }
+
+/* Ensure children take appropriate width */
+#status-bar,
+#game-controls,
+#current-class-details {
+     width: 100%; /* Make blocks take full width */
+     max-width: 450px; /* Optional: Limit max width for aesthetics */
+     margin-left: auto; /* Center the blocks if max-width is used */
+     margin-right: auto;
+}
+
+ /* Adjust button container within game controls if needed */
+ #game-controls.button-container {
+     margin-top: 10px; /* Reduce top margin if needed */
+     margin-bottom: 10px; /* Add bottom margin if needed */
+     width: auto; /* Override width: 100% for button container itself */
+     max-width: none;
+     margin-left: 0;
+     margin-right: 0;
+ }
 #current-class-details h3, #current-class-details h4 {
     margin-top: 10px; margin-bottom: 5px;
 } /* Add some heading margin */
