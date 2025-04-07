@@ -1872,6 +1872,135 @@ document.addEventListener("DOMContentLoaded", () => {
         // TODO: Check win/loss conditions
         return true; // Indicate action attempt success (even if shot missed/blocked)
     }
+    /**
+     * Executes the Dispel action: Removes Grave Dust from the vampire's current square.
+     * @param {object} vampire - The vampire object performing the action (from findVampireById).
+     * @returns {boolean} - True if the action was successful, false otherwise.
+     */
+    function executeDispel(vampire) {
+        if (!vampire) {
+            console.error("executeDispel called without vampire object");
+            return false;
+        }
+        const cost = AP_COST.DISPEL;
+
+        // 1. Check AP
+        if (currentGameState.currentAP < cost) {
+            addToLog("Not enough AP to Dispel.");
+            return false;
+        }
+
+        // 2. Find Grave Dust hazard specifically on the vampire's current square
+        const hazardIndex = currentGameState.board.hazards.findIndex(
+            (h) => h.coord === vampire.coord && h.type === "Grave Dust"
+        );
+
+        // 3. Check if Grave Dust was actually found
+        if (hazardIndex === -1) {
+            addToLog(`Cannot Dispel: No Grave Dust found at ${vampire.coord}.`);
+            return false; // Action fails, no AP cost
+        }
+
+        // --- Action is Valid: Proceed ---
+        console.log(`Executing Dispel for ${vampire.id} at ${vampire.coord}`);
+        saveStateToHistory(); // Save state before modifying
+
+        // 4. Remove the Grave Dust from the board state hazards array
+        const removedHazard = currentGameState.board.hazards.splice(
+            hazardIndex,
+            1
+        )[0];
+        console.log("Dispelled hazard:", removedHazard);
+
+        // 5. Deduct AP cost
+        currentGameState.currentAP -= cost;
+
+        // 6. Log the action
+        addToLog(
+            `${vampire.id} Dispelled Grave Dust at ${vampire.coord}. (${currentGameState.currentAP} AP left)`
+        );
+
+        // 7. Update the display
+        renderBoard(currentGameState);
+        updateUI(); // Updates AP and potentially button states if needed
+
+        return true; // Action successful
+    }
+
+    /**
+     * Executes the Bite the Fuse action: Removes Dynamite from the vampire's current square and Curses the vampire.
+     * @param {object} vampire - The vampire object performing the action (from findVampireById).
+     * @returns {boolean} - True if the action was successful, false otherwise.
+     */
+    function executeBiteFuse(vampire) {
+        if (!vampire) {
+            console.error("executeBiteFuse called without vampire object");
+            return false;
+        }
+        const cost = AP_COST.BITE_FUSE;
+
+        // 1. Check AP
+        if (currentGameState.currentAP < cost) {
+            addToLog("Not enough AP to Bite the Fuse.");
+            return false;
+        }
+
+        // (Assuming cursed players *can* Bite Fuse based on previous analysis)
+
+        // 2. Find Dynamite hazard specifically on the vampire's current square
+        const hazardIndex = currentGameState.board.hazards.findIndex(
+            (h) => h.coord === vampire.coord && h.type === "Dynamite"
+        );
+
+        // 3. Check if Dynamite was actually found
+        if (hazardIndex === -1) {
+            addToLog(
+                `Cannot Bite the Fuse: No Dynamite found at ${vampire.coord}.`
+            );
+            return false; // Action fails, no AP cost
+        }
+
+        // --- Action is Valid: Proceed ---
+        console.log(
+            `Executing Bite Fuse for ${vampire.id} at ${vampire.coord}`
+        );
+        saveStateToHistory(); // Save state before modifying
+
+        // 4. Remove the Dynamite from the board state hazards array
+        const removedHazard = currentGameState.board.hazards.splice(
+            hazardIndex,
+            1
+        )[0];
+        console.log("Removed hazard by biting fuse:", removedHazard);
+
+        // 5. Deduct AP cost
+        currentGameState.currentAP -= cost;
+
+        // 6. Apply Curse to the vampire (Modify the object within currentGameState)
+        // We need the reference from the main state array for the change to persist
+        const vampInState = findVampireById(vampire.id); // Use helper to get state object
+        if (vampInState) {
+            vampInState.cursed = true; // Apply the curse
+            addToLog(
+                `${vampInState.id} Bit the Fuse at ${vampInState.coord}, removing Dynamite and becoming CURSED! (${currentGameState.currentAP} AP left)`
+            );
+        } else {
+            // This case should ideally not happen if 'vampire' object was valid
+            console.error(
+                "executeBiteFuse Error: Could not find vampire in state array to apply curse!"
+            );
+            addToLog(
+                `ERROR: Failed to apply Curse effect after Bite Fuse by ${vampire.id}`
+            );
+        }
+
+        // 7. Update the display
+        renderBoard(currentGameState); // Show curse border, remove hazard
+        updateUI(); // Update AP, potentially button states
+
+        return true; // Action successful
+    }
+
     function executeThrow(vampire, hazardType, targetCoord) {
         if (!vampire) return false;
         const cost =
@@ -2839,6 +2968,33 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     }
+
+    // --- Event Listeners for Dispel and Bite Fuse ---
+
+    // Listener for the Dispel button
+    btnDispel?.addEventListener("click", () => {
+        const selectedVampireObject = findVampireById(
+            currentGameState?.selectedVampireId
+        ); // Get the selected vamp object
+        if (selectedVampireObject) {
+            executeDispel(selectedVampireObject); // Call the function
+        } else {
+            addToLog("Select a Vampire to Dispel."); // Log if no vampire selected
+        }
+    });
+
+    // Listener for the Bite the Fuse button
+    btnBiteFuse?.addEventListener("click", () => {
+        const selectedVampireObject = findVampireById(
+            currentGameState?.selectedVampireId
+        ); // Get the selected vamp object
+        if (selectedVampireObject) {
+            executeBiteFuse(selectedVampireObject); // Call the function
+        } else {
+            addToLog("Select a Vampire to Bite Fuse."); // Log if no vampire selected
+        }
+    });
+
     // Help Button Listener
     if (btnHelp) {
         btnHelp.addEventListener("click", () => {
