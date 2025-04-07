@@ -59,51 +59,222 @@ document.addEventListener('DOMContentLoaded', () => {
     // ... (LAYOUT_DATA etc. follow) ...
     const LAYOUT_DATA = {
         '2': [
-             { // Layout 2P-1 (Adjusted for 8 Hazards: 3T, 3BW, 2G)
-                vampires: [ { player: 0, coord: 'A2', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'C4', facing: 'S', id: 'P1V2' }, { player: 1, coord: 'H7', facing: 'N', id: 'P2V1' }, { player: 1, coord: 'G9', facing: 'N', id: 'P2V2' } ], // Adjusted P2 start slightly
-                bloodwells: [ { player: 0, coord: 'B1', id: 'P1BW1' }, { player: 0, coord: 'D3', id: 'P1BW2' }, { player: 0, coord: 'A4', id: 'P1BW3' }, { player: 1, coord: 'I8', id: 'P2BW1' }, { player: 1, coord: 'G6', id: 'P2BW2' }, { player: 1, coord: 'H9', id: 'P2BW3' } ], // Adjusted P2 BWs
-                hazards: [
-                    { type: 'Tombstone', coord: 'D5' }, { type: 'Tombstone', coord: 'F5' }, { type: 'Tombstone', coord: 'E4' }, // 3T
-                    { type: 'Black Widow', coord: 'E6' }, { type: 'Black Widow', coord: 'C5' }, { type: 'Black Widow', coord: 'G5' }, // 3BW
-                    { type: 'Grave Dust', coord: 'D6' }, { type: 'Grave Dust', coord: 'F4' } // 2GD
-                ] // Total 8
+            // --- 2P Layout 1 (4T, 3BW, 3GD) ---
+            {
+                vampires: [ { player: 0, coord: 'B2', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'D2', facing: 'S', id: 'P1V2' },
+                            { player: 1, coord: 'H8', facing: 'N', id: 'P2V1' }, { player: 1, coord: 'F8', facing: 'N', id: 'P2V2' } ],
+                bloodwells: [ { player: 0, coord: 'A1', id: 'P1BW1' }, { player: 0, coord: 'C1', id: 'P1BW2' }, { player: 0, coord: 'E1', id: 'P1BW3' },
+                              { player: 1, coord: 'I9', id: 'P2BW1' }, { player: 1, coord: 'G9', id: 'P2BW2' }, { player: 1, coord: 'E9', id: 'P2BW3' } ],
+                hazards: [ // 10 total: 4T, 3BW, 3GD
+                    { type: 'Tombstone', coord: 'C4' }, { type: 'Tombstone', coord: 'G6' }, { type: 'Tombstone', coord: 'E5' }, { type: 'Tombstone', coord: 'E7' },
+                    { type: 'Black Widow', coord: 'D6' }, { type: 'Black Widow', coord: 'F4' }, { type: 'Black Widow', coord: 'H5' },
+                    { type: 'Grave Dust', coord: 'B5' }, { type: 'Grave Dust', coord: 'E3' }, { type: 'Grave Dust', coord: 'G5' }
+                ]
             },
-            // Add more 2P layouts here...
+            // --- 2P Layout 2 (3T, 4BW, 3GD) ---
+            {
+                vampires: [ { player: 0, coord: 'A3', facing: 'E', id: 'P1V1' }, { player: 0, coord: 'A5', facing: 'E', id: 'P1V2' },
+                            { player: 1, coord: 'I7', facing: 'W', id: 'P2V1' }, { player: 1, coord: 'I5', facing: 'W', id: 'P2V2' } ],
+                bloodwells: [ { player: 0, coord: 'B1', id: 'P1BW1' }, { player: 0, coord: 'B4', id: 'P1BW2' }, { player: 0, coord: 'B6', id: 'P1BW3' },
+                              { player: 1, coord: 'H9', id: 'P2BW1' }, { player: 1, coord: 'H6', id: 'P2BW2' }, { player: 1, coord: 'H4', id: 'P2BW3' } ],
+                hazards: [ // 10 total: 3T, 4BW, 3GD
+                    { type: 'Tombstone', coord: 'D4' }, { type: 'Tombstone', coord: 'F6' }, { type: 'Tombstone', coord: 'E8' },
+                    { type: 'Black Widow', coord: 'C7' }, { type: 'Black Widow', coord: 'E5' }, { type: 'Black Widow', coord: 'G3' }, { type: 'Black Widow', coord: 'D2' },
+                    { type: 'Grave Dust', coord: 'C3' }, { type: 'Grave Dust', coord: 'E2' }, { type: 'Grave Dust', coord: 'G7' }
+                ]
+            },
+            // --- 2P Layout 3 (3T, 3BW, 4GD) ---
+            {
+                vampires: [ { player: 0, coord: 'C3', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'E1', facing: 'S', id: 'P1V2' },
+                            { player: 1, coord: 'G7', facing: 'N', id: 'P2V1' }, { player: 1, coord: 'E9', facing: 'N', id: 'P2V2' } ],
+                bloodwells: [ { player: 0, coord: 'A2', id: 'P1BW1' }, { player: 0, coord: 'D2', id: 'P1BW2' }, { player: 0, coord: 'G2', id: 'P1BW3' },
+                              { player: 1, coord: 'C8', id: 'P2BW1' }, { player: 1, coord: 'F8', id: 'P2BW2' }, { player: 1, coord: 'I8', id: 'P2BW3' } ],
+                hazards: [ // 10 total: 3T, 3BW, 4GD
+                    { type: 'Tombstone', coord: 'C5' }, { type: 'Tombstone', coord: 'G5' }, { type: 'Tombstone', coord: 'E4' },
+                    { type: 'Black Widow', coord: 'E6' }, { type: 'Black Widow', coord: 'D4' }, { type: 'Black Widow', coord: 'F6' },
+                    { type: 'Grave Dust', coord: 'B7' }, { type: 'Grave Dust', coord: 'H3' }, { type: 'Grave Dust', coord: 'E7' }, { type: 'Grave Dust', coord: 'D3' }
+                ]
+            },
+            // --- 2P Layout 4 (4T, 4BW, 2GD) ---
+            {
+                 vampires: [ { player: 0, coord: 'B1', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'B3', facing: 'S', id: 'P1V2' },
+                             { player: 1, coord: 'H9', facing: 'N', id: 'P2V1' }, { player: 1, coord: 'H7', facing: 'N', id: 'P2V2' } ],
+                 bloodwells: [ { player: 0, coord: 'A2', id: 'P1BW1' }, { player: 0, coord: 'C2', id: 'P1BW2' }, { player: 0, coord: 'D4', id: 'P1BW3' },
+                               { player: 1, coord: 'I8', id: 'P2BW1' }, { player: 1, coord: 'G8', id: 'P2BW2' }, { player: 1, coord: 'F6', id: 'P2BW3' } ],
+                 hazards: [ // 10 total: 4T, 4BW, 2GD
+                     { type: 'Tombstone', coord: 'D5' }, { type: 'Tombstone', coord: 'F5' }, { type: 'Tombstone', coord: 'C7' }, { type: 'Tombstone', coord: 'G3' },
+                     { type: 'Black Widow', coord: 'E4' }, { type: 'Black Widow', coord: 'E6' }, { type: 'Black Widow', coord: 'B5' }, { type: 'Black Widow', coord: 'H5' },
+                     { type: 'Grave Dust', coord: 'D3' }, { type: 'Grave Dust', coord: 'F7' }
+                 ]
+            },
+            // --- 2P Layout 5 (4T, 2BW, 4GD) ---
+            {
+                 vampires: [ { player: 0, coord: 'A8', facing: 'E', id: 'P1V1' }, { player: 0, coord: 'C9', facing: 'E', id: 'P1V2' },
+                             { player: 1, coord: 'I2', facing: 'W', id: 'P2V1' }, { player: 1, coord: 'G1', facing: 'W', id: 'P2V2' } ],
+                 bloodwells: [ { player: 0, coord: 'B7', id: 'P1BW1' }, { player: 0, coord: 'D7', id: 'P1BW2' }, { player: 0, coord: 'B9', id: 'P1BW3' },
+                               { player: 1, coord: 'H3', id: 'P2BW1' }, { player: 1, coord: 'F3', id: 'P2BW2' }, { player: 1, coord: 'H1', id: 'P2BW3' } ],
+                 hazards: [ // 10 total: 4T, 2BW, 4GD
+                     { type: 'Tombstone', coord: 'E4' }, { type: 'Tombstone', coord: 'E6' }, { type: 'Tombstone', coord: 'C5' }, { type: 'Tombstone', coord: 'G5' },
+                     { type: 'Black Widow', coord: 'D3' }, { type: 'Black Widow', coord: 'F7' },
+                     { type: 'Grave Dust', coord: 'D7' }, { type: 'Grave Dust', coord: 'F3' }, { type: 'Grave Dust', coord: 'B4' }, { type: 'Grave Dust', coord: 'H6' }
+                 ]
+            }
         ],
         '3': [
-             { // Layout 3P-1 (Adjusted for 8 Hazards: 3T, 2BW, 3G)
-                 vampires: [ { player: 0, coord: 'A2', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'C4', facing: 'S', id: 'P1V2' }, { player: 1, coord: 'G1', facing: 'S', id: 'P2V1' }, { player: 1, coord: 'I3', facing: 'S', id: 'P2V2' }, { player: 2, coord: 'D8', facing: 'N', id: 'P3V1' }, { player: 2, coord: 'F9', facing: 'N', id: 'P3V2' } ], // Adjusted P2 start slightly
-                 bloodwells: [ { player: 0, coord: 'B1', id: 'P1BW1' }, { player: 0, coord: 'D3', id: 'P1BW2' }, { player: 0, coord: 'A4', id: 'P1BW3' }, { player: 1, coord: 'H2', id: 'P2BW1' }, { player: 1, coord: 'F3', id: 'P2BW2' }, { player: 1, coord: 'I5', id: 'P2BW3' }, { player: 2, coord: 'C7', id: 'P3BW1' }, { player: 2, coord: 'E6', id: 'P3BW2' }, { player: 2, coord: 'G8', id: 'P3BW3' } ], // Adjusted P1/P2 BWs
-                 hazards: [
-                    { type: 'Tombstone', coord: 'E5' }, { type: 'Tombstone', coord: 'C5' }, { type: 'Tombstone', coord: 'G5' }, // 3T
-                    { type: 'Black Widow', coord: 'D4' }, { type: 'Black Widow', coord: 'F4' }, // 2BW
-                    { type: 'Grave Dust', coord: 'E6' }, { type: 'Grave Dust', coord: 'B7' }, { type: 'Grave Dust', coord: 'H7' } // 3GD
-                 ] // Total 8
+            // --- 3P Layout 1 (4T, 3BW, 3GD) ---
+            {
+                vampires: [ { player: 0, coord: 'B2', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'D1', facing: 'S', id: 'P1V2' }, // Top-Left
+                            { player: 1, coord: 'F1', facing: 'S', id: 'P2V1' }, { player: 1, coord: 'H2', facing: 'S', id: 'P2V2' }, // Top-Right
+                            { player: 2, coord: 'E9', facing: 'N', id: 'P3V1' }, { player: 2, coord: 'G8', facing: 'W', id: 'P3V2' } ],// Bottom-Middle/Right
+                bloodwells: [ { player: 0, coord: 'A1', id: 'P1BW1' }, { player: 0, coord: 'C1', id: 'P1BW2' }, { player: 0, coord: 'B3', id: 'P1BW3' },
+                              { player: 1, coord: 'I1', id: 'P2BW1' }, { player: 1, coord: 'G1', id: 'P2BW2' }, { player: 1, coord: 'H3', id: 'P2BW3' },
+                              { player: 2, coord: 'D9', id: 'P3BW1' }, { player: 2, coord: 'F9', id: 'P3BW2' }, { player: 2, coord: 'H9', id: 'P3BW3' } ],
+                hazards: [ // 10 total: 4T, 3BW, 3GD
+                    { type: 'Tombstone', coord: 'D4' }, { type: 'Tombstone', coord: 'F4' }, { type: 'Tombstone', coord: 'E6' }, { type: 'Tombstone', coord: 'C6' },
+                    { type: 'Black Widow', coord: 'E2' }, { type: 'Black Widow', coord: 'G5' }, { type: 'Black Widow', coord: 'B5' },
+                    { type: 'Grave Dust', coord: 'D7' }, { type: 'Grave Dust', coord: 'F7' }, { type: 'Grave Dust', coord: 'E5' }
+                ]
+            },
+            // --- 3P Layout 2 (3T, 4BW, 3GD) ---
+            {
+                vampires: [ { player: 0, coord: 'A4', facing: 'E', id: 'P1V1' }, { player: 0, coord: 'C2', facing: 'S', id: 'P1V2' }, // Left/Top-Left
+                            { player: 1, coord: 'G2', facing: 'S', id: 'P2V1' }, { player: 1, coord: 'I4', facing: 'W', id: 'P2V2' }, // Right/Top-Right
+                            { player: 2, coord: 'C8', facing: 'N', id: 'P3V1' }, { player: 2, coord: 'G8', facing: 'N', id: 'P3V2' } ],// Bottom
+                bloodwells: [ { player: 0, coord: 'B1', id: 'P1BW1' }, { player: 0, coord: 'A6', id: 'P1BW2' }, { player: 0, coord: 'D3', id: 'P1BW3' },
+                              { player: 1, coord: 'H1', id: 'P2BW1' }, { player: 1, coord: 'I6', id: 'P2BW2' }, { player: 1, coord: 'F3', id: 'P2BW3' },
+                              { player: 2, coord: 'B9', id: 'P3BW1' }, { player: 2, coord: 'E9', id: 'P3BW2' }, { player: 2, coord: 'H9', id: 'P3BW3' } ],
+                hazards: [ // 10 total: 3T, 4BW, 3GD
+                    { type: 'Tombstone', coord: 'E4' }, { type: 'Tombstone', coord: 'C6' }, { type: 'Tombstone', coord: 'G6' },
+                    { type: 'Black Widow', coord: 'E6' }, { type: 'Black Widow', coord: 'D5' }, { type: 'Black Widow', coord: 'F5' }, { type: 'Black Widow', coord: 'E7' },
+                    { type: 'Grave Dust', coord: 'B4' }, { type: 'Grave Dust', coord: 'H4' }, { type: 'Grave Dust', coord: 'E2' }
+                ]
+            },
+             // --- 3P Layout 3 (3T, 3BW, 4GD) ---
+             {
+                 vampires: [ { player: 0, coord: 'E1', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'G3', facing: 'W', id: 'P1V2' }, // Top-Right/East
+                             { player: 1, coord: 'A5', facing: 'S', id: 'P2V1' }, { player: 1, coord: 'C3', facing: 'E', id: 'P2V2' }, // West/Top-Left
+                             { player: 2, coord: 'C7', facing: 'N', id: 'P3V1' }, { player: 2, coord: 'G7', facing: 'N', id: 'P3V2' } ],// South
+                 bloodwells: [ { player: 0, coord: 'I2', id: 'P1BW1' }, { player: 0, coord: 'G1', id: 'P1BW2' }, { player: 0, coord: 'I4', id: 'P1BW3' },
+                               { player: 1, coord: 'A1', id: 'P2BW1' }, { player: 1, coord: 'A3', id: 'P2BW2' }, { player: 1, coord: 'C1', id: 'P2BW3' },
+                               { player: 2, coord: 'B9', id: 'P3BW1' }, { player: 2, coord: 'E9', id: 'P3BW2' }, { player: 2, coord: 'H9', id: 'P3BW3' } ],
+                 hazards: [ // 10 total: 3T, 3BW, 4GD
+                     { type: 'Tombstone', coord: 'D5' }, { type: 'Tombstone', coord: 'F5' }, { type: 'Tombstone', coord: 'E3' },
+                     { type: 'Black Widow', coord: 'E7' }, { type: 'Black Widow', coord: 'C6' }, { type: 'Black Widow', coord: 'G4' },
+                     { type: 'Grave Dust', coord: 'B4' }, { type: 'Grave Dust', coord: 'H6' }, { type: 'Grave Dust', coord: 'D2' }, { type: 'Grave Dust', coord: 'F8' }
+                 ]
              },
-            // Add more 3P layouts here...
+             // --- 3P Layout 4 (4T, 4BW, 2GD) ---
+             {
+                 vampires: [ { player: 0, coord: 'B1', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'C3', facing: 'E', id: 'P1V2' }, // Top-Left
+                             { player: 1, coord: 'H1', facing: 'S', id: 'P2V1' }, { player: 1, coord: 'G3', facing: 'W', id: 'P2V2' }, // Top-Right
+                             { player: 2, coord: 'E8', facing: 'N', id: 'P3V1' }, { player: 2, coord: 'E6', facing: 'N', id: 'P3V2' } ],// Bottom-Middle
+                 bloodwells: [ { player: 0, coord: 'A2', id: 'P1BW1' }, { player: 0, coord: 'A4', id: 'P1BW2' }, { player: 0, coord: 'D2', id: 'P1BW3' },
+                               { player: 1, coord: 'I2', id: 'P2BW1' }, { player: 1, coord: 'I4', id: 'P2BW2' }, { player: 1, coord: 'F2', id: 'P2BW3' },
+                               { player: 2, coord: 'C9', id: 'P3BW1' }, { player: 2, coord: 'E9', id: 'P3BW2' }, { player: 2, coord: 'G9', id: 'P3BW3' } ],
+                 hazards: [ // 10 total: 4T, 4BW, 2GD
+                     { type: 'Tombstone', coord: 'E4' }, { type: 'Tombstone', coord: 'C5' }, { type: 'Tombstone', coord: 'G5' }, { type: 'Tombstone', coord: 'E6' }, // E6 hazard blocks P3V2 initial move
+                     { type: 'Black Widow', coord: 'D3' }, { type: 'Black Widow', coord: 'F3' }, { type: 'Black Widow', coord: 'D7' }, { type: 'Black Widow', coord: 'F7' },
+                     { type: 'Grave Dust', coord: 'B6' }, { type: 'Grave Dust', coord: 'H6' }
+                 ]
+             },
+             // --- 3P Layout 5 (4T, 2BW, 4GD) ---
+             {
+                 vampires: [ { player: 0, coord: 'A7', facing: 'N', id: 'P1V1' }, { player: 0, coord: 'C9', facing: 'E', id: 'P1V2' }, // Bottom-Left
+                             { player: 1, coord: 'G9', facing: 'W', id: 'P2V1' }, { player: 1, coord: 'I7', facing: 'N', id: 'P2V2' }, // Bottom-Right
+                             { player: 2, coord: 'C1', facing: 'S', id: 'P3V1' }, { player: 2, coord: 'G1', facing: 'S', id: 'P3V2' } ],// Top
+                 bloodwells: [ { player: 0, coord: 'A9', id: 'P1BW1' }, { player: 0, coord: 'B8', id: 'P1BW2' }, { player: 0, coord: 'D9', id: 'P1BW3' },
+                               { player: 1, coord: 'I9', id: 'P2BW1' }, { player: 1, coord: 'H8', id: 'P2BW2' }, { player: 1, coord: 'F9', id: 'P2BW3' },
+                               { player: 2, coord: 'A2', id: 'P3BW1' }, { player: 2, coord: 'E2', id: 'P3BW2' }, { player: 2, coord: 'I2', id: 'P3BW3' } ],
+                 hazards: [ // 10 total: 4T, 2BW, 4GD
+                     { type: 'Tombstone', coord: 'E4' }, { type: 'Tombstone', coord: 'E6' }, { type: 'Tombstone', coord: 'C5' }, { type: 'Tombstone', coord: 'G5' },
+                     { type: 'Black Widow', coord: 'D3' }, { type: 'Black Widow', coord: 'F7' },
+                     { type: 'Grave Dust', coord: 'D7' }, { type: 'Grave Dust', coord: 'F3' }, { type: 'Grave Dust', coord: 'B5' }, { type: 'Grave Dust', coord: 'H5' }
+                 ]
+             }
         ],
         '4': [
-             { // Layout 4P-1 (Adjusted for 8 Hazards: 2T, 3BW, 3G)
-                 vampires: [ { player: 0, coord: 'A2', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'C4', facing: 'S', id: 'P1V2' }, { player: 1, coord: 'G1', facing: 'S', id: 'P2V1' }, { player: 1, coord: 'I3', facing: 'S', id: 'P2V2' }, { player: 2, coord: 'A8', facing: 'N', id: 'P3V1' }, { player: 2, coord: 'C9', facing: 'N', id: 'P3V2' }, { player: 3, coord: 'G8', facing: 'N', id: 'P4V1' }, { player: 3, coord: 'I9', facing: 'N', id: 'P4V2' } ], // Adjusted starts slightly
-                 bloodwells: [ { player: 0, coord: 'B1', id: 'P1BW1' }, { player: 0, coord: 'D3', id: 'P1BW2' }, { player: 0, coord: 'A4', id: 'P1BW3' }, { player: 1, coord: 'H2', id: 'P2BW1' }, { player: 1, coord: 'F3', id: 'P2BW2' }, { player: 1, coord: 'I5', id: 'P2BW3' }, { player: 2, coord: 'B6', id: 'P3BW1' }, { player: 2, coord: 'D8', id: 'P3BW2' }, { player: 2, coord: 'A9', id: 'P3BW3' }, { player: 3, coord: 'H6', id: 'P4BW1' }, { player: 3, coord: 'F8', id: 'P4BW2' }, { player: 3, coord: 'I7', id: 'P4BW3' } ], // Adjusted BWs slightly
-                 hazards: [
-                    { type: 'Tombstone', coord: 'D5' }, { type: 'Tombstone', coord: 'F5' }, // 2T
-                    { type: 'Black Widow', coord: 'E4' }, { type: 'Black Widow', coord: 'E6' }, { type: 'Black Widow', coord: 'C7' },// 3BW
-                    { type: 'Grave Dust', coord: 'C4' }, { type: 'Grave Dust', coord: 'G4' }, { type: 'Grave Dust', coord: 'G7' } // 3GD
-                 ] // Total 8
-            },
-            { // Layout R1 (Adjusted for 8 Hazards: 3T, 3BW, 2G)
-                 vampires: [ { player: 0, coord: 'A2', facing: 'S', id: 'S1' }, { player: 0, coord: 'C3', facing: 'S', id: 'S2' }, { player: 1, coord: 'G2', facing: 'S', id: 'V1' }, { player: 1, coord: 'I3', facing: 'S', id: 'V2' }, { player: 2, coord: 'B8', facing: 'N', id: 'O1' }, { player: 2, coord: 'D7', facing: 'N', id: 'O2' }, { player: 3, coord: 'F8', facing: 'N', id: 'B1' }, { player: 3, coord: 'H7', facing: 'N', id: 'B2' } ],
-                 bloodwells: [ { player: 0, coord: 'B1', id: 'SBW1' }, { player: 0, coord: 'D2', id: 'SBW2' }, { player: 0, coord: 'A4', id: 'SBW3' }, { player: 1, coord: 'H1', id: 'VBW1' }, { player: 1, coord: 'F2', id: 'VBW2' }, { player: 1, coord: 'I4', id: 'VBW3' }, { player: 2, coord: 'C9', id: 'OBW1' }, { player: 2, coord: 'A7', id: 'OBW2' }, { player: 2, coord: 'D9', id: 'OBW3' }, { player: 3, coord: 'G9', id: 'BBW1' }, { player: 3, coord: 'I7', id: 'BBW2' }, { player: 3, coord: 'F9', id: 'BBW3' } ],
-                 hazards: [ // Was 2T, 2C, 2G. Now 3T, 3BW, 2G = 8
-                    { type: 'Tombstone', coord: 'D5' }, { type: 'Tombstone', coord: 'F5' }, { type: 'Tombstone', coord: 'E7' }, // 3T
-                    { type: 'Black Widow', coord: 'E4' }, { type: 'Black Widow', coord: 'E6' }, { type: 'Black Widow', coord: 'C5' }, // 3BW
-                    { type: 'Grave Dust', coord: 'D4' }, { type: 'Grave Dust', coord: 'G5' } // 2GD
-                 ] // Total 8
+            // --- 4P Layout 1 (4T, 3BW, 3GD) ---
+            {
+                 vampires: [ { player: 0, coord: 'B2', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'C1', facing: 'E', id: 'P1V2' }, // TL
+                             { player: 1, coord: 'G1', facing: 'W', id: 'P2V1' }, { player: 1, coord: 'H2', facing: 'S', id: 'P2V2' }, // TR
+                             { player: 2, coord: 'B8', facing: 'N', id: 'P3V1' }, { player: 2, coord: 'C9', facing: 'E', id: 'P3V2' }, // BL
+                             { player: 3, coord: 'G9', facing: 'W', id: 'P4V1' }, { player: 3, coord: 'H8', facing: 'N', id: 'P4V2' } ],// BR
+                 bloodwells: [ { player: 0, coord: 'A1', id: 'P1BW1' }, { player: 0, coord: 'A3', id: 'P1BW2' }, { player: 0, coord: 'D1', id: 'P1BW3' },
+                               { player: 1, coord: 'I1', id: 'P2BW1' }, { player: 1, coord: 'I3', id: 'P2BW2' }, { player: 1, coord: 'F1', id: 'P2BW3' },
+                               { player: 2, coord: 'A9', id: 'P3BW1' }, { player: 2, coord: 'A7', id: 'P3BW2' }, { player: 2, coord: 'D9', id: 'P3BW3' },
+                               { player: 3, coord: 'I9', id: 'P4BW1' }, { player: 3, coord: 'I7', id: 'P4BW2' }, { player: 3, coord: 'F9', id: 'P4BW3' } ],
+                 hazards: [ // 10 total: 4T, 3BW, 3GD
+                     { type: 'Tombstone', coord: 'E3' }, { type: 'Tombstone', coord: 'C5' }, { type: 'Tombstone', coord: 'G5' }, { type: 'Tombstone', coord: 'E7' },
+                     { type: 'Black Widow', coord: 'D4' }, { type: 'Black Widow', coord: 'F6' }, { type: 'Black Widow', coord: 'B7' },
+                     { type: 'Grave Dust', coord: 'H4' }, { type: 'Grave Dust', coord: 'E5' }, { type: 'Grave Dust', coord: 'D6' }
+                 ]
+             },
+             // --- 4P Layout 2 (3T, 4BW, 3GD) ---
+             {
+                 vampires: [ { player: 0, coord: 'A2', facing: 'E', id: 'P1V1' }, { player: 0, coord: 'C1', facing: 'S', id: 'P1V2' }, // TL
+                             { player: 1, coord: 'I2', facing: 'W', id: 'P2V1' }, { player: 1, coord: 'G1', facing: 'S', id: 'P2V2' }, // TR
+                             { player: 2, coord: 'A8', facing: 'E', id: 'P3V1' }, { player: 2, coord: 'C9', facing: 'N', id: 'P3V2' }, // BL
+                             { player: 3, coord: 'I8', facing: 'W', id: 'P4V1' }, { player: 3, coord: 'G9', facing: 'N', id: 'P4V2' } ],// BR
+                 bloodwells: [ { player: 0, coord: 'B3', id: 'P1BW1' }, { player: 0, coord: 'D2', id: 'P1BW2' }, { player: 0, coord: 'B1', id: 'P1BW3' },
+                               { player: 1, coord: 'H3', id: 'P2BW1' }, { player: 1, coord: 'F2', id: 'P2BW2' }, { player: 1, coord: 'H1', id: 'P2BW3' },
+                               { player: 2, coord: 'B7', id: 'P3BW1' }, { player: 2, coord: 'D8', id: 'P3BW2' }, { player: 2, coord: 'B9', id: 'P3BW3' },
+                               { player: 3, coord: 'H7', id: 'P4BW1' }, { player: 3, coord: 'F8', id: 'P4BW2' }, { player: 3, coord: 'H9', id: 'P4BW3' } ],
+                 hazards: [ // 10 total: 3T, 4BW, 3GD
+                     { type: 'Tombstone', coord: 'D5' }, { type: 'Tombstone', coord: 'F5' }, { type: 'Tombstone', coord: 'E7' },
+                     { type: 'Black Widow', coord: 'E3' }, { type: 'Black Widow', coord: 'C4' }, { type: 'Black Widow', coord: 'G6' }, { type: 'Black Widow', coord: 'E5' },
+                     { type: 'Grave Dust', coord: 'D7' }, { type: 'Grave Dust', coord: 'F3' }, { type: 'Grave Dust', coord: 'B5' }
+                 ]
+             },
+             // --- 4P Layout 3 (3T, 3BW, 4GD) ---
+             {
+                 vampires: [ { player: 0, coord: 'B3', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'D3', facing: 'E', id: 'P1V2' }, // Top-Leftish
+                             { player: 1, coord: 'F3', facing: 'W', id: 'P2V1' }, { player: 1, coord: 'H3', facing: 'S', id: 'P2V2' }, // Top-Rightish
+                             { player: 2, coord: 'B7', facing: 'N', id: 'P3V1' }, { player: 2, coord: 'D7', facing: 'E', id: 'P3V2' }, // Bottom-Leftish
+                             { player: 3, coord: 'F7', facing: 'W', id: 'P4V1' }, { player: 3, coord: 'H7', facing: 'N', id: 'P4V2' } ],// Bottom-Rightish
+                 bloodwells: [ { player: 0, coord: 'A1', id: 'P1BW1' }, { player: 0, coord: 'C1', id: 'P1BW2' }, { player: 0, coord: 'E1', id: 'P1BW3' },
+                               { player: 1, coord: 'G1', id: 'P2BW1' }, { player: 1, coord: 'I1', id: 'P2BW2' }, { player: 1, coord: 'E2', id: 'P2BW3' }, // P2 BW slightly different
+                               { player: 2, coord: 'A9', id: 'P3BW1' }, { player: 2, coord: 'C9', id: 'P3BW2' }, { player: 2, coord: 'E9', id: 'P3BW3' },
+                               { player: 3, coord: 'G9', id: 'P4BW1' }, { player: 3, coord: 'I9', id: 'P4BW2' }, { player: 3, coord: 'E8', id: 'P4BW3' } ], // P4 BW slightly different
+                 hazards: [ // 10 total: 3T, 3BW, 4GD
+                     { type: 'Tombstone', coord: 'E4' }, { type: 'Tombstone', coord: 'C6' }, { type: 'Tombstone', coord: 'G6' },
+                     { type: 'Black Widow', coord: 'D5' }, { type: 'Black Widow', coord: 'F5' }, { type: 'Black Widow', coord: 'E6' }, // Center heavy BW
+                     { type: 'Grave Dust', coord: 'B5' }, { type: 'Grave Dust', coord: 'H5' }, { type: 'Grave Dust', coord: 'D2' }, { type: 'Grave Dust', coord: 'F8' }
+                 ]
+             },
+            // --- 4P Layout 4 (4T, 4BW, 2GD) ---
+            {
+                 vampires: [ { player: 0, coord: 'A3', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'B1', facing: 'E', id: 'P1V2' }, // TL Corner
+                             { player: 1, coord: 'G1', facing: 'W', id: 'P2V1' }, { player: 1, coord: 'I3', facing: 'N', id: 'P2V2' }, // TR Corner
+                             { player: 2, coord: 'C9', facing: 'E', id: 'P3V1' }, { player: 2, coord: 'A7', facing: 'S', id: 'P3V2' }, // BL Corner
+                             { player: 3, coord: 'I7', facing: 'N', id: 'P4V1' }, { player: 3, coord: 'G9', facing: 'W', id: 'P4V2' } ],// BR Corner
+                 bloodwells: [ { player: 0, coord: 'C3', id: 'P1BW1' }, { player: 0, coord: 'D1', id: 'P1BW2' }, { player: 0, coord: 'A1', id: 'P1BW3' },
+                               { player: 1, coord: 'G3', id: 'P2BW1' }, { player: 1, coord: 'F1', id: 'P2BW2' }, { player: 1, coord: 'I1', id: 'P2BW3' },
+                               { player: 2, coord: 'C7', id: 'P3BW1' }, { player: 2, coord: 'D9', id: 'P3BW2' }, { player: 2, coord: 'A9', id: 'P3BW3' },
+                               { player: 3, coord: 'G7', id: 'P4BW1' }, { player: 3, coord: 'F9', id: 'P4BW2' }, { player: 3, coord: 'I9', id: 'P4BW3' } ],
+                 hazards: [ // 10 total: 4T, 4BW, 2GD
+                     { type: 'Tombstone', coord: 'E2' }, { type: 'Tombstone', coord: 'B5' }, { type: 'Tombstone', coord: 'H5' }, { type: 'Tombstone', coord: 'E8' },
+                     { type: 'Black Widow', coord: 'E4' }, { type: 'Black Widow', coord: 'D6' }, { type: 'Black Widow', coord: 'F6' }, { type: 'Black Widow', coord: 'E6' },
+                     { type: 'Grave Dust', coord: 'C4' }, { type: 'Grave Dust', coord: 'G4' }
+                 ]
+             },
+             // --- 4P Layout 5 (2T, 4BW, 4GD) --- *Alternate distribution*
+             {
+                 vampires: [ { player: 0, coord: 'A5', facing: 'S', id: 'P1V1' }, { player: 0, coord: 'C5', facing: 'E', id: 'P1V2' }, // West Mid
+                             { player: 1, coord: 'E3', facing: 'W', id: 'P2V1' }, { player: 1, coord: 'E1', facing: 'S', id: 'P2V2' }, // North Mid
+                             { player: 2, coord: 'G5', facing: 'W', id: 'P3V1' }, { player: 2, coord: 'I5', facing: 'N', id: 'P3V2' }, // East Mid
+                             { player: 3, coord: 'E7', facing: 'E', id: 'P4V1' }, { player: 3, coord: 'E9', facing: 'N', id: 'P4V2' } ],// South Mid
+                 bloodwells: [ { player: 0, coord: 'A3', id: 'P1BW1' }, { player: 0, coord: 'A7', id: 'P1BW2' }, { player: 0, coord: 'C3', id: 'P1BW3' },
+                               { player: 1, coord: 'C1', id: 'P2BW1' }, { player: 1, coord: 'G1', id: 'P2BW2' }, { player: 1, coord: 'G3', id: 'P2BW3' },
+                               { player: 2, coord: 'I3', id: 'P3BW1' }, { player: 2, coord: 'I7', id: 'P3BW2' }, { player: 2, coord: 'G7', id: 'P3BW3' },
+                               { player: 3, coord: 'C7', id: 'P4BW1' }, { player: 3, coord: 'G9', id: 'P4BW2' }, { player: 3, coord: 'C9', id: 'P4BW3' } ],
+                 hazards: [ // 10 total: 2T, 4BW, 4GD
+                     { type: 'Tombstone', coord: 'D4' }, { type: 'Tombstone', coord: 'F6' }, // Only two tombstones
+                     { type: 'Black Widow', coord: 'F4' }, { type: 'Black Widow', coord: 'D6' }, { type: 'Black Widow', coord: 'B7' }, { type: 'Black Widow', coord: 'H3' },
+                     { type: 'Grave Dust', coord: 'B3' }, { type: 'Grave Dust', coord: 'H7' }, { type: 'Grave Dust', coord: 'F2' }, { type: 'Grave Dust', coord: 'D8' }
+                 ]
              }
-             // Add more 4P layouts here...
         ]
-    }; // IMPORTANT: Replace abbreviated data if necessary
+    }; // End LAYOUT_DATA
 
     // --- 3. DOM Element References --- // Note: Original numbering kept for internal reference, this is Section 2 of pasting sequence
     // Screens & Popups
@@ -1343,16 +1514,16 @@ function initializeGame() {
     // ... rest of function
     gameHistory = [];
     
-    const layouts = LAYOUT_DATA[numberOfPlayers];
+    const layouts = LAYOUT_DATA[numberOfPlayers]; // Get the array of layouts for this player count
     if (!layouts?.length) {
-        alert(`Error: No layouts for ${numberOfPlayers}P!`);
+        alert(`Error: No layouts defined for ${numberOfPlayers} players!`);
         showScreen('playerCount');
         return;
     }
-    
+    // This line correctly picks a random index from the available layouts:
     const layoutIdx = Math.floor(Math.random() * layouts.length);
-    const layout = layouts[layoutIdx];
-    const layoutName = `${numberOfPlayers}P Layout #${layoutIdx + 1}`;
+    const layout = layouts[layoutIdx]; // Select the random layout
+    const layoutName = `${numberOfPlayers}P Layout #${layoutIdx + 1}`; // For logging
     console.log(`Selected ${layoutName}`);
     
     currentGameState = {
@@ -1371,9 +1542,9 @@ function initializeGame() {
             hazards: JSON.parse(JSON.stringify(layout.hazards)) // << NO comma needed here
         }, // << Comma IS needed here before hazardPool
         hazardPool: {
-            'Tombstone': 4 - layout.hazards.filter(h => h.type === 'Tombstone').length,
-            'Black Widow': 4 - layout.hazards.filter(h => h.type === 'Black Widow').length,
-            'Grave Dust': 4 - layout.hazards.filter(h => h.type === 'Grave Dust').length,
+            'Tombstone': 5 - layout.hazards.filter(h => h.type === 'Tombstone').length,
+            'Black Widow': 5 - layout.hazards.filter(h => h.type === 'Black Widow').length,
+            'Grave Dust': 5 - layout.hazards.filter(h => h.type === 'Grave Dust').length,
             'Dynamite': 3
         },
         playerResources: playerData.map(() => ({
