@@ -669,24 +669,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (targetType === 'bloodwell') {
                     const targetBW = targetPiece; // The Bloodwell piece that was hit
                     const targetBWCoord = targetBW.coord;
-                    const targetBWPlayerIndex = targetBW.player;
+                    const targetBWPlayerIndex = targetBW.player; // *** Owner of the BW being shot ***
                     const targetBWId = targetBW.id;
 
                     let isProtectedBySheriff = false; // Assume not protected initially
 
                     // --- Sheriff "Under My Protection" Check ---
                     // Check only applies to standard shots (for now, assume !isSilverBullet is standard)
-                    // TODO: Later, add check to ensure Hand Cannon ignores this protection.
                     if (!isSilverBullet) {
                         // Find the player index of the Sheriff faction (if one exists and is active)
                         const sheriffPlayerIndex = currentGameState.players.findIndex(p => p.class === 'Sheriff' && !p.eliminated);
 
-                        if (sheriffPlayerIndex !== -1) { // If an active Sheriff player is in the game
+                        // *** ADDED CHECK: Protection only applies if the target BW BELONGS to the Sheriff player ***
+                        if (sheriffPlayerIndex !== -1 && targetBWPlayerIndex === sheriffPlayerIndex) {
+                            // Only proceed if an active Sheriff exists AND they own the target Bloodwell
+
                             // Find all active Sheriff vampires on the board belonging to that player
                             const activeSheriffVamps = currentGameState.board.vampires.filter(
                                 v => v.player === sheriffPlayerIndex
-                                // Optional: Rule clarification needed - does protection work if Sheriff is cursed? Assuming yes for now.
-                                // && !v.cursed
+                                // Assuming protection works even if Sheriff is cursed
                             );
 
                             // Check the 3x3 area around each active Sheriff vamp
@@ -694,14 +695,17 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const protectionZone = getCoordsInArea(sheriffVamp.coord, 1); // Get 3x3 area
                                 // Check if the target Bloodwell's coordinate is in this Sheriff's zone
                                 if (protectionZone.includes(targetBWCoord)) {
+                                    // Bloodwell is owned by the Sheriff AND is in a protection zone!
                                     isProtectedBySheriff = true; // Found protection!
-                                    console.log(`Bloodwell at ${targetBWCoord} is protected by Sheriff ${sheriffVamp.id} at ${sheriffVamp.coord}.`);
-                                    hitMessage = `Shot blocked! Bloodwell at ${targetBWCoord} is under the Sheriff's protection!`;
-                                    addToLog(hitMessage);
+                                    console.log(`Sheriff's own Bloodwell at ${targetBWCoord} is protected by ${sheriffVamp.id} at ${sheriffVamp.coord}.`);
+                                    // Update hitMessage here, as it won't be destroyed
+                                    hitMessage = `Shot blocked! Sheriff's Bloodwell at ${targetBWCoord} is under protection!`;
+                                    addToLog(hitMessage); // Log the block message
                                     break; // Stop checking other Sheriffs once protection is confirmed
                                 }
                             }
                         }
+                        // Implicitly else: If no active Sheriff, or the BW doesn't belong to the Sheriff, isProtectedBySheriff remains false.
                     }
                     // --- End Sheriff Protection Check ---
 
@@ -712,6 +716,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         break;
                     } else {
                         // --- Not Protected: Proceed with Destruction ---
+                        // Ensure hitMessage reflects destruction if not protected
                         hitMessage = `Shot DESTROYED Bloodwell ${targetBWId} at ${targetBWCoord}!`;
                         addToLog(hitMessage); // Log destruction
 
