@@ -740,22 +740,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (targetType === 'hazard') {
                     // Rule: Tombstone blocks LoS/Path (stops shot), unless BH. Destroys Tombstone. Special SB case.
                     if (targetPiece.type === 'Tombstone') {
+                        // --- Sharpshooter Check ---
+                        // Check if the shooter belongs to the Bounty Hunter class
                         if (shooterClass === 'Bounty Hunter') {
-                            addToLog(`Passes through Tombstone at ${currentCoord} (Sharpshooter).`);
-                            continue; // Bounty Hunter ignores, shot continues
-                        } else {
-                            // Non-BH hit Tombstone
+                            // Bounty Hunter's shot passes through Tombstone without stopping or destroying it.
+                            addToLog(`Shot passes through Tombstone at ${currentCoord} (Sharpshooter).`);
+                            console.log(`BH Sharpshooter ignores Tombstone at ${currentCoord}. Shot continues.`);
+                            continue; // <<< Skips the rest of this block and continues the 'for' loop to the next square
+                        }
+                        // --- End Sharpshooter Check ---
+                        else {
+                            // --- Non-BH hit Tombstone (Existing Logic) ---
                             const vampBehind = currentGameState.board.vampires.find(v => v.coord === currentCoord && v.player !== shooterPlayerIndex);
                             if (isSilverBullet && vampBehind) {
-                                // Special Case: SB hits Tombstone shielding enemy Vamp
+                                // Special Case: SB hits Tombstone shielding enemy Vamp - TS destroyed, SB wasted
                                 hitMessage = `Silver Bullet shattered Tombstone at ${currentCoord}, but ${vampBehind.id} was protected! (SB Wasted)`;
+                                addToLog("Tombstone destroyed by Silver Bullet."); // Specific log
+                                currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord); // Destroy TS
                             } else {
-                                // Standard Hit: Destroy Tombstone
+                                // Standard Hit or SB hit tombstone without vamp behind: Destroy Tombstone
                                 hitMessage = `Shot DESTROYED Tombstone at ${currentCoord}!`;
+                                // No need for separate addToLog here, hitMessage covers it below.
+                                currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord); // Destroy TS
                             }
-                            // Remove Tombstone in both non-BH cases where it's hit
-                            currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
-                            shotResolved = true; break; // Shot stops here
+                            // Shot stops here for non-BH after hitting a Tombstone
+                            shotResolved = true;
+                            break; // <<< Stops the 'for' loop tracing the shot path
+                            // --- End Non-BH Logic ---
                         }
                     }
                     // Rule: Dynamite blocks LoS/Path, Explodes when hit, potentially causing chain reactions.
