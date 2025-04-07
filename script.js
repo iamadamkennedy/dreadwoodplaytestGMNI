@@ -622,37 +622,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 // --- Check Piece Interactions (if not blocked/passed through hazard) ---
                 else if (targetType === 'vampire') {
                     // Inside the for loop in executeShoot...
-                // Inside the for loop in executeShoot...
+                // Inside executeShoot's loop, for Silver Bullet hit:
                 if (isSilverBullet && targetPiece.player !== shooterPlayerIndex) {
-                    // Successfully hit an enemy vampire with a Silver Bullet
                     const eliminatedVampId = targetPiece.id;
                     const eliminatedVampPlayerIndex = targetPiece.player;
-                    hitMessage = `Silver Bullet HIT & ELIMINATED enemy ${eliminatedVampId} at ${currentCoord}!`; // Use stored ID in message
+                    hitMessage = `Silver Bullet HIT & ELIMINATED enemy ${eliminatedVampId} at ${currentCoord}!`;
+                    addToLog(hitMessage);
 
-                    console.log(`Silver Bullet hit P${eliminatedVampPlayerIndex}'s vamp ${eliminatedVampId}`);
-                    addToLog(hitMessage); // Log the elimination message
-
-                    // 1. Remove the vampire from the game state *first*
+                    // 1. Remove vampire from state
                     currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.id !== eliminatedVampId);
 
-                    // 2. ***IMMEDIATELY Update Board and UI***
-                    renderBoard(currentGameState); // Update the board visuals NOW
-                    updateUI(); // Update AP display and button states NOW
+                    // 2. Update Board & UI visuals
+                    renderBoard(currentGameState);
+                    updateUI();
 
-                    // 3. Check if this elimination causes player elimination
+                    // 3. Check if player should be eliminated and update their state
+                    let wasEliminated = false;
                     if (checkPlayerElimination(eliminatedVampPlayerIndex)) {
-                         // If player eliminated, handle the consequences (set flag, remove other pieces, popup)
-                         handlePlayerElimination(eliminatedVampPlayerIndex);
+                        if(updateEliminationState(eliminatedVampPlayerIndex)) { // Sets flag, removes pieces
+                            wasEliminated = true;
+                        }
                     }
 
-                    // 4. Check if the game has ended after handling potential elimination
-                    checkGameEnd();
+                    // 4. Check if the game ended AFTER updating state
+                    const gameEnded = checkGameEnd(); // Shows victory popup if needed
 
-                    // 5. Mark shot as resolved and stop the bullet path
-                    shotResolved = true; // Ensure this is set
-                    // Note: The final log message with remaining AP happens AFTER the loop breaks
+                    // 5. If the game DID NOT end AND a player was just eliminated, show the elim popup
+                    if (!gameEnded && wasEliminated) {
+                        showEliminationPopup(eliminatedVampPlayerIndex);
+                    }
 
-                    // --- Block Finished ---
+                    shotResolved = true;
+                    break; // Stop shot path
                 }
                 // ... other conditions like hitting friendly vamp, bloodwell, etc. ...
 
@@ -663,31 +664,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 shotResolved = true; // Set it here again just to be safe within this block
                 break; // Stop shot path after SB hit
                 }
-                // Check this block too inside executeShoot's loop:
+                
+                // Inside executeShoot's loop, for Bloodwell destruction:
                 else if (targetType === 'bloodwell') {
-                    // TODO: Add Sheriff 'Under My Protection' check here first! If protected, log and break without destroying.
+                    // TODO: Add Sheriff 'Under My Protection' check here first!
 
                     const destroyedBwId = targetPiece.id;
                     const destroyedBwPlayerIndex = targetPiece.player;
                     hitMessage = `Shot DESTROYED Bloodwell ${destroyedBwId} at ${currentCoord}!`;
-                    addToLog(hitMessage); // Log destruction
+                    addToLog(hitMessage);
 
                     // 1. Remove Bloodwell from state
                     currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== destroyedBwId);
 
-                    // 2. ***IMMEDIATELY Update Board and UI***
+                    // 2. Update Board & UI visuals
                     renderBoard(currentGameState);
                     updateUI();
 
-                    // 3. Check for player elimination
+                    // 3. Check if player should be eliminated and update their state
+                    let wasEliminated = false;
                     if (checkPlayerElimination(destroyedBwPlayerIndex)) {
-                        handlePlayerElimination(destroyedBwPlayerIndex);
+                        if(updateEliminationState(destroyedBwPlayerIndex)) { // Sets flag, removes pieces
+                            wasEliminated = true;
+                        }
                     }
 
-                    // 4. Check for game end
-                    checkGameEnd();
+                    // 4. Check if the game ended AFTER updating state
+                    const gameEnded = checkGameEnd(); // Shows victory popup if needed
 
-                    // 5. Mark shot resolved and stop
+                    // 5. If the game DID NOT end AND a player was just eliminated, show the elim popup
+                    if (!gameEnded && wasEliminated) {
+                        showEliminationPopup(destroyedBwPlayerIndex);
+                    }
+
                     shotResolved = true;
                     break; // Stop shot path
                 }
@@ -943,7 +952,6 @@ if (btnRestartVictory) {
         addToLog(`Throwing ${hazardType}. Select target.`);
     }
     // Calculates and highlights valid squares for the selected throw action
-    // Calculates and highlights valid squares for the selected throw action (Updated Path Rules)
     function highlightThrowTargets() {
         clearHighlights(); // Clear previous highlights first
         const selectedVamp = findVampireById(currentGameState?.selectedVampireId);
@@ -1104,36 +1112,38 @@ function processExplosionQueue(explosionQueue, processedExplosions) {
 
     console.log("Chain reaction processing complete.");
 
-    // 7. After the entire chain reaction is finished, re-render the board once
-    renderBoard(currentGameState); // Update board visually
-    updateUI(); // Update AP etc. (though AP was spent on the shot, not explosions)
+    // Re-render board once after all explosion effects applied
+    renderBoard(currentGameState);
+    updateUI();
 
-    // 8. Check for player elimination if any bloodwells were destroyed during the chain
+    // Check eliminations caused by the chain reaction
     if (needsEliminationCheck) {
-        console.log("Checking elimination status after chain reaction.");
-        // Inside processExplosionQueue, AFTER the while loop finishes...
+        console.log("Checking elimination status for all players after chain reaction.");
+        addToLog("Checking player elimination status...");
+        const newlyEliminatedIndexes = []; // Store players eliminated in this chain
 
-        if (needsEliminationCheck) {
-            console.log("Checking elimination status for all players after chain reaction.");
-            addToLog("Checking player elimination status...");
-            let anEliminationOccurred = false;
-            // Check all players to see if the chain reaction eliminated anyone
-            for (let i = 0; i < currentGameState.players.length; i++) {
-                // Only check players not already marked as eliminated
-                if (!currentGameState.players[i].eliminated) {
-                    if (checkPlayerElimination(i)) {
-                        handlePlayerElimination(i);
-                        anEliminationOccurred = true; // Flag that at least one elimination happened
+        // First pass: Update state for all eliminated players
+        for (let i = 0; i < currentGameState.players.length; i++) {
+            if (!currentGameState.players[i].eliminated) { // Only check active players
+                if (checkPlayerElimination(i)) {
+                    if(updateEliminationState(i)) { // Sets flag, removes pieces
+                    newlyEliminatedIndexes.push(i);
                     }
                 }
             }
-            // Now, check if the game ended AFTER handling all eliminations from the chain
-            if (anEliminationOccurred) {
-                checkGameEnd();
-            }
         }
-        addToLog("Checking player elimination status...");
-    }
+
+        // Now, check if the game ended AFTER handling all potential eliminations
+        const gameEnded = checkGameEnd(); // Shows victory popup if needed
+
+        // If the game DID NOT end, show popups for players eliminated in this chain
+        if (!gameEnded && newlyEliminatedIndexes.length > 0) {
+            newlyEliminatedIndexes.forEach(eliminatedIndex => {
+                showEliminationPopup(eliminatedIndex);
+                // Note: This could still show multiple popups if the chain eliminates multiple players simultaneously without ending the game (e.g., 4p -> 2p). This might be desired.
+            });
+        }
+    } // end if(needsEliminationCheck)
 }
 
 /**
@@ -1161,61 +1171,55 @@ function checkPlayerElimination(playerIndex) {
 }
 
 /**
- * Handles the consequences of a player being eliminated.
- * Sets the eliminated flag, removes pieces, shows popup.
- * @param {number} playerIndex - The index of the eliminated player.
+ * Updates the game state when a player is eliminated.
+ * Sets the eliminated flag, logs it, and removes player's pieces from the board.
+ * @param {number} playerIndex - The index of the player being eliminated.
+ * @returns {boolean} - True if the state was updated, false otherwise (e.g., already eliminated).
  */
-function handlePlayerElimination(playerIndex) {
+function updateEliminationState(playerIndex) {
     // Prevent processing if playerIndex is invalid or player already marked eliminated
     if (!currentGameState || !currentGameState.players[playerIndex] || currentGameState.players[playerIndex].eliminated) {
-        console.log(`handlePlayerElimination: Skipping P${playerIndex}, already eliminated or invalid.`);
-        return;
+        // console.log(`updateEliminationState: Skipping P${playerIndex}, already eliminated or invalid.`); // Optional debug
+        return false; // Indicate state was not changed
     }
 
     const playerName = currentGameState.players[playerIndex].name;
-    const playerClass = currentGameState.players[playerIndex].class;
+    console.log(`Updating elimination state for P${playerIndex} (${playerName}). Setting eliminated = true.`); // Keep console log
 
-    // --- Debugging Logs Start ---
-    console.log(`Attempting to set eliminated flag for P${playerIndex} (${playerName}). Current status before setting: ${currentGameState.players[playerIndex].eliminated}`);
-    // --- Debugging Logs End ---
-
-    // *** Mark the player as eliminated in the game state ***
+    // Mark the player as eliminated in the game state
     currentGameState.players[playerIndex].eliminated = true;
-
-    // --- Debugging Logs Start ---
-    console.log(`P${playerIndex} (${playerName}) eliminated flag is now: ${currentGameState.players[playerIndex].eliminated}`);
-    // Log the whole player object to see the change
-    console.log("Player state object after setting flag:", JSON.stringify(currentGameState.players[playerIndex]));
-    // --- Debugging Logs End ---
-
     addToLog(`--- PLAYER ELIMINATED: ${playerName} ---`); // Add to game log
 
     // Remove player's remaining pieces from the board state
     console.log(`Removing remaining pieces for P${playerIndex}.`);
-    const vampsBefore = currentGameState.board.vampires.length;
-    const bwsBefore = currentGameState.board.bloodwells.length;
     currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.player !== playerIndex);
     currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.player !== playerIndex);
-    console.log(`Vamps removed: ${vampsBefore - currentGameState.board.vampires.length}, BWs removed: ${bwsBefore - currentGameState.board.bloodwells.length}`);
 
+    return true; // Indicate state was successfully updated
+}
 
-    // Display the elimination popup
-    const elimPopup = popups.elimination; // Reference from global scope
-    const elimMsg = document.getElementById('elimination-message'); // Reference the specific element
+/**
+ * Displays the "Player Eliminated!" popup for a given player.
+ * @param {number} playerIndex - The index of the player eliminated.
+ */
+function showEliminationPopup(playerIndex) {
+    const player = currentGameState.players[playerIndex];
+    if (!player) {
+        console.error(`Cannot show elimination popup: Invalid playerIndex ${playerIndex}`);
+        return;
+    }
+    const playerName = player.name;
+    const playerClass = player.class;
 
+    const elimPopup = popups.elimination;
+    const elimMsg = document.getElementById('elimination-message');
     if (elimPopup && elimMsg) {
-        console.log(`Populating elimination popup for P${playerIndex}: ${playerName} (${playerClass})`);
-        // Set the text content using backticks ` `
-        elimMsg.textContent = `${playerName} (${playerClass}) has been eliminated!`;
-        elimPopup.style.display = 'flex'; // Show the popup
+        console.log(`Showing elimination popup for P${playerIndex}: <span class="math-inline">\{playerName\} \(</span>{playerClass})`);
+        elimMsg.textContent = `<span class="math-inline">\{playerName\} \(</span>{playerClass}) has been eliminated!`;
+        elimPopup.style.display = 'flex';
     } else {
         console.error("Elimination popup elements ('popup-elimination' or 'elimination-message') not found!");
     }
-
-    // Re-render the board immediately to show removed pieces
-    renderBoard(currentGameState);
-    // Update UI (AP display likely won't matter for eliminated player, but good practice)
-    updateUI();
 }
 
 /**
