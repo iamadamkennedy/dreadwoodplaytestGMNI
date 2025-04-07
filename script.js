@@ -1210,18 +1210,17 @@ function updateEliminationState(playerIndex) {
  * @param {number} playerIndex - The index of the player eliminated.
  */
 function showEliminationPopup(playerIndex) {
-    console.log("--- showEliminationPopup START ---"); // Log entry
+    console.log("--- showEliminationPopup START ---");
     console.log("showEliminationPopup received playerIndex:", playerIndex);
 
     const player = currentGameState.players[playerIndex];
-    console.log("Fetched player object:", JSON.stringify(player)); // Log the fetched player object
+    console.log("Fetched player object:", JSON.stringify(player));
 
     if (!player) {
         console.error(`Cannot show elimination popup: Invalid playerIndex ${playerIndex} or player data missing.`);
         return;
     }
 
-    // Explicitly log the values *before* using them in the template literal
     const playerName = player.name;
     const playerClass = player.class;
     console.log(`Extracted Name: ${playerName}, Extracted Class: ${playerClass}`);
@@ -1229,17 +1228,17 @@ function showEliminationPopup(playerIndex) {
     const elimPopup = popups.elimination;
     const elimMsg = document.getElementById('elimination-message');
     if (elimPopup && elimMsg) {
-        // Final check before assignment
-        console.log(`Attempting to set popup text for P${playerIndex} with Name='<span class="math-inline">\{playerName\}' and Class\='</span>{playerClass}'`);
+        console.log(`Attempting to set popup text for P${playerIndex} with Name='${playerName}' and Class='${playerClass}'`);
 
-        // Ensure backticks ` ` are used here
-        elimMsg.textContent = `<span class="math-inline">\{playerName\} \(</span>{playerClass}) has been eliminated!`;
+        // --- TEMPORARY TEST: Use string concatenation instead of template literal ---
+        elimMsg.textContent = playerName + " (" + playerClass + ") has been eliminated!";
+        // --- END TEMPORARY TEST ---
 
         elimPopup.style.display = 'flex';
     } else {
         console.error("Elimination popup elements ('popup-elimination' or 'elimination-message') not found!");
     }
-    console.log("--- showEliminationPopup END ---"); // Log exit
+    console.log("--- showEliminationPopup END ---");
 }
 
 /**
