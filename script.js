@@ -1230,11 +1230,12 @@ function showEliminationPopup(playerIndex) {
     if (elimPopup && elimMsg) {
         console.log(`Attempting to set popup text for P${playerIndex} with Name='${playerName}' and Class='${playerClass}'`);
 
-        // --- TEMPORARY TEST: Use string concatenation instead of template literal ---
-        elimMsg.textContent = playerName + " (" + playerClass + ") has been eliminated!";
-        // --- END TEMPORARY TEST ---
+        // --- Use Template Literal (Backticks ``) ---
+        // Make sure to use the backtick character (`), NOT a single quote (')
+        elimMsg.textContent = `${playerName} (${playerClass}) has been eliminated!`;
+        // --- End Template Literal ---
 
-        elimPopup.style.display = 'flex';
+        elimPopup.style.display = 'flex'; // Show the popup
     } else {
         console.error("Elimination popup elements ('popup-elimination' or 'elimination-message') not found!");
     }
