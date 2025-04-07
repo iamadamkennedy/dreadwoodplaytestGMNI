@@ -667,39 +667,82 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Inside executeShoot's loop, for Bloodwell destruction:
                 else if (targetType === 'bloodwell') {
-                    // TODO: Add Sheriff 'Under My Protection' check here first!
+                    const targetBW = targetPiece; // The Bloodwell piece that was hit
+                    const targetBWCoord = targetBW.coord;
+                    const targetBWPlayerIndex = targetBW.player;
+                    const targetBWId = targetBW.id;
 
-                    const destroyedBwId = targetPiece.id;
-                    const destroyedBwPlayerIndex = targetPiece.player;
-                    hitMessage = `Shot DESTROYED Bloodwell ${destroyedBwId} at ${currentCoord}!`;
-                    addToLog(hitMessage);
+                    let isProtectedBySheriff = false; // Assume not protected initially
 
-                    // 1. Remove Bloodwell from state
-                    currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== destroyedBwId);
+                    // --- Sheriff "Under My Protection" Check ---
+                    // Check only applies to standard shots (for now, assume !isSilverBullet is standard)
+                    // TODO: Later, add check to ensure Hand Cannon ignores this protection.
+                    if (!isSilverBullet) {
+                        // Find the player index of the Sheriff faction (if one exists and is active)
+                        const sheriffPlayerIndex = currentGameState.players.findIndex(p => p.class === 'Sheriff' && !p.eliminated);
 
-                    // 2. Update Board & UI visuals
-                    renderBoard(currentGameState);
-                    updateUI();
+                        if (sheriffPlayerIndex !== -1) { // If an active Sheriff player is in the game
+                            // Find all active Sheriff vampires on the board belonging to that player
+                            const activeSheriffVamps = currentGameState.board.vampires.filter(
+                                v => v.player === sheriffPlayerIndex
+                                // Optional: Rule clarification needed - does protection work if Sheriff is cursed? Assuming yes for now.
+                                // && !v.cursed
+                            );
 
-                    // 3. Check if player should be eliminated and update their state
-                    let wasEliminated = false;
-                    if (checkPlayerElimination(destroyedBwPlayerIndex)) {
-                        if(updateEliminationState(destroyedBwPlayerIndex)) { // Sets flag, removes pieces
-                            wasEliminated = true;
+                            // Check the 3x3 area around each active Sheriff vamp
+                            for (const sheriffVamp of activeSheriffVamps) {
+                                const protectionZone = getCoordsInArea(sheriffVamp.coord, 1); // Get 3x3 area
+                                // Check if the target Bloodwell's coordinate is in this Sheriff's zone
+                                if (protectionZone.includes(targetBWCoord)) {
+                                    isProtectedBySheriff = true; // Found protection!
+                                    console.log(`Bloodwell at ${targetBWCoord} is protected by Sheriff ${sheriffVamp.id} at ${sheriffVamp.coord}.`);
+                                    hitMessage = `Shot blocked! Bloodwell at ${targetBWCoord} is under the Sheriff's protection!`;
+                                    addToLog(hitMessage);
+                                    break; // Stop checking other Sheriffs once protection is confirmed
+                                }
+                            }
                         }
                     }
+                    // --- End Sheriff Protection Check ---
 
-                    // 4. Check if the game ended AFTER updating state
-                    const gameEnded = checkGameEnd(); // Shows victory popup if needed
+                    // --- Apply Outcome ---
+                    if (isProtectedBySheriff) {
+                        // Shot is blocked by protection, stop the bullet path here.
+                        shotResolved = true;
+                        break;
+                    } else {
+                        // --- Not Protected: Proceed with Destruction ---
+                        hitMessage = `Shot DESTROYED Bloodwell ${targetBWId} at ${targetBWCoord}!`;
+                        addToLog(hitMessage); // Log destruction
 
-                    // 5. If the game DID NOT end AND a player was just eliminated, show the elim popup
-                    if (!gameEnded && wasEliminated) {
-                        showEliminationPopup(destroyedBwPlayerIndex);
+                        // 1. Remove Bloodwell from state
+                        currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== targetBWId);
+
+                        // 2. Update Board & UI visuals
+                        renderBoard(currentGameState);
+                        updateUI();
+
+                        // 3. Check if player should be eliminated and update their state
+                        let wasEliminated = false;
+                        if (checkPlayerElimination(targetBWPlayerIndex)) {
+                             if(updateEliminationState(targetBWPlayerIndex)) { // Sets flag, removes pieces
+                                 wasEliminated = true;
+                             }
+                        }
+
+                        // 4. Check if the game ended AFTER updating state
+                        const gameEnded = checkGameEnd(); // Shows victory popup if needed
+
+                        // 5. If the game DID NOT end AND a player was just eliminated, show the elim popup
+                        if (!gameEnded && wasEliminated) {
+                            showEliminationPopup(targetBWPlayerIndex);
+                        }
+
+                        shotResolved = true;
+                        break; // Stop shot path after destruction
+                        // --- End Destruction Logic ---
                     }
-
-                    shotResolved = true;
-                    break; // Stop shot path
-                }
+                } // End handling 'bloodwell' target type
             }
             // If square was empty, shot continues
         }
