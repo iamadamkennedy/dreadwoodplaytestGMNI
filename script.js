@@ -707,87 +707,109 @@ document.addEventListener('DOMContentLoaded', () => {
         return true; // Indicate action attempt success (even if shot missed/blocked)
     }
     function executeThrow(vampire, hazardType, targetCoord) { if (!vampire) return false; const cost = hazardType === 'Dynamite' ? AP_COST.THROW_DYNAMITE : AP_COST.THROW_HAZARD; if (currentGameState.currentAP < cost) { addToLog(`No AP.`); return false; } if (vampire.cursed) { addToLog("Cursed cannot throw."); return false; } if (!currentGameState.hazardPool || (currentGameState.hazardPool[hazardType] || 0) <= 0) { addToLog(`No ${hazardType}.`); return false; } const dist = getDistance(vampire.coord, targetCoord); if (dist === 0 || dist > 3) { addToLog(`Bad distance.`); return false; } const targetPiece = findPieceAtCoord(targetCoord); if (targetPiece && !(hazardType === 'Grave Dust' && targetPiece.type === 'vampire')) { addToLog(`Target blocked.`); return false; } /* TODO: Path validation */ saveStateToHistory(); currentGameState.hazardPool[hazardType]--; currentGameState.board.hazards.push({ type: hazardType, coord: targetCoord }); currentGameState.currentAP -= cost; addToLog(`${vampire.id} threw ${hazardType} to ${targetCoord}. (${currentGameState.currentAP} AP)`); if (hazardType === 'Grave Dust' && targetPiece?.type === 'vampire') { const targetV = findVampireById(targetPiece.piece.id); if (targetV && !targetV.cursed) { targetV.cursed = true; addToLog(`${targetV.id} CURSED by GD!`); } } renderBoard(currentGameState); updateUI(); return true; }
-    function nextTurn() {
-        // Check if any actions are pending (like selecting throw target)
-        if (currentGameState.actionState?.pendingAction) {
-            addToLog("Cannot end turn while an action is pending. Cancel or complete the action.");
-            return;
-        }
+    /**
+ * Advances the game to the next active player's turn.
+ * Handles AP reset, turn counter, UI updates, and skipping eliminated players.
+ */
+function nextTurn() {
+    // Check if any actions are pending (like selecting throw target)
+    if (currentGameState.actionState?.pendingAction) {
+        addToLog("Cannot end turn while an action is pending. Cancel or complete the action.");
+        return;
+    }
 
-        // Save state before ending turn (allows undoing the 'end turn' itself)
-        saveStateToHistory();
+    // Save state before ending turn (allows undoing the 'end turn' itself)
+    saveStateToHistory();
 
-        const previousPlayerIndex = currentGameState.currentPlayerIndex;
-        const previousPlayer = currentGameState.players[previousPlayerIndex];
+    const previousPlayerIndex = currentGameState.currentPlayerIndex;
+    const previousPlayer = currentGameState.players[previousPlayerIndex];
 
-        // --- Apply end-of-turn effects ---
-        // TODO: Implement Sheriff Swift Justice UI/Logic
-        if (previousPlayer?.class === 'Sheriff' && !previousPlayer.eliminated) {
-            addToLog("Sheriff's Swift Justice may apply (Manual Check / UI TBD).");
-        }
-        // TODO: Add other end-of-turn effects
+    // --- Apply end-of-turn effects ---
+    // TODO: Implement Sheriff Swift Justice UI/Logic
+    if (previousPlayer?.class === 'Sheriff' && !previousPlayer.eliminated) {
+        addToLog("Sheriff's Swift Justice may apply (Manual Check / UI TBD).");
+    }
+    // TODO: Add other end-of-turn effects
 
-        // Advance Player Index (Looping and skipping eliminated)
-        let nextPlayerIndex = (previousPlayerIndex + 1) % numberOfPlayers;
-        let loopCheck = 0;
-        while (currentGameState.players[nextPlayerIndex]?.eliminated && loopCheck < numberOfPlayers) {
-            nextPlayerIndex = (nextPlayerIndex + 1) % numberOfPlayers;
-            loopCheck++;
-        }
-        const activePlayers = currentGameState.players.filter(p => !p.eliminated);
-        if (activePlayers.length <= 1 && loopCheck >= numberOfPlayers) {
-            console.error("Error: Could not find next active player! Possible game end state missed?");
-            addToLog("Error advancing turn!");
-            undoLastAction(); // Revert the end turn attempt
-            return;
-        }
-        currentGameState.currentPlayerIndex = nextPlayerIndex;
+    // --- Advance Player Index (Looping and skipping eliminated) ---
+    let nextPlayerIndex = (previousPlayerIndex + 1) % numberOfPlayers;
+    let loopCheck = 0; // Safety counter to prevent infinite loops
+
+    // --- Debugging log added to this loop ---
+    while (currentGameState.players[nextPlayerIndex]?.eliminated && loopCheck < numberOfPlayers) {
+        // Log which player is being skipped and why
+        console.log(`nextTurn: Skipping P${nextPlayerIndex} because eliminated status is: ${currentGameState.players[nextPlayerIndex]?.eliminated}`);
+
+        // Move to the next player index
+        nextPlayerIndex = (nextPlayerIndex + 1) % numberOfPlayers;
+        loopCheck++;
+    }
+
+    // Check if we couldn't find an active player (should only happen if game end check failed)
+    const activePlayers = currentGameState.players.filter(p => !p.eliminated);
+    if (activePlayers.length > 0 && loopCheck >= numberOfPlayers) { // Check if we looped without finding the active player
+         console.error("Error: Could not find next active player even though active players exist! State:", currentGameState);
+         addToLog("Error advancing turn!");
+         undoLastAction(); // Revert the end turn attempt
+         return;
+    } else if (activePlayers.length === 0) {
+         console.log("nextTurn found no active players left. Game should have ended.");
+         // Don't proceed with turn logic if no one is left
+         return;
+    }
 
 
-        // Increment turn number if we wrapped around to player 0
-        if (currentGameState.currentPlayerIndex === 0 && previousPlayerIndex !== 0 && numberOfPlayers > 1) { // Added check for >1 player
-             currentGameState.turn++;
-        } else if (numberOfPlayers === 1 && currentGameState.currentPlayerIndex === previousPlayerIndex) {
-             // Handle single player scenario if needed, maybe don't increment turn?
-             // Or the game should end? For now, do nothing special.
-        } else if (currentGameState.currentPlayerIndex < previousPlayerIndex) {
-             // Wrapped around in >2 player game
-             currentGameState.turn++;
-        }
+    // --- Debugging log added before setting the index ---
+    console.log(`nextTurn: Final determined next player index: ${nextPlayerIndex}. Eliminated status: ${currentGameState.players[nextPlayerIndex]?.eliminated}`);
+    // Set the current player for the new turn
+    currentGameState.currentPlayerIndex = nextPlayerIndex;
+    // --- End Debugging log ---
 
 
-       // Set AP for the new player
-        const playerIndex = currentGameState.currentPlayerIndex;
-        // Reset AP based on rules
-        if (currentGameState.turn === 1) { // Only check turn 1 for scaling
-             if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][playerIndex];
-             else if (numberOfPlayers === 3) currentGameState.currentAP = 6;
-             else if (numberOfPlayers === 2) currentGameState.currentAP = 5;
-             else currentGameState.currentAP = 5; // Fallback
-        } else {
-             currentGameState.currentAP = 5; // Standard AP for all turns after 1
-        }
-        // TODO: Add Vigilante Blood Brothers check here & potentially add +1 AP
+    // Increment turn number if we wrapped around to player 0 (or first active player)
+     if (nextPlayerIndex <= previousPlayerIndex && !(numberOfPlayers === 1 && nextPlayerIndex === previousPlayerIndex)) {
+         // Check if the new index is less than or equal to previous, indicating a wrap-around (unless it's a 1P game)
+         currentGameState.turn++;
+         console.log(`Advanced to Turn ${currentGameState.turn}`);
+     }
 
-        // --- Reset turn-specific state ---
-        currentGameState.selectedVampireId = null;
-        currentGameState.actionState = { pendingAction: null, selectedHazardType: null };
-        clearHighlights();
-        if(movementBar) movementBar.classList.add('hidden'); // <-- HIDE MOVEMENT BAR HERE
-        btnUndo.disabled = true;
-        // Reset movesThisTurn for ALL vampires at the start of a new turn
-        if (currentGameState.board?.vampires) {
-            currentGameState.board.vampires.forEach(v => v.movesThisTurn = 0);
-        }
-        // gameHistory = []; // Clearing history means cannot undo across turns - KEEPING history for now
 
-        // Update UI for new player
-        renderBoard(currentGameState); // Rerender to remove selection highlights etc.
-        updateUI(); // Update panels and button states
-        const currentPlayer = currentGameState.players[currentGameState.currentPlayerIndex];
-        addToLog(`--- Turn ${currentGameState.turn} - ${currentPlayer.name}'s turn (${currentPlayer.class}). AP: ${currentGameState.currentAP} ---`);
-        // TODO: Check Victory condition here (only 1 player not eliminated)
-   }
+    // --- Set AP for the new player ---
+    const playerIndex = currentGameState.currentPlayerIndex; // Use the updated index
+    // Reset AP based on rules
+    if (currentGameState.turn === 1) { // Only check turn 1 for scaling
+         if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][playerIndex];
+         else if (numberOfPlayers === 3) currentGameState.currentAP = 6;
+         else if (numberOfPlayers === 2) currentGameState.currentAP = 5;
+         else currentGameState.currentAP = 5; // Fallback for 1 player?
+    } else {
+         currentGameState.currentAP = 5; // Standard AP for all turns after 1
+    }
+    // TODO: Add Vigilante Blood Brothers check here & potentially add +1 AP
+
+    // --- Reset turn-specific state ---
+    currentGameState.selectedVampireId = null;
+    currentGameState.actionState = { pendingAction: null, selectedHazardType: null };
+    clearHighlights();
+    if(movementBar) movementBar.classList.add('hidden'); // Hide D-Pad
+    btnUndo.disabled = true; // Disable Undo at start of new turn
+    // Reset movesThisTurn for ALL vampires
+    if (currentGameState.board?.vampires) {
+         currentGameState.board.vampires.forEach(v => v.movesThisTurn = 0);
+    }
+
+
+    // Update UI for new player
+    renderBoard(currentGameState); // Rerender to remove selection highlights etc.
+    updateUI(); // Update panels and button states for the new player/AP
+    const currentPlayer = currentGameState.players[currentGameState.currentPlayerIndex];
+    if (currentPlayer) { // Check if currentPlayer exists before logging
+      addToLog(`--- Turn ${currentGameState.turn} - ${currentPlayer.name}'s turn (${currentPlayer.class}). AP: ${currentGameState.currentAP} ---`);
+    } else {
+      console.error("Could not find current player object for logging turn start.");
+    }
+    // NOTE: Victory check is primarily done after eliminations occur, but could add a safety check here if needed.
+}
 
     // --- Event Listener Handlers ---
     function handleBoardClick(event) { const squareEl = event.target.closest('.grid-square'); if (!squareEl) return; const coord = squareEl.dataset.coord; if (!currentGameState?.actionState) return; const pending = currentGameState.actionState.pendingAction; if (pending === 'throw-select-target') { const type = currentGameState.actionState.selectedHazardType; const vamp = findVampireById(currentGameState.selectedVampireId); if (squareEl.classList.contains('valid-target')) executeThrow(vamp, type, coord); else addToLog("Invalid target. Throw cancelled."); currentGameState.actionState = { pendingAction: null, selectedHazardType: null }; clearHighlights(); } else if (pending === 'move-select-target') { const vamp = findVampireById(currentGameState.selectedVampireId); if (vamp && squareEl.classList.contains('valid-target')) executeMove(vamp, coord); else addToLog("Invalid target. Move cancelled."); currentGameState.actionState = { pendingAction: null }; clearHighlights(); } else { handleVampireSelection(event); } }
@@ -1126,6 +1148,8 @@ function checkPlayerElimination(playerIndex) {
 
     const remainingVamps = currentGameState.board.vampires.filter(v => v.player === playerIndex).length;
     const remainingBloodwells = currentGameState.board.bloodwells.filter(bw => bw.player === playerIndex).length;
+    
+    console.log(`Checking P${playerIndex} (<span class="math-inline">\{currentGameState\.players\[playerIndex\]?\.name\}\)\: Vamps\=</span>{remainingVamps}, BWs=${remainingBloodwells}`);
 
     const isEliminated = (remainingVamps === 0 || remainingBloodwells === 0);
 
@@ -1138,37 +1162,60 @@ function checkPlayerElimination(playerIndex) {
 
 /**
  * Handles the consequences of a player being eliminated.
+ * Sets the eliminated flag, removes pieces, shows popup.
  * @param {number} playerIndex - The index of the eliminated player.
  */
 function handlePlayerElimination(playerIndex) {
-    // ... (code to check if already eliminated, set flag, log) ...
-
-    const playerName = currentGameState.players[playerIndex].name; // Name fetched here
-    // currentGameState.players[playerIndex].eliminated = true; // Flag set here
-    // addToLog(`--- PLAYER ELIMINATED: ${playerName} ---`); // Logged here
-
-    // Display the elimination popup
-    const elimPopup = popups.elimination;
-    const elimMsg = document.getElementById('elimination-message');
-
-    // --- Possible Issue Area ---
-    if (elimPopup && elimMsg) {
-        // Add these console logs to check the variables right before setting text:
-        console.log("Populating elimination popup for player index:", playerIndex);
-        console.log("Player Name:", playerName);
-        console.log("Player Class:", currentGameState.players[playerIndex]?.class); // Using optional chaining just in case
-
-        // Ensure you are using backticks ` ` for the template literal
-        elimMsg.textContent = `${playerName} (${currentGameState.players[playerIndex].class}) has been eliminated!`;
-
-        elimPopup.style.display = 'flex'; // Show the popup
-    } else {
-        console.error("Elimination popup elements not found!");
+    // Prevent processing if playerIndex is invalid or player already marked eliminated
+    if (!currentGameState || !currentGameState.players[playerIndex] || currentGameState.players[playerIndex].eliminated) {
+        console.log(`handlePlayerElimination: Skipping P${playerIndex}, already eliminated or invalid.`);
+        return;
     }
 
-    // Re-render the board to show removed pieces
+    const playerName = currentGameState.players[playerIndex].name;
+    const playerClass = currentGameState.players[playerIndex].class;
+
+    // --- Debugging Logs Start ---
+    console.log(`Attempting to set eliminated flag for P${playerIndex} (${playerName}). Current status before setting: ${currentGameState.players[playerIndex].eliminated}`);
+    // --- Debugging Logs End ---
+
+    // *** Mark the player as eliminated in the game state ***
+    currentGameState.players[playerIndex].eliminated = true;
+
+    // --- Debugging Logs Start ---
+    console.log(`P${playerIndex} (${playerName}) eliminated flag is now: ${currentGameState.players[playerIndex].eliminated}`);
+    // Log the whole player object to see the change
+    console.log("Player state object after setting flag:", JSON.stringify(currentGameState.players[playerIndex]));
+    // --- Debugging Logs End ---
+
+    addToLog(`--- PLAYER ELIMINATED: ${playerName} ---`); // Add to game log
+
+    // Remove player's remaining pieces from the board state
+    console.log(`Removing remaining pieces for P${playerIndex}.`);
+    const vampsBefore = currentGameState.board.vampires.length;
+    const bwsBefore = currentGameState.board.bloodwells.length;
+    currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.player !== playerIndex);
+    currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.player !== playerIndex);
+    console.log(`Vamps removed: ${vampsBefore - currentGameState.board.vampires.length}, BWs removed: ${bwsBefore - currentGameState.board.bloodwells.length}`);
+
+
+    // Display the elimination popup
+    const elimPopup = popups.elimination; // Reference from global scope
+    const elimMsg = document.getElementById('elimination-message'); // Reference the specific element
+
+    if (elimPopup && elimMsg) {
+        console.log(`Populating elimination popup for P${playerIndex}: ${playerName} (${playerClass})`);
+        // Set the text content using backticks ` `
+        elimMsg.textContent = `${playerName} (${playerClass}) has been eliminated!`;
+        elimPopup.style.display = 'flex'; // Show the popup
+    } else {
+        console.error("Elimination popup elements ('popup-elimination' or 'elimination-message') not found!");
+    }
+
+    // Re-render the board immediately to show removed pieces
     renderBoard(currentGameState);
-    updateUI(); // Update player info (though eliminated player won't have a turn)
+    // Update UI (AP display likely won't matter for eliminated player, but good practice)
+    updateUI();
 }
 
 /**
