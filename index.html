@@ -9,8 +9,9 @@
 <body>
 
     <div id="game-container">
-        <button id="btn-help" class="help-button" title="How to Play">?</button> <div id="screen-player-count" class="screen active">
-            <h1>Dreadwood Setup</h1>
+        <button id="btn-help" class="help-button" title="How to Play">?</button>
+
+        <div id="screen-player-count" class="screen active">
             <p>Select the number of players:</p>
             <div class="button-container">
                 <button id="btn-2-players" data-count="2">2 Players</button>
@@ -55,17 +56,22 @@
         </div>
 
         <div id="screen-gameplay" class="screen">
-            <div id="action-bar" class="button-container action-buttons">
-                <button id="action-shoot" title="Shoot (3 AP)">🔫 Shoot</button>
-                <button id="action-throw" title="Throw Hazard (1/2 AP)">✋ Throw</button>
-                <button id="action-silver-bullet" title="Silver Bullet Shot (3 AP)">💎 Silver</button>
-                <button id="action-dispel" title="Dispel Grave Dust (3 AP)" style="display: none;">🪄 Dispel</button>
-            </div>
 
             <div id="game-board-container">
                 <div id="game-board" class="grid-container">
                     </div>
-            </div> <div id="movement-bar" class="button-container movement-buttons hidden"> <button id="move-n" class="move-button" data-direction="N" title="Move/Pivot North (1 AP)">⬆️</button>
+            </div>
+
+            <div id="action-bar" class="button-container action-buttons">
+                <button id="action-shoot" title="Shoot (3 AP)">🔫 Shoot</button>
+                <button id="action-throw" title="Throw Hazard (1/2 AP)">✋ Throw</button>
+                <button id="action-silver-bullet" title="Silver Bullet Shot (3 AP)">💎 Silver</button>
+                <button id="action-dispel" title="Dispel Grave Dust (3 AP)">🪄 Dispel</button>
+                <button id="action-bite-fuse" title="Bite the Fuse (1 AP)">😬 Bite Fuse</button>
+            </div>
+
+            <div id="movement-bar" class="button-container movement-buttons hidden">
+                <button id="move-n" class="move-button" data-direction="N" title="Move/Pivot North (1 AP)">⬆️</button>
                 <button id="move-w" class="move-button" data-direction="W" title="Move/Pivot West (1 AP)">⬅️</button>
                 <button id="move-e" class="move-button" data-direction="E" title="Move/Pivot East (1 AP)">➡️</button>
                 <button id="move-s" class="move-button" data-direction="S" title="Move/Pivot South (1 AP)">⬇️</button>
@@ -83,9 +89,13 @@
                 </div>
 
                 <div id="current-class-details" class="setup-section class-details-box">
-                     <h3>Current Player Info:</h3> <ul id="info-class-abilities"><li>---</li></ul><p><strong>Silver Bullet:</strong> <span id="info-silver-bullet">Available</span></p>
+                     <h3>Current Player Info:</h3>
+                     <ul id="info-class-abilities"><li>---</li></ul>
+                     <p><strong>Silver Bullet:</strong> <span id="info-silver-bullet">Available</span></p>
                 </div>
-            </div> <div id="game-log-container">
+            </div>
+
+            <div id="game-log-container">
                 <button id="btn-toggle-log">Show/Hide Log</button>
                 <div id="game-log" class="log-hidden">
                     <h4>Game Log</h4>
@@ -109,40 +119,45 @@
                     <p>Each turn, you get Action Points (AP) to spend commanding your two vampires. Use these points thoughtfully for movement, attacks, and setting traps. Once you've used your AP, your turn ends, and the next player goes.</p>
                     <h3>Basic Actions</h3>
                     <ul>
-                        <li><strong>Pivot (1 AP):</strong> Change the direction your selected vampire faces to prepare your next move or shot.</li>
-                        <li><strong>Move (1 AP):</strong> Step one square forward in the direction your vampire is facing. Some obstacles, like sticky Black Widow webs (🕷️), might block your path!</li>
-                        <li><strong>Shoot (3 AP):</strong> Fire your weapon straight ahead. A well-aimed shot can destroy vital enemy Bloodwells (🩸), Black Widows (🕷️), or Tombstones (🪦). It can even hit rival vampires (sometimes with special effects!). Dynamite (💥) blocks shots and explodes when hit!</li>
-                        <li><strong>Throw Hazard (1 AP / 2 AP for 💥):</strong> Toss obstacles like blocking Tombstones, entangling Black Widow webs, dangerous Dynamite, or cursing Grave Dust (💩) onto the board (up to 3 squares ahead) to disrupt your foes or create cover. Path must be clear of Vamps/BWs/Tombstones/Dynamite.</li>
-                    </ul>
+                        <li><strong>Pivot:</strong> Change the direction your selected vampire faces to prepare your next move or shot. (1 AP)</li>
+                        <li><strong>Move:</strong> Step one square forward in the direction your vampire is facing. Some obstacles, like sticky Black Widow webs (🕷️), might block your path! (1 AP)</li>
+                        <li><strong>Shoot:</strong> Fire your weapon straight ahead. A well-aimed shot can destroy vital enemy Bloodwells (🩸) or even hit rival vampires (sometimes with special effects!). Certain obstacles like Tombstones (🪦) or volatile Dynamite (💥) will block your shot. (3 AP)</li>
+                        <li><strong>Throw Hazard:</strong> Toss obstacles like blocking Tombstones, entangling Black Widow webs, dangerous Dynamite, or cursing Grave Dust (💩) onto the board (up to 3 squares ahead) to disrupt your foes or create cover. (1 AP / 2 AP for 💥)</li>
+                        </ul>
                     <h3>Key Things to Know</h3>
                     <ul>
-                        <li><strong>Bloodwells (🩸):</strong> Your faction's lifeline. If an enemy destroys all three, your faction is eliminated!</li>
-                        <li><strong>Hazards:</strong> Tombstones & Dynamite block shots & throw paths (Dynamite explodes!). Black Widow webs stop movement. Grave Dust curses those who land on it.</li>
-                        <li><strong>Cursed (Purple Ring):</strong> Slowed (max 1 move/turn), cannot Shoot/Throw. Cure by moving onto a clear square adjacent to ANY Bloodwell.</li>
-                        <li><strong>Silver Bullet (💎):</strong> One per game! This special shot instantly eliminates an enemy vampire hit. (Uses Shoot action, 3 AP)</li>
-                        <li><strong>Faction Powers:</strong> Use your unique skills!</li>
+                        <li><strong>Bloodwells (🩸):</strong> These arcane fonts are your faction's lifeline. Protect yours fiercely! If an enemy destroys all three, your connection is severed, and your faction is eliminated!</li>
+                        <li><strong>Hazards:</strong> Use obstacles to your advantage! Tombstones block shots & throw paths, Black Widow webs stop movement, Grave Dust curses those who tread on it, and Dynamite creates explosive chaos when shot. Learn their effects to outsmart your rivals.</li>
+                        <li><strong>Cursed (Purple Ring):</strong> Step onto Grave Dust or suffer certain attacks, and your vampire becomes cursed! They'll be slowed down (only one move attempt per turn!) and unable to use some actions until they cleanse themselves near the arcane energy of *any* Bloodwell (even an enemy's!).</li>
+                        <li><strong>Silver Bullet (💎):</strong> You get one special bullet per game. It's incredibly potent – a direct hit instantly eliminates an enemy vampire! Make it count. (Uses Shoot action, 3 AP)</li>
+                        <li><strong>Faction Powers:</strong> Don't forget your faction's unique abilities! Using them at the right time can turn the tide of battle.</li>
                     </ul>
                     <h3>Winning</h3>
-                    <p>Eliminate rivals by destroying all their Bloodwells OR taking out both of their vampires. Last faction standing wins!</p>
-                    </div>
+                    <p>Eliminate your rivals by either destroying all their Bloodwells OR by taking out both of their vampires. The last faction standing claims the Dreadwood!</p>
+                </div>
                 <div class="button-container">
                      <button id="btn-back-to-game">Back to Game</button>
                 </div>
-            </div></div><div id="popup-elimination" class="popup">
+            </div>
+        </div>
+
+        <div id="popup-elimination" class="popup">
              <div class="popup-content">
                  <h3 id="elimination-title">Player Eliminated!</h3>
                  <p id="elimination-message">[Player Name] has been eliminated.</p>
                  <button id="btn-close-elimination">OK</button>
              </div>
-         </div>
-         <div id="popup-victory" class="popup">
+        </div>
+
+        <div id="popup-victory" class="popup">
              <div class="popup-content">
                  <h3 id="victory-title">Victory!</h3>
                  <p id="victory-message">[Player Name] Wins!</p>
                  <button id="btn-restart-victory">Restart Game</button>
              </div>
-         </div>
-         <div id="hazard-picker" class="popup">
+        </div>
+
+        <div id="hazard-picker" class="popup">
              <div class="popup-content">
                  <h4>Select Hazard to Throw</h4>
                  <p>Available:</p>
@@ -150,7 +165,7 @@
                      </div>
                  <button id="btn-cancel-throw" style="background-color: #6c757d; margin-top: 15px;">Cancel Throw</button>
              </div>
-         </div>
+        </div>
 
     </div><script src="script.js" defer></script>
 </body>
