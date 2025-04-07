@@ -1177,25 +1177,32 @@ function checkPlayerElimination(playerIndex) {
  * @returns {boolean} - True if the state was updated, false otherwise (e.g., already eliminated).
  */
 function updateEliminationState(playerIndex) {
-    // Prevent processing if playerIndex is invalid or player already marked eliminated
     if (!currentGameState || !currentGameState.players[playerIndex] || currentGameState.players[playerIndex].eliminated) {
-        // console.log(`updateEliminationState: Skipping P${playerIndex}, already eliminated or invalid.`); // Optional debug
-        return false; // Indicate state was not changed
+        return false;
     }
+    // Get the player object *within this function*
+    const player = currentGameState.players[playerIndex];
+    if (!player) { // Check if player exists at that index
+         console.error(`updateEliminationState: Invalid playerIndex ${playerIndex}, cannot find player.`);
+         return false;
+    }
+    const playerName = player.name; // Get name from the fetched object
 
-    const playerName = currentGameState.players[playerIndex].name;
-    console.log(`Updating elimination state for P${playerIndex} (${playerName}). Setting eliminated = true.`); // Keep console log
+    // CORRECTED CONSOLE LOG: Uses the correct playerName variable
+    console.log(`Updating elimination state for P${playerIndex} (${playerName}). Setting eliminated = true.`);
 
-    // Mark the player as eliminated in the game state
     currentGameState.players[playerIndex].eliminated = true;
-    addToLog(`--- PLAYER ELIMINATED: ${playerName} ---`); // Add to game log
+    console.log(`P${playerIndex} (${playerName}) eliminated flag is now: ${currentGameState.players[playerIndex].eliminated}`);
+    console.log("Player state object after setting flag:", JSON.stringify(currentGameState.players[playerIndex]));
 
-    // Remove player's remaining pieces from the board state
+    addToLog(`--- PLAYER ELIMINATED: ${playerName} ---`);
+
+    // CORRECTED CONSOLE LOG: Uses the correct playerIndex for the message
     console.log(`Removing remaining pieces for P${playerIndex}.`);
     currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.player !== playerIndex);
     currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.player !== playerIndex);
 
-    return true; // Indicate state was successfully updated
+    return true;
 }
 
 /**
@@ -1203,23 +1210,36 @@ function updateEliminationState(playerIndex) {
  * @param {number} playerIndex - The index of the player eliminated.
  */
 function showEliminationPopup(playerIndex) {
+    console.log("--- showEliminationPopup START ---"); // Log entry
+    console.log("showEliminationPopup received playerIndex:", playerIndex);
+
     const player = currentGameState.players[playerIndex];
+    console.log("Fetched player object:", JSON.stringify(player)); // Log the fetched player object
+
     if (!player) {
-        console.error(`Cannot show elimination popup: Invalid playerIndex ${playerIndex}`);
+        console.error(`Cannot show elimination popup: Invalid playerIndex ${playerIndex} or player data missing.`);
         return;
     }
+
+    // Explicitly log the values *before* using them in the template literal
     const playerName = player.name;
     const playerClass = player.class;
+    console.log(`Extracted Name: ${playerName}, Extracted Class: ${playerClass}`);
 
     const elimPopup = popups.elimination;
     const elimMsg = document.getElementById('elimination-message');
     if (elimPopup && elimMsg) {
-        console.log(`Showing elimination popup for P${playerIndex}: <span class="math-inline">\{playerName\} \(</span>{playerClass})`);
+        // Final check before assignment
+        console.log(`Attempting to set popup text for P${playerIndex} with Name='<span class="math-inline">\{playerName\}' and Class\='</span>{playerClass}'`);
+
+        // Ensure backticks ` ` are used here
         elimMsg.textContent = `<span class="math-inline">\{playerName\} \(</span>{playerClass}) has been eliminated!`;
+
         elimPopup.style.display = 'flex';
     } else {
         console.error("Elimination popup elements ('popup-elimination' or 'elimination-message') not found!");
     }
+    console.log("--- showEliminationPopup END ---"); // Log exit
 }
 
 /**
