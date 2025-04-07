@@ -1,82 +1,535 @@
 /* Basic Reset & Body */
-body { font-family: sans-serif; background-color: #f0f0f0; color: #333; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
-#game-container { background-color: #fff; padding: 20px 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); width: 90%; max-width: 800px; text-align: center; position: relative; /* Needed for absolute positioning of help button */ }
-@media (max-height: 750px) { #game-container { padding-top: 10px; padding-bottom: 10px; } #screen-player-setup .setup-section { margin-top: 15px; padding: 10px; } }
-.screen { display: none; animation: fadeIn 0.5s ease-in-out; }
-.screen.active { display: block; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-h1, h2, h3, h4 { color: #5a3a3a; }
-label { display: block; margin-bottom: 5px; font-weight: bold; color: #666; text-align: left; }
-.button-container { margin-top: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
-button { padding: 10px 20px; font-size: 1em; border: none; border-radius: 5px; cursor: pointer; background-color: #8b4513; color: white; transition: background-color 0.2s ease; }
-button:hover:not(:disabled) { background-color: #a0522d; }
-button:disabled { background-color: #cccccc; color: #666666; cursor: not-allowed; }
-#btn-back, #btn-back-to-start { background-color: #6c757d; }
-#btn-back:hover:not(:disabled), #btn-back-to-start:hover:not(:disabled) { background-color: #5a6268; }
-.btn-class { min-width: 120px; }
-.btn-class[data-class="Sheriff"] { background-color: #4682b4; }
-.btn-class[data-class="Vigilante"] { background-color: #696969; }
-.btn-class[data-class="Outlaw"] { background-color: #b22222; }
+body {
+    font-family: sans-serif;
+    background-color: #f0f0f0;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align to top */
+    min-height: 100vh;
+}
+
+#game-container {
+    background-color: #fff;
+    padding: 20px 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 800px; /* Adjust as needed */
+    text-align: center;
+}
+
+/* Adjust spacing on shorter screens */
+@media (max-height: 750px) {
+    #game-container {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+    #screen-player-setup .setup-section {
+        margin-top: 15px; /* Reduce top margin between sections */
+        padding: 10px; /* Reduce padding inside sections */
+    }
+    /* Reduce font size slightly if needed */
+    /* body { font-size: 0.95em; } */
+}
+
+/* Screen Visibility */
+.screen {
+    display: none; /* Hide screens by default */
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.screen.active {
+    display: block; /* Show active screen */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+
+/* Headings and Text */
+h1, h2, h3, h4 {
+    color: #5a3a3a; /* Western-ish brown */
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #666;
+    text-align: left;
+}
+
+/* Buttons */
+.button-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 15px; /* Space between buttons */
+    flex-wrap: wrap; /* Allow buttons to wrap */
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 1em;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #8b4513; /* Saddle Brown */
+    color: white;
+    transition: background-color 0.2s ease;
+}
+
+button:hover:not(:disabled) { /* Ensure hover only affects enabled buttons */
+    background-color: #a0522d; /* Sienna */
+}
+
+button:disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+}
+
+/* Specific Button Styles */
+#btn-back {
+    background-color: #6c757d; /* Gray */
+}
+#btn-back:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+
+#btn-back-to-start {
+    background-color: #6c757d; /* Gray */
+    color: white;
+}
+#btn-back-to-start:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+
+.btn-class {
+    min-width: 120px;
+}
+
+.btn-class[data-class="Sheriff"] { background-color: #4682b4; } /* Steel Blue */
+.btn-class[data-class="Vigilante"] { background-color: #696969; } /* Dim Gray */
+.btn-class[data-class="Outlaw"] { background-color: #b22222; } /* Firebrick */
 .btn-class[data-class="Bounty Hunter"] { background-color: #228B22; } /* Forest Green */
-.btn-class.selected { font-weight: bold; box-shadow: inset 0 0 6px rgba(0,0,0,0.4); outline: none; }
-.btn-class[data-class="Sheriff"].selected { background-color: #366a94; }
-.btn-class[data-class="Vigilante"].selected { background-color: #505050; }
-.btn-class[data-class="Outlaw"].selected { background-color: #8f1c1c; }
-.btn-class[data-class="Bounty Hunter"].selected { background-color: #1c701c; }
-.btn-class:disabled { background-color: #a9a9a9; opacity: 0.7; }
-.setup-section { margin-top: 25px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #fafafa; text-align: left; }
-#input-player-name { padding: 8px; font-size: 1em; border: 1px solid #ccc; border-radius: 4px; width: calc(100% - 20px); max-width: 300px; }
-.class-details-box { margin-top: 15px; min-height: 150px; background-color: #f9f9f9; }
-#class-abilities { list-style: disc; margin-left: 20px; padding-left: 0; }
-#class-abilities li { margin-bottom: 8px; }
-.popup { display: none; position: fixed; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center; }
-.popup.active { display: flex; } /* Should NOT be used by showScreen logic anymore */
-.popup-content { background-color: #fff; padding: 30px; border-radius: 8px; text-align: center; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); max-width: 600px; /* Increased width */ width: 90%; }
-/* Gameplay Styles */
-#action-bar { margin-bottom: 20px; flex-wrap: wrap; border-bottom: 1px solid #eee; padding-bottom: 15px; display: flex; justify-content: center; gap: 10px; }
-#action-bar button { background-color: #e8e8e8; color: #333; min-width: 80px; padding: 8px 12px; font-size: 0.9em; }
-#action-bar button:hover:not(:disabled) { background-color: #dcdcdc; }
-#action-bar button:disabled { background-color: #f5f5f5; color: #aaa; cursor: not-allowed; }
-#game-board-container { display: flex; justify-content: center; margin-bottom: 20px; max-width: 100%; overflow-x: auto; }
-#game-board { display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr); width: 500px; height: 500px; max-width: 90vw; max-height: 90vw; border: 2px solid #333; background-color: #fdfbf7; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
-.grid-square { border: 1px solid #ccc; position: relative; display: flex; justify-content: center; align-items: center; font-size: 0.6em; color: #aaa; aspect-ratio: 1 / 1; overflow: hidden; cursor: pointer; transition: background-color 0.2s ease; }
-.grid-square:hover { background-color: #f0f0f0; }
-.piece { position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 1.5em; font-weight: bold; box-sizing: border-box; pointer-events: none; user-select: none; line-height: 1; }
-.vampire::before { content: ''; position: absolute; font-size: 1.1em; font-weight: bold; color: rgba(0,0,0,0.8); text-shadow: 1px 1px 1px rgba(255,255,255,0.5); z-index: 1; line-height: 1; }
+
+.btn-class.selected {
+    outline: 3px solid gold;
+    box-shadow: 0 0 10px gold;
+}
+
+/* Darker Backgrounds for Selected State */
+.btn-class[data-class="Sheriff"].selected { background-color: #366a94; } /* Darker Steel Blue */
+.btn-class[data-class="Vigilante"].selected { background-color: #505050; } /* Darker Dim Gray */
+.btn-class[data-class="Outlaw"].selected { background-color: #8f1c1c; } /* Darker Firebrick */
+.btn-class[data-class="Bounty Hunter"].selected { background-color: #1c701c; } /* Darker Forest Green */
+
+.btn-class:disabled { /* Override default disabled if needed for visual cue */
+     background-color: #a9a9a9; /* Dark Gray for disabled */
+     opacity: 0.7;
+}
+
+
+/* Setup Screen Specifics */
+.setup-section {
+    margin-top: 25px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fafafa;
+    text-align: left; /* Align content left within sections */
+}
+
+#input-player-name {
+    padding: 8px;
+    font-size: 1em;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: calc(100% - 20px); /* Adjust for padding */
+    max-width: 300px;
+}
+
+.class-details-box {
+    margin-top: 15px;
+    min-height: 150px; /* Ensure space for details */
+    background-color: #f9f9f9;
+}
+
+#class-abilities { /* Target specifically setup abilities list */
+    list-style: disc;
+    margin-left: 20px;
+    padding-left: 0; /* Reset padding */
+}
+/* Added spacing for ability list items in setup */
+#class-abilities li {
+    margin-bottom: 8px;
+}
+
+
+/* Popup Styles */
+.popup {
+    display: none; /* Hidden by default */
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Dim background */
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.popup.active { /* Use this class to show popups if needed */
+    display: flex;
+}
+
+.popup-content {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center; /* Keep center for buttons maybe */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    max-width: 600px; /* << INCREASED WIDTH */
+    width: 90%; /* Maybe increase percentage slightly too */
+}
+
+/* --- Gameplay Screen Styles --- */
+
+#screen-gameplay h2 {
+    margin-bottom: 15px;
+}
+
+/* Game Board */
+#game-board-container {
+    display: flex;
+    justify-content: center; /* Center the board */
+    /* margin-bottom: 20px; */ /* Removed margin-bottom as action bar goes here now */
+    max-width: 100%;
+    overflow-x: auto; /* Allow horizontal scroll on small screens if needed */
+}
+
+#game-board {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr); /* 9 columns */
+    grid-template-rows: repeat(9, 1fr); /* 9 rows */
+    width: 500px; /* Adjust size as needed */
+    height: 500px; /* Keep it square */
+    max-width: 90vw; /* Prevent overflow on small screens */
+    max-height: 90vw;
+    border: 2px solid #333;
+    background-color: #fdfbf7; /* Light parchment/off-white */
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+}
+
+.grid-square {
+    border: 1px solid #ccc;
+    position: relative; /* For positioning pieces inside */
+    display: flex; /* Center content like coordinates */
+    justify-content: center;
+    align-items: center;
+    font-size: 0.6em; /* Smaller font for coords */
+    color: #aaa;
+    aspect-ratio: 1 / 1;
+    overflow: hidden; /* Hide piece overflow */
+    cursor: pointer; /* Default cursor */
+    transition: background-color 0.2s ease; /* Smooth transition for hover/highlight */
+}
+.grid-square:hover {
+    background-color: #f0f0f0; /* Slight hover effect */
+}
+
+/* Action Bar (Styles Adjusted for New Position) */
+#action-bar {
+    /* Styles removed related to being at the top */
+    /* margin-bottom: 20px; */
+    /* border-bottom: 1px solid #eee; */
+    /* padding-bottom: 15px; */
+
+    /* New Styles */
+    margin-top: 20px; /* Space below board */
+    margin-bottom: 15px; /* Space above movement bar */
+
+    /* Keep original flex properties */
+    flex-wrap: wrap;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+/* Keep button styles inside action bar */
+#action-bar button {
+    background-color: #e8e8e8;
+    color: #333;
+    min-width: 80px;
+    padding: 8px 12px;
+    font-size: 0.9em;
+}
+#action-bar button:hover:not(:disabled) {
+    background-color: #dcdcdc;
+}
+#action-bar button:disabled {
+    background-color: #f5f5f5;
+    color: #aaa;
+    cursor: not-allowed;
+}
+
+
+/* --- Piece/Hazard Styles --- */
+.piece {
+    position: absolute;
+    top: 5%;
+    left: 5%;
+    width: 90%;
+    height: 90%;
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5em; /* Adjust for icons */
+    font-weight: bold;
+    box-sizing: border-box; /* Include border in size */
+    pointer-events: none; /* Click goes through to square by default */
+    user-select: none; /* Prevent text selection */
+    line-height: 1; /* Adjust line height for icon centering */
+}
+
+/* Facing Indicators (Larger, Bolder Arrow Text using ::before) */
+.vampire::before {
+    content: ''; /* Base rule */
+    position: absolute;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: rgba(0,0,0,0.8);
+    text-shadow: 1px 1px 1px rgba(255,255,255,0.5);
+    z-index: 1;
+    line-height: 1;
+}
 .vampire[data-facing="N"]::before { content: '▲'; top: 0px; width: 100%; text-align: center; }
 .vampire[data-facing="S"]::before { content: '▼'; bottom: 0px; width: 100%; text-align: center; }
 .vampire[data-facing="E"]::before { content: '▶'; right: 2px; top: 50%; transform: translateY(-50%); }
 .vampire[data-facing="W"]::before { content: '◀'; left: 2px; top: 50%; transform: translateY(-50%); }
-.vampire { border-radius: 50%; border: 2px solid black; z-index: 10; cursor: pointer; pointer-events: auto; display: flex; justify-content: center; align-items: center; font-size: 0.9em; font-weight: bold; color: white; text-shadow: 0 0 2px black, 0 0 2px black, 0 0 1px black; line-height: 1; }
-.vampire.selected { outline: 3px solid gold; box-shadow: 0 0 10px gold; z-index: 11; }
-.vampire.cursed { border: 3px dashed purple !important; box-shadow: 0 0 8px purple; }
-.bloodwell { border-radius: 10%; border: 3px dashed transparent; font-size: 1.8em; z-index: 5; opacity: 1; color: crimson; background-color: black; display: flex; justify-content: center; align-items: center; line-height: 1; text-shadow: 0 0 3px rgba(255, 255, 255, 0.7); /* Added glow */ }
+
+
+.vampire {
+    border-radius: 50%;
+    border: 2px solid black;
+    z-index: 10;
+    cursor: pointer;
+    pointer-events: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.9em;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 0 2px black, 0 0 2px black, 0 0 1px black;
+    line-height: 1;
+}
+.vampire.selected {
+    outline: 3px solid gold;
+     box-shadow: 0 0 10px gold;
+     z-index: 11;
+}
+.vampire.cursed {
+    border: 3px dashed purple !important;
+    box-shadow: 0 0 8px purple;
+}
+
+.bloodwell {
+    border-radius: 10%;
+    border: 3px dashed transparent;
+    font-size: 1.8em;
+    z-index: 5;
+    opacity: 1;
+    color: crimson;
+    background-color: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1;
+}
+
+/* Player-specific Bloodwell Border Colors */
 .bloodwell.color-sheriff { border-color: #4682b4; }
 .bloodwell.color-vigilante { border-color: #696969; }
 .bloodwell.color-outlaw { border-color: #b22222; }
-.bloodwell.color-bounty-hunter { border-color: #228B22; } /* Forest Green */
-.hazard { border-radius: 0; border: 1px solid #555; font-size: 1.6em; z-index: 1; opacity: 1; color: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; line-height: 1; }
+.bloodwell.color-bounty-hunter { border-color: #228B22; }
+
+.hazard {
+    border-radius: 0;
+    border: 1px solid #555;
+    font-size: 1.6em;
+    z-index: 1;
+    opacity: 1;
+    color: rgba(0,0,0,0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1;
+}
+
+/* Class Colors (Vampire Backgrounds) */
 .vampire.color-sheriff { background-color: rgba(70, 130, 180, 0.7); }
 .vampire.color-vigilante { background-color: rgba(105, 105, 105, 0.7); }
 .vampire.color-outlaw { background-color: rgba(178, 34, 34, 0.7); }
-.vampire.color-bounty-hunter { background-color: rgba(34, 139, 34, 0.7); } /* Forest Green w/ Alpha */
-.hazard-tombstone { background-color: transparent; border: none; font-size: 2.8em; /* Increased Size */ color: #333; }
-.hazard-black-widow { background-color: #D2B48C; /* Tan */ border: none; color: black; font-size: 1.6em; /* Keep base hazard size or adjust? */ }
-.hazard-grave-dust { background-color: plum; /* Lighter Purple */ color: #333; /* Darker Icon */ }
-.hazard-dynamite { background-color: #ff4500; color: white; font-size: 2.2em; /* Increased Size */ border: none; text-shadow: -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF, 1px 1px 0 #FFF; /* White Outline */ /* Removed text-stroke */ }
-/* Player Info & Layout Fix */
-#player-info { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 20px; }
-#status-bar, #game-controls, #current-class-details { width: 100%; max-width: 450px; margin-left: auto; margin-right: auto; box-sizing: border-box; }
-#status-bar { text-align: center; font-size: 1.1em; font-weight: bold; margin-top: 10px; margin-bottom: 10px; /* Removed bg/padding/radius */ }
-#status-bar span { color: #8b4513; display: inline-block; min-width: 20px; text-align: center; }
-#game-controls.button-container { justify-content: center; margin-top: 5px; margin-bottom: 15px; /* Space before details */ padding: 10px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee; width: 100%; max-width: 450px; }
-#player-info > .button-container { margin-top: 5px; } /* Refined margin */
-#current-class-details { flex: 1; min-width: 250px; margin-top: 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #fafafa; text-align: left; }
-#current-class-details h3 { margin-top: 0; margin-bottom: 15px; text-align: center; color: #5a3a3a; }
-#current-class-details h4 { margin-top: 15px; margin-bottom: 5px; font-size: 0.9em; color: #666; border-bottom: 1px solid #eee; padding-bottom: 3px; text-align: left; }
-#current-class-details hr { border: none; border-top: 1px dashed #ccc; margin: 15px 0; }
-#current-class-details ul { padding-left: 20px; margin-top: 5px; }
-#current-class-details #info-class-abilities li { margin-bottom: 5px; font-size: 0.9em; }
+.vampire.color-bounty-hunter { background-color: rgba(34, 139, 34, 0.7); }
+
+/* Hazard specific appearances */
+.hazard-tombstone {
+    background-color: transparent;
+    border: none; font-size: 3em;
+    color: #333;
+}
+.hazard-black-widow {
+    background-color: #f7be73;
+    border: none;
+    color: black;
+    font-size: 3em;
+}
+.hazard-grave-dust {
+    background-color: plum;
+    color: #333;
+    font-size: 3em;
+}
+.hazard-dynamite {
+    background-color: #ff4500;
+    color: white;
+    font-size: 3em;
+    border: none;
+    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+}
+
+
+/* --- Movement Bar (D-Pad) Styles --- */
+#movement-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 45px);
+    grid-template-rows: repeat(3, 45px);
+    gap: 2px;
+    width: fit-content;
+    /* Adjusted top margin */
+    margin: 15px auto 20px auto; /* Reduced top margin */
+    border: none;
+    padding: 0;
+    justify-items: center;
+    align-items: center;
+}
+/* (Keep other movement-bar styles: .move-button, placement rules, .hidden) */
+.movement-buttons button.move-button {
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    font-size: 1.8em;
+    line-height: 45px;
+    background-color: #d8d8d8;
+    color: #333;
+    border: 1px solid #aaa;
+    min-width: auto;
+}
+.movement-buttons button.move-button:hover:not(:disabled) {
+    background-color: #c8c8c8;
+}
+.movement-buttons button.move-button:disabled {
+    background-color: #e8e8e8;
+    color: #bbb;
+    border-color: #ccc;
+}
+#move-n { grid-row: 1; grid-column: 2; }
+#move-w { grid-row: 2; grid-column: 1; }
+#move-e { grid-row: 2; grid-column: 3; }
+#move-s { grid-row: 3; grid-column: 2; }
+#movement-bar.hidden {
+    display: none;
+}
+
+
+/* Player Info & Status Bar */
+#player-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px; /* Keep margin above this section */
+    flex-wrap: wrap;
+}
+
+#status-bar,
+#game-controls,
+#current-class-details {
+    width: 100%;
+    max-width: 450px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#game-controls.button-container {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    width: auto;
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    justify-content: center;
+}
+
+#current-class-details h3, #current-class-details h4 {
+    margin-top: 10px; margin-bottom: 5px;
+}
+#current-class-details #info-class-abilities {
+    list-style: disc; margin-left: 20px; padding-left: 0;
+}
+#current-class-details #info-class-abilities li {
+    margin-bottom: 5px; font-size: 0.9em;
+}
+#current-class-details h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    text-align: center;
+    color: #5a3a3a;
+}
+#current-class-details h4 {
+    margin-top: 15px;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+    color: #666;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 3px;
+    text-align: left;
+}
+#current-class-details hr {
+    border: none;
+    border-top: 1px dashed #ccc;
+    margin: 15px 0;
+}
+#current-class-details ul {
+    padding-left: 20px;
+    margin-top: 5px;
+}
+
+#status-bar {
+    flex-basis: 100%;
+    text-align: center;
+    font-size: 1.1em;
+    font-weight: bold;
+    padding: 10px;
+    background-color: #eee;
+    border-radius: 4px;
+    /* margin-top: 10px; */ /* Removed margin-top as #player-info provides spacing */
+}
+#status-bar span {
+    color: #8b4513;
+    display: inline-block;
+    min-width: 20px;
+    text-align: center;
+}
+
+
 /* Game Log */
 #game-log-container { margin-top: 20px; text-align: left; }
 #btn-toggle-log { margin-bottom: 5px; background-color: #6c757d; }
@@ -85,12 +538,30 @@ button:disabled { background-color: #cccccc; color: #666666; cursor: not-allowed
 #log-list { list-style: none; padding: 0; margin: 0; }
 #log-list li { padding: 2px 0; border-bottom: 1px dotted #eee; }
 #log-list li:last-child { border-bottom: none; }
-/* Game Controls Base */
-#game-controls { /* Keep this separate from .button-container version */ border-top: none; padding-top: 0; } /* Remove extra border/padding */
-#btn-undo:disabled { background-color: #cccccc; color: #666666; cursor: not-allowed; }
-#btn-back-to-setup { background-color: #ffc107; color: #333; }
-#btn-back-to-setup:hover:not(:disabled) { background-color: #e0a800; }
-/* Gameplay Action Enhancements */
+
+
+/* Game Controls (within Player Info) */
+#game-controls {
+    /* Removed margin-top/border-top as it's within #player-info now */
+    /* margin-top: 20px; */
+    /* border-top: 1px solid #eee; */
+    /* padding-top: 20px; */
+}
+#btn-undo:disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+}
+#btn-back-to-setup { /* Assuming this is the dev button at the bottom */
+    background-color: #ffc107;
+    color: #333;
+}
+#btn-back-to-setup:hover:not(:disabled) {
+    background-color: #e0a800;
+}
+
+/* --- Gameplay Action Enhancements --- */
+/* Hazard Picker Panel */
 #hazard-picker .popup-content { max-width: 500px; }
 #hazard-picker-options { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
 #hazard-picker-options button { min-width: 100px; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 0.9em; padding: 8px; background-color: #f8f8f8; color: #333; border: 1px solid #ccc; }
@@ -100,28 +571,77 @@ button:disabled { background-color: #cccccc; color: #666666; cursor: not-allowed
 #hazard-picker-options button:hover:not(:disabled) { background-color: #e0e0e0; }
 #btn-cancel-throw { background-color: #6c757d; margin-top: 15px; }
 #btn-cancel-throw:hover:not(:disabled) { background-color: #5a6268; }
+
+
 /* Target Highlighting */
-.grid-square.valid-target { background-color: rgba(0, 255, 0, 0.3) !important; outline: 1px solid darkgreen; cursor: crosshair; }
-.grid-square.invalid-target {}
-/* Movement Bar (D-Pad) Styles */
-#movement-bar { display: grid; grid-template-columns: repeat(3, 45px); grid-template-rows: repeat(3, 45px); gap: 2px; width: fit-content; margin: 25px auto 20px auto; border: none; padding: 0; justify-items: center; align-items: center; }
-.movement-buttons button.move-button { padding: 0; width: 100%; height: 100%; font-size: 1.8em; line-height: 45px; background-color: #d8d8d8; color: #333; border: 1px solid #aaa; min-width: auto; }
-.movement-buttons button.move-button:hover:not(:disabled) { background-color: #c8c8c8; }
-.movement-buttons button.move-button:disabled { background-color: #e8e8e8; color: #bbb; border-color: #ccc; }
-#move-n { grid-row: 1; grid-column: 2; }
-#move-w { grid-row: 2; grid-column: 1; }
-#move-e { grid-row: 2; grid-column: 3; }
-#move-s { grid-row: 3; grid-column: 2; }
-#movement-bar.hidden { display: none; }
-/* Help Button */
-.help-button { position: absolute; top: 15px; right: 20px; font-size: 1.2em; font-weight: bold; width: 35px; height: 35px; padding: 0; border-radius: 50%; background-color: #6c757d; color: white; border: 1px solid #5a6268; z-index: 10; line-height: 33px; text-align: center; }
-.help-button:hover:not(:disabled) { background-color: #5a6268; }
-/* How to Play Screen */
-#screen-how-to-play { /* Style as popup content container */ background-color: #fff; padding: 30px; border-radius: 8px; text-align: left; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); max-width: 600px; width: 90%; max-height: 80vh; /* Limit height */ display: flex; flex-direction: column; }
-#screen-how-to-play h2 { text-align: center; margin-top: 0; color: #5a3a3a;}
-.how-to-play-content { flex-grow: 1; /* Allow content to take space */ max-height: calc(80vh - 150px); /* Adjust based on header/footer */ overflow-y: auto; margin-bottom: 20px; border: 1px solid #eee; padding: 15px; background-color: #fdfdfd; text-align: left; }
-#screen-how-to-play h3 { margin-top: 15px; margin-bottom: 5px; border-bottom: 1px solid #ccc; padding-bottom: 3px; color: #5a3a3a;}
-#screen-how-to-play ul { list-style: disc; margin-left: 25px; }
-#screen-how-to-play li { margin-bottom: 8px; }
-#screen-how-to-play .button-container { margin-top: auto; /* Push button to bottom */ }
-#btn-back-to-game {}
+.grid-square.valid-target {
+    background-color: rgba(0, 255, 0, 0.3) !important;
+    outline: 1px solid darkgreen;
+    cursor: crosshair;
+}
+.grid-square.invalid-target {
+   /* Optional styling */
+}
+
+/* Move/Pivot Action Buttons (If added later) */
+.direction-buttons button { min-width: 40px; font-size: 1.2em; padding: 5px 10px; }
+
+/* Style for inline error messages */
+.error-message {
+    color: #b22222;
+    font-weight: bold;
+    margin-top: 10px;
+    text-align: center;
+    min-height: 1em;
+}
+
+/* Help Button Styling */
+.help-button {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 1.2em;
+    font-weight: bold;
+    width: 35px;
+    height: 35px;
+    padding: 0;
+    border-radius: 50%;
+    background-color: #6c757d;
+    color: white;
+    border: 1px solid #5a6268;
+    z-index: 10;
+    line-height: 33px;
+    text-align: center;
+}
+.help-button:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+
+/* How to Play Screen Styling */
+#screen-how-to-play .how-to-play-content {
+    text-align: left;
+}
+.how-to-play-content {
+    max-height: 60vh;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    border: 1px solid #eee;
+    padding: 15px;
+    background-color: #fdfdfd;
+}
+#screen-how-to-play h3 {
+    margin-top: 15px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 3px;
+}
+#screen-how-to-play ul {
+    list-style: disc;
+    margin-left: 25px;
+}
+#screen-how-to-play li {
+    margin-bottom: 8px;
+}
+#btn-back-to-game {
+    /* Optional styling */
+}
