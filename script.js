@@ -3275,85 +3275,81 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 	}
 
 	/**
-	 * Executes a Throw Hazard action.
-	 * @param {object} vampire - The vampire throwing.
-	 * @param {string} hazardType - The type of hazard ("Tombstone", "Black Widow", etc.).
-	 * @param {string} targetCoord - The coordinate to throw to.
-	 * @returns {boolean} - True if successful, false otherwise.
-	 */
-	function executeThrow(vampire, hazardType, targetCoord) {
-		if (!vampire) {
-			console.error("executeThrow: Missing vampire object.");
-			return false;
-		}
-		
-        const count = hazardPool[hazardType] || 0;
+     * Executes a Throw Hazard action after validation.
+     * Assumes targetCoord is valid based on prior highlighting.
+     * Updates game state (pool, board, AP) and UI.
+     * @param {object} vampire - The vampire object throwing.
+     * @param {string} hazardType - The type of hazard ("Tombstone", "Black Widow", etc.).
+     * @param {string} targetCoord - The coordinate to throw to.
+     * @returns {boolean} - True if successful, false otherwise.
+     */
+    function executeThrow(vampire, hazardType, targetCoord) {
+        // --- Initial Checks ---
+        if (!vampire) {
+            console.error("executeThrow: Missing vampire object.");
+            return false;
+        }
+
         const cost = hazardType === "Dynamite" ? AP_COST.THROW_DYNAMITE : AP_COST.THROW_HAZARD;
-        const emoji = getHazardEmoji(hazardType); // <<< Get the emoji
 
-        const button = document.createElement('button');
-        button.classList.add('btn', 'btn-hazard-option');
-        button.dataset.hazardType = hazardType;
+        // --- REMOVED the misplaced emoji and button creation code ---
 
-        // Prepend the emoji to the text content
-        button.textContent = `${emoji} <span class="math-inline">\{hazardType\} \(</span>{count})`; // <<< MODIFIED LINE
+        // Check AP
+        if (currentGameState.currentAP < cost) {
+            addToLog(`Not enough AP to Throw ${hazardType}.`);
+            return false;
+        }
+        // Check Cursed Status
+        if (vampire.cursed) {
+            addToLog("Cursed vampires cannot throw hazards.");
+            return false;
+        }
+        // Check Hazard Pool Availability (Ensure this line is exactly like this in your file)
+        if (!currentGameState.hazardPool || (currentGameState.hazardPool[hazardType] || 0) <= 0) {
+            addToLog(`No ${hazardType}s left in the pool.`);
+            return false;
+        }
 
-		if (currentGameState.currentAP < cost) {
-			addToLog(`Not enough AP to Throw ${hazardType}.`);
-			return false;
-		}
-		if (vampire.cursed) {
-			addToLog("Cursed vampires cannot throw hazards.");
-			return false;
-		}
-		if (!currentGameState.hazardPool || (currentGameState.hazardPool[hazardType] || 0) <= 0) {
-			addToLog(`No ${hazardType}s left in the pool.`);
-			return false;
-		}
+        // --- Lock-in & Last Action Tracking ---
+        const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
+        if (currentPlayerClass !== "Vigilante" && !currentGameState.lockedInVampireIdThisTurn) {
+            currentGameState.lockedInVampireIdThisTurn = vampire.id;
+            addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
+        }
+        currentGameState.lastActionVampId = vampire.id;
+        // --- End Lock-in ---
 
-		// Validation (Target coord validity and path blocking is handled by highlightThrowTargets)
-		// We assume targetCoord passed here is one that was highlighted as valid.
+        // --- Action is valid, proceed ---
+        saveStateToHistory();
 
-		// --- Lock-in & Last Action Tracking ---
-		const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
-		if (currentPlayerClass !== "Vigilante" && !currentGameState.lockedInVampireIdThisTurn) {
-			currentGameState.lockedInVampireIdThisTurn = vampire.id;
-			addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
-		}
-		currentGameState.lastActionVampId = vampire.id;
-		// --- End Lock-in ---
+        // --- Update Game State ---
+        currentGameState.hazardPool[hazardType]--; // Decrement from pool
+        currentGameState.board.hazards.push({    // Add hazard to board
+            type: hazardType,
+            coord: targetCoord,
+        });
+        currentGameState.currentAP -= cost;       // Deduct AP
 
-		// --- Action is valid, proceed ---
-		saveStateToHistory();
+        addToLog(`${vampire.id} threw ${hazardType} to ${targetCoord}. (${currentGameState.currentAP} AP left)`);
 
-		// Update state
-		currentGameState.hazardPool[hazardType]--;
-		currentGameState.board.hazards.push({
-			type: hazardType,
-			coord: targetCoord,
-		});
-		currentGameState.currentAP -= cost;
+        // --- Post-Throw Effects (e.g., Grave Dust curse) ---
+        if (hazardType === "Grave Dust") {
+            const pieceAtTarget = findPieceAtCoord(targetCoord);
+            if (pieceAtTarget?.type === "vampire") {
+                const targetVamp = findVampireById(pieceAtTarget.piece.id);
+                if (targetVamp && !targetVamp.cursed) {
+                    targetVamp.cursed = true;
+                    targetVamp.movesThisTurn = 0; // Reset moves on curse
+                    addToLog(`${targetVamp.id} was hit by Grave Dust and is CURSED!`);
+                }
+            }
+        }
 
-		addToLog(`${vampire.id} threw ${hazardType} to ${targetCoord}. (${currentGameState.currentAP} AP left)`);
-
-		// Check for GD cursing a vampire on the target square
-		if (hazardType === "Grave Dust") {
-			const pieceAtTarget = findPieceAtCoord(targetCoord);
-			if (pieceAtTarget?.type === "vampire") {
-				const targetVamp = findVampireById(pieceAtTarget.piece.id);
-				if (targetVamp && !targetVamp.cursed) {
-					targetVamp.cursed = true;
-					targetVamp.movesThisTurn = 0; // Reset moves on curse
-					addToLog(`${targetVamp.id} was hit by Grave Dust and is CURSED!`);
-				}
-			}
-		}
-
-		// Update display
-		renderBoard(currentGameState);
-		updateUI();
-		return true;
-	}
+        // --- Update Display ---
+        renderBoard(currentGameState);
+        updateUI();
+        return true; // Indicate successful execution
+    }
 
 	/**
 	 * Executes the Dispel action: Removes Grave Dust from the vampire's current square.
@@ -4240,75 +4236,74 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 
     /**
      * Highlights valid target squares on the board for throwing a specific hazard
-     * from the vampire's current location.
-     * IMPLEMENTATION BASED ON ASSUMED RULES (3 Sq Range, Cardinal, Blocked by Vamp/BW).
+     * ONLY in the direction the vampire is currently facing.
+     * IMPLEMENTATION BASED ON ASSUMED RULES (3 Sq Range, Forward Only, Blocked by Vamp/BW).
      * @param {object} vampire - The vampire object performing the throw.
      * @param {string} hazardType - The type of hazard being thrown.
      */
     function highlightThrowTargets(vampire, hazardType) {
-        clearHighlights(); // Clear any previous target highlights
-        if (!vampire) return;
+        clearHighlights(); // Clear previous target highlights
+        // Add null check for vampire and facing property
+        if (!vampire || !vampire.facing) {
+             console.error("highlightThrowTargets: Invalid vampire or missing facing data.");
+             addToLog("Cannot highlight throw targets: Vampire data missing.");
+             return;
+        }
 
-        console.log(`Highlighting throw targets for ${vampire.id} throwing ${hazardType}...`);
+        console.log(`Highlighting throw targets for ${vampire.id} (facing ${vampire.facing}) throwing ${hazardType}...`);
 
         const throwRange = 3; // Example: Max range of 3 squares
         const startCoord = vampire.coord;
+        const facingDirection = vampire.facing; // Get the single direction to check
         let foundValidTarget = false;
+        let currentCoord = startCoord;
+        let pathBlocked = false;
 
-        DIRECTIONS.forEach(dir => { // Check North, East, South, West
-            let currentCoord = startCoord;
-            let pathBlocked = false;
+        // --- Only loop forward in the facing direction ---
+        for (let distance = 1; distance <= throwRange; distance++) {
+            currentCoord = getAdjacentCoord(currentCoord, facingDirection); // Use the specific facing direction
+            if (!currentCoord) break; // Off board
 
-            for (let distance = 1; distance <= throwRange; distance++) {
-                currentCoord = getAdjacentCoord(currentCoord, dir);
-                if (!currentCoord) break; // Off board
+            const squareElement = gameBoard.querySelector(`.grid-square[data-coord="${currentCoord}"]`);
+            if (!squareElement) continue; // Should not happen if coord is valid
 
-                const squareElement = gameBoard.querySelector(`.grid-square[data-coord="${currentCoord}"]`);
-                if (!squareElement) continue;
-
-                const piece = findPieceAtCoord(currentCoord);
-
-                // --- Check if the path is blocked BEFORE this square ---
-                // If path is already blocked, we can't target this square or beyond
-                if (pathBlocked) {
-                    squareElement.classList.add('invalid-target'); // Indicate unreachable
-                    continue; // Don't check further this direction if path blocked
-                }
-
-                // --- Check if the current square itself blocks the path or is invalid landing ---
-                let isInvalidLandingSpot = false;
-                if (piece) {
-                    // Cannot throw ONTO a Vampire or Bloodwell
-                    if (piece.type === 'vampire' || piece.type === 'bloodwell') {
-                        isInvalidLandingSpot = true;
-                        pathBlocked = true; // Blocks further path
-                    }
-                    // Add other blocking rules? E.g., Cannot throw onto Black Widow?
-                    // if (piece.type === 'hazard' && piece.piece.type === 'Black Widow') {
-                    //     isInvalidLandingSpot = true;
-                    //     pathBlocked = true;
-                    // }
-                }
-
-                // Highlight based on validity
-                if (isInvalidLandingSpot) {
-                    squareElement.classList.add('invalid-target');
-                } else {
-                    squareElement.classList.add('valid-target');
-                    foundValidTarget = true;
-                }
-
-                // If this square was blocked, stop checking further in this direction
-                if (pathBlocked) break;
+            // If path was blocked by a piece on the previous square, mark this as invalid and stop
+            if (pathBlocked) {
+                squareElement.classList.add('invalid-target');
+                continue; // Technically 'break' would also work as path is blocked
             }
-        });
+
+            const piece = findPieceAtCoord(currentCoord);
+
+            // --- Check if the current square itself blocks the path or is invalid landing ---
+            let isInvalidLandingSpot = false;
+            if (piece) {
+                // Cannot throw ONTO a Vampire or Bloodwell
+                if (piece.type === 'vampire' || piece.type === 'bloodwell') {
+                    isInvalidLandingSpot = true;
+                    pathBlocked = true; // This piece blocks further throws
+                }
+                // Add other rules here (e.g., cannot throw onto Black Widow?)
+            }
+
+            // Highlight based on validity
+            if (isInvalidLandingSpot) {
+                squareElement.classList.add('invalid-target');
+            } else {
+                squareElement.classList.add('valid-target');
+                foundValidTarget = true;
+            }
+
+            // If this square was blocked, stop checking further
+            if (pathBlocked) break;
+        } // --- End For Loop ---
+
 
         if (!foundValidTarget) {
             addToLog("No valid targets in range for throw.");
-            // Optional: Cancel the throw action automatically if no targets?
+            // Consider auto-cancelling the throw state here if desired
             // currentGameState.actionState.pendingAction = null;
             // currentGameState.actionState.selectedHazardType = null;
-            // updateUI();
         }
     }
 
