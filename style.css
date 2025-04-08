@@ -46,13 +46,19 @@ body {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
-
 /* Headings and Text */
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
     color: #5a3a3a; /* Western-ish brown */
 }
 
@@ -84,7 +90,8 @@ button {
     transition: background-color 0.2s ease;
 }
 
-button:hover:not(:disabled) { /* Ensure hover only affects enabled buttons */
+button:hover:not(:disabled) {
+    /* Ensure hover only affects enabled buttons */
     background-color: #a0522d; /* Sienna */
 }
 
@@ -114,10 +121,18 @@ button:disabled {
     min-width: 120px;
 }
 
-.btn-class[data-class="Sheriff"] { background-color: #4682b4; } /* Steel Blue */
-.btn-class[data-class="Vigilante"] { background-color: #696969; } /* Dim Gray */
-.btn-class[data-class="Outlaw"] { background-color: #b22222; } /* Firebrick */
-.btn-class[data-class="Bounty Hunter"] { background-color: #228B22; } /* Forest Green */
+.btn-class[data-class="Sheriff"] {
+    background-color: #4682b4;
+} /* Steel Blue */
+.btn-class[data-class="Vigilante"] {
+    background-color: #696969;
+} /* Dim Gray */
+.btn-class[data-class="Outlaw"] {
+    background-color: #b22222;
+} /* Firebrick */
+.btn-class[data-class="Bounty Hunter"] {
+    background-color: #228b22;
+} /* Forest Green */
 
 .btn-class.selected {
     outline: 3px solid gold;
@@ -125,16 +140,24 @@ button:disabled {
 }
 
 /* Darker Backgrounds for Selected State */
-.btn-class[data-class="Sheriff"].selected { background-color: #366a94; } /* Darker Steel Blue */
-.btn-class[data-class="Vigilante"].selected { background-color: #505050; } /* Darker Dim Gray */
-.btn-class[data-class="Outlaw"].selected { background-color: #8f1c1c; } /* Darker Firebrick */
-.btn-class[data-class="Bounty Hunter"].selected { background-color: #1c701c; } /* Darker Forest Green */
+.btn-class[data-class="Sheriff"].selected {
+    background-color: #366a94;
+} /* Darker Steel Blue */
+.btn-class[data-class="Vigilante"].selected {
+    background-color: #505050;
+} /* Darker Dim Gray */
+.btn-class[data-class="Outlaw"].selected {
+    background-color: #8f1c1c;
+} /* Darker Firebrick */
+.btn-class[data-class="Bounty Hunter"].selected {
+    background-color: #1c701c;
+} /* Darker Forest Green */
 
-.btn-class:disabled { /* Override default disabled if needed for visual cue */
-     background-color: #a9a9a9; /* Dark Gray for disabled */
-     opacity: 0.7;
+.btn-class:disabled {
+    /* Override default disabled if needed for visual cue */
+    background-color: #a9a9a9; /* Dark Gray for disabled */
+    opacity: 0.7;
 }
-
 
 /* Setup Screen Specifics */
 .setup-section {
@@ -161,7 +184,8 @@ button:disabled {
     background-color: #f9f9f9;
 }
 
-#class-abilities { /* Target specifically setup abilities list */
+#class-abilities {
+    /* Target specifically setup abilities list */
     list-style: disc;
     margin-left: 20px;
     padding-left: 0; /* Reset padding */
@@ -170,7 +194,6 @@ button:disabled {
 #class-abilities li {
     margin-bottom: 8px;
 }
-
 
 /* Popup Styles */
 .popup {
@@ -186,7 +209,8 @@ button:disabled {
     align-items: center;
 }
 
-.popup.active { /* Use this class to show popups if needed */
+.popup.active {
+    /* Use this class to show popups if needed */
     display: flex;
 }
 
@@ -225,7 +249,7 @@ button:disabled {
     max-height: 90vw;
     border: 2px solid #333;
     background-color: #fdfbf7; /* Light parchment/off-white */
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .grid-square {
@@ -279,7 +303,6 @@ button:disabled {
     cursor: not-allowed;
 }
 
-
 /* --- Piece/Hazard Styles --- */
 .piece {
     position: absolute;
@@ -301,20 +324,39 @@ button:disabled {
 
 /* Facing Indicators (Larger, Bolder Arrow Text using ::before) */
 .vampire::before {
-    content: ''; /* Base rule */
+    content: ""; /* Base rule */
     position: absolute;
     font-size: 1.1em;
     font-weight: bold;
-    color: rgba(0,0,0,0.8);
-    text-shadow: 1px 1px 1px rgba(255,255,255,0.5);
+    color: rgba(0, 0, 0, 0.8);
+    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.5);
     z-index: 1;
     line-height: 1;
 }
-.vampire[data-facing="N"]::before { content: '▲'; top: 0px; width: 100%; text-align: center; }
-.vampire[data-facing="S"]::before { content: '▼'; bottom: 0px; width: 100%; text-align: center; }
-.vampire[data-facing="E"]::before { content: '▶'; right: 2px; top: 50%; transform: translateY(-50%); }
-.vampire[data-facing="W"]::before { content: '◀'; left: 2px; top: 50%; transform: translateY(-50%); }
-
+.vampire[data-facing="N"]::before {
+    content: "▲";
+    top: 0px;
+    width: 100%;
+    text-align: center;
+}
+.vampire[data-facing="S"]::before {
+    content: "▼";
+    bottom: 0px;
+    width: 100%;
+    text-align: center;
+}
+.vampire[data-facing="E"]::before {
+    content: "▶";
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+.vampire[data-facing="W"]::before {
+    content: "◀";
+    left: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+}
 
 .vampire {
     border-radius: 50%;
@@ -333,8 +375,8 @@ button:disabled {
 }
 .vampire.selected {
     outline: 3px solid gold;
-     box-shadow: 0 0 10px gold;
-     z-index: 11;
+    box-shadow: 0 0 10px gold;
+    z-index: 11;
 }
 .vampire.cursed {
     border: 3px dashed purple !important;
@@ -356,10 +398,18 @@ button:disabled {
 }
 
 /* Player-specific Bloodwell Border Colors */
-.bloodwell.color-sheriff { border-color: #4682b4; }
-.bloodwell.color-vigilante { border-color: #696969; }
-.bloodwell.color-outlaw { border-color: #b22222; }
-.bloodwell.color-bounty-hunter { border-color: #228B22; }
+.bloodwell.color-sheriff {
+    border-color: #4682b4;
+}
+.bloodwell.color-vigilante {
+    border-color: #696969;
+}
+.bloodwell.color-outlaw {
+    border-color: #b22222;
+}
+.bloodwell.color-bounty-hunter {
+    border-color: #228b22;
+}
 
 .hazard {
     border-radius: 0;
@@ -367,7 +417,7 @@ button:disabled {
     font-size: 1.6em;
     z-index: 1;
     opacity: 1;
-    color: rgba(0,0,0,0.9);
+    color: rgba(0, 0, 0, 0.9);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -375,15 +425,24 @@ button:disabled {
 }
 
 /* Class Colors (Vampire Backgrounds) */
-.vampire.color-sheriff { background-color: rgba(70, 130, 180, 0.7); }
-.vampire.color-vigilante { background-color: rgba(105, 105, 105, 0.7); }
-.vampire.color-outlaw { background-color: rgba(178, 34, 34, 0.7); }
-.vampire.color-bounty-hunter { background-color: rgba(34, 139, 34, 0.7); }
+.vampire.color-sheriff {
+    background-color: rgba(70, 130, 180, 0.7);
+}
+.vampire.color-vigilante {
+    background-color: rgba(105, 105, 105, 0.7);
+}
+.vampire.color-outlaw {
+    background-color: rgba(178, 34, 34, 0.7);
+}
+.vampire.color-bounty-hunter {
+    background-color: rgba(34, 139, 34, 0.7);
+}
 
 /* Hazard specific appearances */
 .hazard-tombstone {
     background-color: transparent;
-    border: none; font-size: 3em;
+    border: none;
+    font-size: 3em;
     color: #333;
 }
 .hazard-black-widow {
@@ -404,7 +463,6 @@ button:disabled {
     border: none;
     text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
 }
-
 
 /* --- Movement Bar (D-Pad) Styles --- */
 #movement-bar {
@@ -440,14 +498,25 @@ button:disabled {
     color: #bbb;
     border-color: #ccc;
 }
-#move-n { grid-row: 1; grid-column: 2; }
-#move-w { grid-row: 2; grid-column: 1; }
-#move-e { grid-row: 2; grid-column: 3; }
-#move-s { grid-row: 3; grid-column: 2; }
+#move-n {
+    grid-row: 1;
+    grid-column: 2;
+}
+#move-w {
+    grid-row: 2;
+    grid-column: 1;
+}
+#move-e {
+    grid-row: 2;
+    grid-column: 3;
+}
+#move-s {
+    grid-row: 3;
+    grid-column: 2;
+}
 #movement-bar.hidden {
     display: none;
 }
-
 
 /* Player Info & Status Bar */
 #player-info {
@@ -459,7 +528,55 @@ button:disabled {
     flex-wrap: wrap;
 }
 
-#status-bar,
+/* --- Status Bar Player Color Indicator (Additions/Replacements) --- */
+
+/* Base style for the status bar (ensure transition is here) */
+#status-bar {
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.2em; /* Adjust as needed */
+    margin-bottom: 15px; /* Space below */
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition */
+    color: #333; /* Default text color */
+    background-color: #eee; /* Default background */
+    /* Remove any direct color/background settings if they exist here */
+    /* The class-based rules below will handle colors */
+}
+
+/* Class-specific background and text colors */
+#status-bar.color-sheriff {
+    background-color: #4682b4; /* Steel Blue */
+    color: white;
+}
+
+#status-bar.color-vigilante {
+    background-color: #696969; /* Dim Gray */
+    color: white;
+}
+
+#status-bar.color-outlaw {
+    background-color: #b22222; /* Firebrick */
+    color: white;
+}
+
+#status-bar.color-bounty-hunter {
+    background-color: #228B22; /* Forest Green */
+    color: white;
+}
+
+/* Ensure spans inside (if any were kept) also get the right color */
+/* You might not need these if textContent replaces everything */
+/*
+#status-bar.color-sheriff span,
+#status-bar.color-vigilante span,
+#status-bar.color-outlaw span,
+#status-bar.color-bounty-hunter span {
+     color: white;
+}
+*/
+
 #game-controls,
 #current-class-details {
     width: 100%;
@@ -478,14 +595,19 @@ button:disabled {
     justify-content: center;
 }
 
-#current-class-details h3, #current-class-details h4 {
-    margin-top: 10px; margin-bottom: 5px;
+#current-class-details h3,
+#current-class-details h4 {
+    margin-top: 10px;
+    margin-bottom: 5px;
 }
 #current-class-details #info-class-abilities {
-    list-style: disc; margin-left: 20px; padding-left: 0;
+    list-style: disc;
+    margin-left: 20px;
+    padding-left: 0;
 }
 #current-class-details #info-class-abilities li {
-    margin-bottom: 5px; font-size: 0.9em;
+    margin-bottom: 5px;
+    font-size: 0.9em;
 }
 #current-class-details h3 {
     margin-top: 0;
@@ -529,16 +651,46 @@ button:disabled {
     text-align: center;
 }
 
-
 /* Game Log */
-#game-log-container { margin-top: 20px; text-align: left; }
-#btn-toggle-log { margin-bottom: 5px; background-color: #6c757d; }
-#game-log { border: 1px solid #ccc; background-color: #f8f8f8; padding: 10px; max-height: 150px; overflow-y: auto; border-radius: 4px; font-size: 0.9em; transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out, border 0.3s ease-out; }
-#game-log.log-hidden { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; border: none; overflow: hidden; margin-top: 0; }
-#log-list { list-style: none; padding: 0; margin: 0; }
-#log-list li { padding: 2px 0; border-bottom: 1px dotted #eee; }
-#log-list li:last-child { border-bottom: none; }
-
+#game-log-container {
+    margin-top: 20px;
+    text-align: left;
+}
+#btn-toggle-log {
+    margin-bottom: 5px;
+    background-color: #6c757d;
+}
+#game-log {
+    border: 1px solid #ccc;
+    background-color: #f8f8f8;
+    padding: 10px;
+    max-height: 150px;
+    overflow-y: auto;
+    border-radius: 4px;
+    font-size: 0.9em;
+    transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out, border 0.3s ease-out;
+}
+#game-log.log-hidden {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border: none;
+    overflow: hidden;
+    margin-top: 0;
+}
+#log-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+#log-list li {
+    padding: 2px 0;
+    border-bottom: 1px dotted #eee;
+}
+#log-list li:last-child {
+    border-bottom: none;
+}
 
 /* Game Controls (within Player Info) */
 #game-controls {
@@ -552,7 +704,8 @@ button:disabled {
     color: #666666;
     cursor: not-allowed;
 }
-#btn-back-to-setup { /* Assuming this is the dev button at the bottom */
+#btn-back-to-setup {
+    /* Assuming this is the dev button at the bottom */
     background-color: #ffc107;
     color: #333;
 }
@@ -562,16 +715,48 @@ button:disabled {
 
 /* --- Gameplay Action Enhancements --- */
 /* Hazard Picker Panel */
-#hazard-picker .popup-content { max-width: 500px; }
-#hazard-picker-options { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
-#hazard-picker-options button { min-width: 100px; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 0.9em; padding: 8px; background-color: #f8f8f8; color: #333; border: 1px solid #ccc; }
-#hazard-picker-options button .hazard-icon { font-size: 1.8em; }
-#hazard-picker-options button .hazard-cost { font-size: 0.8em; color: #555; }
-#hazard-picker-options button:disabled { background-color: #e0e0e0; opacity: 0.6; }
-#hazard-picker-options button:hover:not(:disabled) { background-color: #e0e0e0; }
-#btn-cancel-throw { background-color: #6c757d; margin-top: 15px; }
-#btn-cancel-throw:hover:not(:disabled) { background-color: #5a6268; }
-
+#hazard-picker .popup-content {
+    max-width: 500px;
+}
+#hazard-picker-options {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+#hazard-picker-options button {
+    min-width: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9em;
+    padding: 8px;
+    background-color: #f8f8f8;
+    color: #333;
+    border: 1px solid #ccc;
+}
+#hazard-picker-options button .hazard-icon {
+    font-size: 1.8em;
+}
+#hazard-picker-options button .hazard-cost {
+    font-size: 0.8em;
+    color: #555;
+}
+#hazard-picker-options button:disabled {
+    background-color: #e0e0e0;
+    opacity: 0.6;
+}
+#hazard-picker-options button:hover:not(:disabled) {
+    background-color: #e0e0e0;
+}
+#btn-cancel-throw {
+    background-color: #6c757d;
+    margin-top: 15px;
+}
+#btn-cancel-throw:hover:not(:disabled) {
+    background-color: #5a6268;
+}
 
 /* Target Highlighting */
 .grid-square.valid-target {
@@ -580,11 +765,15 @@ button:disabled {
     cursor: crosshair;
 }
 .grid-square.invalid-target {
-   /* Optional styling */
+    /* Optional styling */
 }
 
 /* Move/Pivot Action Buttons (If added later) */
-.direction-buttons button { min-width: 40px; font-size: 1.2em; padding: 5px 10px; }
+.direction-buttons button {
+    min-width: 40px;
+    font-size: 1.2em;
+    padding: 5px 10px;
+}
 
 /* Style for inline error messages */
 .error-message {
