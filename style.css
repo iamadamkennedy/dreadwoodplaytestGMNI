@@ -2,12 +2,19 @@
 :root {
   --vampire-purple: #6a0dad; /* Primary purple */
   --vampire-purple-hover: #4b0082; /* Darker purple (Indigo) */
+  --action-gray: #e8e8e8; /* Light gray for actions */
+  --action-gray-hover: #dcdcdc;
+  --movement-gray: #d8d8d8; /* Slightly darker gray for movement */
+  --movement-gray-hover: #c8c8c8;
+  --hazard-picker-gray: #f8f8f8; /* Very light gray for hazard picker */
+  --hazard-picker-gray-hover: #e0e0e0;
+  --dark-text: #333;
 }
 
 body {
     font-family: sans-serif;
     background-color: #f0f0f0;
-    color: #333;
+    color: var(--dark-text);
     margin: 0;
     padding: 20px;
     display: flex;
@@ -28,435 +35,204 @@ body {
 
 /* Adjust spacing on shorter screens */
 @media (max-height: 750px) {
-    #game-container {
-        padding-top: 10px;
-        padding-bottom: 10px;
-    }
-    #screen-player-setup .setup-section {
-        margin-top: 15px; /* Reduce top margin between sections */
-        padding: 10px; /* Reduce padding inside sections */
-    }
-    /* Reduce font size slightly if needed */
+    #game-container { padding-top: 10px; padding-bottom: 10px; }
+    #screen-player-setup .setup-section { margin-top: 15px; padding: 10px; }
     /* body { font-size: 0.95em; } */
 }
 
 /* Screen Visibility */
-.screen {
-    display: none; /* Hide screens by default */
-    animation: fadeIn 0.5s ease-in-out;
-}
-
-.screen.active {
-    display: block; /* Show active screen */
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
+.screen { display: none; animation: fadeIn 0.5s ease-in-out; }
+.screen.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* Headings and Text */
-h1,
-h2,
-h3,
-h4 {
-    color: #5a3a3a; /* Western-ish brown */
-}
+h1, h2, h3, h4 { color: #5a3a3a; }
+label { display: block; margin-bottom: 5px; font-weight: bold; color: #666; text-align: left; }
 
-label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-    color: #666;
-    text-align: left;
-}
-
-/* --- Button Theme Change (Purple) --- */
-
-/* Base Button Style */
+/* --- Base Button Style (Now Purple for "Surrounding" Buttons) --- */
 button {
     padding: 10px 20px;
     font-size: 1em;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    background-color: var(--vampire-purple); /* CHANGED */
-    color: white;                         /* ENSURED */
+    background-color: var(--vampire-purple);
+    color: white;
     transition: background-color 0.2s ease;
 }
 button:hover:not(:disabled) {
-    background-color: var(--vampire-purple-hover); /* CHANGED */
+    background-color: var(--vampire-purple-hover);
 }
 /* Keep existing disabled style */
 button:disabled {
     background-color: #cccccc;
     color: #666666;
     cursor: not-allowed;
-    opacity: 0.7; /* Ensure disabled buttons look distinct */
+    opacity: 0.7;
 }
 
 /* Button Container */
-.button-container {
-    margin-top: 20px;
-    display: flex;
-    justify-content: center;
-    gap: 15px; /* Space between buttons */
-    flex-wrap: wrap; /* Allow buttons to wrap */
-}
+.button-container { margin-top: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
 
+/* --- Specific Button Style Overrides --- */
 
-/* --- Specific Button Styles (Adjusted for Purple Theme) --- */
+/* Setup Navigation Buttons (Inherit Purple) */
+#btn-back, #btn-next, #btn-back-to-start { /* Already purple */ }
 
-/* Setup Navigation Buttons */
-#btn-back, #btn-back-to-start {
-     /* Inherits base button style now */
-     /* background-color: #6c757d; */ /* REMOVED Gray */
-}
-/* Hover state inherited */
+/* Class Selection Buttons (Restore Class Colors) */
+.btn-class { min-width: 120px; }
+.btn-class[data-class="Sheriff"] { background-color: #4682b4; }
+.btn-class[data-class="Vigilante"] { background-color: #696969; }
+.btn-class[data-class="Outlaw"] { background-color: #b22222; }
+.btn-class[data-class="Bounty Hunter"] { background-color: #228b22; }
 
+.btn-class.selected { outline: 3px solid gold; box-shadow: 0 0 10px gold; }
+.btn-class[data-class="Sheriff"].selected { background-color: #366a94; }
+.btn-class[data-class="Vigilante"].selected { background-color: #505050; }
+.btn-class[data-class="Outlaw"].selected { background-color: #8f1c1c; }
+.btn-class[data-class="Bounty Hunter"].selected { background-color: #1c701c; }
 
-/* Setup Class Buttons */
-.btn-class {
-    min-width: 120px;
-    /* background-color is now handled by the base 'button' rule */
-}
-/* REMOVED specific background colors for setup class buttons */
-/* .btn-class[data-class="Sheriff"] { background-color: #4682b4; } */
-/* .btn-class[data-class="Vigilante"] { background-color: #696969; } */
-/* .btn-class[data-class="Outlaw"] { background-color: #b22222; } */
-/* .btn-class[data-class="Bounty Hunter"] { background-color: #228b22; } */
-
-/* Keep selected style outline, hover color will apply */
-.btn-class.selected {
-    outline: 3px solid gold;
-    box-shadow: 0 0 10px gold;
-}
-/* REMOVED selected background overrides */
-/* .btn-class[data-class="Sheriff"].selected { background-color: #366a94; } */
-/* ... remove others ... */
-
-/* Disabled class button style override (if needed) */
-/* .btn-class:disabled { */
-    /* background-color: #a9a9a9; */ /* Optional override */
-/* } */
-
-
-/* Setup Screen Specifics */
-.setup-section {
-    margin-top: 25px;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background-color: #fafafa;
-    text-align: left; /* Align content left within sections */
-    box-sizing: border-box; /* ADDED - Layout Drift Fix */
-}
-
-#input-player-name {
-    padding: 8px;
-    font-size: 1em;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: calc(100% - 20px); /* Adjust for padding */
-    max-width: 300px;
-}
-
-.class-details-box {
-    margin-top: 15px;
-    min-height: 150px; /* Ensure space for details */
-    background-color: #f9f9f9;
-}
-
-#class-abilities {
-    /* Target specifically setup abilities list */
-    list-style: disc;
-    margin-left: 20px;
-    padding-left: 0; /* Reset padding */
-}
-#class-abilities li {
-    margin-bottom: 8px;
-}
-
-/* Popup Styles */
-.popup {
-    display: none; /* Hidden by default */
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Dim background */
-    z-index: 1000;
-    justify-content: center;
-    align-items: center;
-}
-
-.popup.active {
-    display: flex;
-}
-
-.popup-content {
-    background-color: #fff;
-    padding: 30px;
-    border-radius: 8px;
-    text-align: center;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    max-width: 600px;
-    width: 90%;
-}
-
-/* Popup Buttons */
-.popup button {
-     /* Inherits base 'button' style */
-     margin-top: 15px; /* Add consistent margin maybe */
-}
-#btn-cancel-throw {
-    /* Inherits base 'button' style */
-    /* background-color: #6c757d; */ /* REMOVED gray */
-}
-
-/* --- Gameplay Screen Styles --- */
-
-#screen-gameplay h2 {
-    margin-bottom: 15px;
-}
-
-/* Game Board */
-#game-board-container {
-    display: flex;
-    justify-content: center;
-    max-width: 100%;
-    overflow-x: auto;
-}
-
-#game-board {
-    display: grid;
-    grid-template-columns: repeat(9, 1fr);
-    grid-template-rows: repeat(9, 1fr);
-    width: 500px;
-    height: 500px;
-    max-width: 90vw;
-    max-height: 90vw;
-    border: 2px solid #333;
-    background-color: #fdfbf7;
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
-}
-
-.grid-square {
-    border: 1px solid #ccc;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 0.6em;
-    color: #aaa;
-    aspect-ratio: 1 / 1;
-    overflow: hidden;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-.grid-square:hover {
-    background-color: #f0f0f0;
-}
-
-/* Action Bar */
-#action-bar {
-    margin-top: 20px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-}
-/* Action Bar Buttons */
+/* Action Bar Buttons (Revert to Gray) */
 #action-bar button {
-    /* background-color: #e8e8e8; */ /* REMOVED */
-    /* color: #333; */ /* REMOVED */
+    background-color: var(--action-gray);
+    color: var(--dark-text);
     min-width: 80px;
     padding: 8px 12px;
     font-size: 0.9em;
-    /* Inherits purple theme from base 'button' */
 }
-/* Hover/Disabled states are inherited from base 'button' */
+#action-bar button:hover:not(:disabled) {
+    background-color: var(--action-gray-hover);
+}
+#action-bar button:disabled { /* Use default disabled or customize */
+    background-color: #f5f5f5;
+    color: #aaa;
+}
 
+/* Movement Buttons (Revert to Gray) */
+.movement-buttons button.move-button {
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    font-size: 1.8em;
+    line-height: 45px;
+    background-color: var(--movement-gray);
+    color: var(--dark-text);
+    border: 1px solid #aaa;
+    min-width: auto;
+}
+.movement-buttons button.move-button:hover:not(:disabled) {
+    background-color: var(--movement-gray-hover);
+}
+.movement-buttons button.move-button:disabled {
+    background-color: #e8e8e8; /* Lighter disabled gray */
+    color: #bbb;
+    border-color: #ccc;
+}
+
+/* Hazard Picker Buttons (Revert to Gray) */
+#hazard-picker-options button {
+    min-width: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9em;
+    padding: 8px;
+    background-color: var(--hazard-picker-gray);
+    color: var(--dark-text);
+    border: 1px solid #ccc;
+}
+#hazard-picker-options button:hover:not(:disabled) {
+    background-color: var(--hazard-picker-gray-hover);
+}
+#hazard-picker-options button .hazard-cost {
+     font-size: 0.8em;
+     color: #555; /* Darker text for cost on light background */
+}
+#hazard-picker-options button:disabled {
+     background-color: #e0e0e0; /* Keep light gray disabled */
+     opacity: 0.6;
+     color: #666666;
+}
+
+/* Help Button (Purple) */
+#btn-help {
+     /* Inherits purple theme from base 'button' */
+     /* Keep positioning/size/shape */
+     position: absolute; top: 15px; right: 20px; font-size: 1.2em; font-weight: bold;
+     width: 35px; height: 35px; padding: 0; border-radius: 50%;
+     border: 1px solid rgba(255, 255, 255, 0.3); z-index: 10;
+     line-height: 33px; text-align: center;
+}
+
+/* Log Toggle, Dev Back, Popups, Undo/End Turn (Inherit Purple) */
+#btn-toggle-log, #btn-back-to-setup, .popup button, #game-controls button {
+    /* These inherit the base purple style */
+}
+
+
+/* Setup Screen Specifics */
+.setup-section { margin-top: 25px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background-color: #fafafa; text-align: left; box-sizing: border-box; }
+#input-player-name { padding: 8px; font-size: 1em; border: 1px solid #ccc; border-radius: 4px; width: calc(100% - 20px); max-width: 300px; }
+.class-details-box { margin-top: 15px; min-height: 150px; background-color: #f9f9f9; }
+#class-abilities { list-style: disc; margin-left: 20px; padding-left: 0; }
+#class-abilities li { margin-bottom: 8px; }
+
+/* Popup Styles */
+.popup { display: none; position: fixed; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center; }
+.popup.active { display: flex; }
+.popup-content { background-color: #fff; padding: 30px; border-radius: 8px; text-align: center; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); max-width: 600px; width: 90%; }
+
+/* --- Gameplay Screen Styles --- */
+#screen-gameplay h2 { margin-bottom: 15px; }
+
+/* Game Board */
+#game-board-container { display: flex; justify-content: center; max-width: 100%; overflow-x: auto; }
+#game-board { display: grid; grid-template-columns: repeat(9, 1fr); grid-template-rows: repeat(9, 1fr); width: 500px; height: 500px; max-width: 90vw; max-height: 90vw; border: 2px solid #333; background-color: #fdfbf7; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
+.grid-square { border: 1px solid #ccc; position: relative; display: flex; justify-content: center; align-items: center; font-size: 0.6em; color: #aaa; aspect-ratio: 1 / 1; overflow: hidden; cursor: pointer; transition: background-color 0.2s ease; }
+.grid-square:hover { background-color: #f0f0f0; }
+
+/* Action Bar */
+#action-bar { margin-top: 20px; margin-bottom: 15px; flex-wrap: wrap; display: flex; justify-content: center; gap: 10px; }
 
 /* --- Piece/Hazard Styles --- */
-.piece {
-    position: absolute;
-    top: 5%;
-    left: 5%;
-    width: 90%;
-    height: 90%;
-    border-radius: 4px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5em;
-    font-weight: bold;
-    box-sizing: border-box;
-    pointer-events: none;
-    user-select: none;
-    line-height: 1;
-}
-
-/* Facing Indicators */
-.vampire::before {
-    content: '';
-    position: absolute;
-    font-size: 1.1em;
-    font-weight: bold;
-    color: rgba(0,0,0,0.8);
-    text-shadow: 1px 1px 1px rgba(255,255,255,0.5);
-    z-index: 1;
-    line-height: 1;
-}
+.piece { position: absolute; top: 5%; left: 5%; width: 90%; height: 90%; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 1.5em; font-weight: bold; box-sizing: border-box; pointer-events: none; user-select: none; line-height: 1; }
+.vampire::before { content: ''; position: absolute; font-size: 1.1em; font-weight: bold; color: rgba(0,0,0,0.8); text-shadow: 1px 1px 1px rgba(255,255,255,0.5); z-index: 1; line-height: 1; }
 .vampire[data-facing="N"]::before { content: '▲'; top: 0px; width: 100%; text-align: center; }
 .vampire[data-facing="S"]::before { content: '▼'; bottom: 0px; width: 100%; text-align: center; }
 .vampire[data-facing="E"]::before { content: '▶'; right: 2px; top: 50%; transform: translateY(-50%); }
 .vampire[data-facing="W"]::before { content: '◀'; left: 2px; top: 50%; transform: translateY(-50%); }
-
-.vampire {
-    border-radius: 50%;
-    border: 2px solid black;
-    z-index: 10;
-    cursor: pointer;
-    pointer-events: auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 0.9em;
-    font-weight: bold;
-    color: white;
-    text-shadow: 0 0 2px black, 0 0 2px black, 0 0 1px black;
-    line-height: 1;
-}
-.vampire.selected {
-    outline: 3px solid gold;
-    box-shadow: 0 0 10px gold;
-    z-index: 11;
-}
-.vampire.cursed {
-    border: 3px dashed purple !important;
-    box-shadow: 0 0 8px purple;
-}
-
-.bloodwell {
-    border-radius: 10%;
-    border: 3px dashed transparent;
-    font-size: 1.8em;
-    z-index: 5;
-    opacity: 1;
-    color: crimson;
-    background-color: black;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    line-height: 1;
-}
-
-/* Player-specific Bloodwell Border Colors */
+.vampire { border-radius: 50%; border: 2px solid black; z-index: 10; cursor: pointer; pointer-events: auto; display: flex; justify-content: center; align-items: center; font-size: 0.9em; font-weight: bold; color: white; text-shadow: 0 0 2px black, 0 0 2px black, 0 0 1px black; line-height: 1; }
+.vampire.selected { outline: 3px solid gold; box-shadow: 0 0 10px gold; z-index: 11; }
+.vampire.cursed { border: 3px dashed purple !important; box-shadow: 0 0 8px purple; }
+.bloodwell { border-radius: 10%; border: 3px dashed transparent; font-size: 1.8em; z-index: 5; opacity: 1; color: crimson; background-color: black; display: flex; justify-content: center; align-items: center; line-height: 1; }
 .bloodwell.color-sheriff { border-color: #4682b4; }
 .bloodwell.color-vigilante { border-color: #696969; }
 .bloodwell.color-outlaw { border-color: #b22222; }
 .bloodwell.color-bounty-hunter { border-color: #228b22; }
-
-.hazard {
-    border-radius: 0;
-    border: 1px solid #555;
-    font-size: 1.6em;
-    z-index: 1;
-    opacity: 1;
-    color: rgba(0,0,0,0.9);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    line-height: 1;
-}
-
-/* Class Colors (Vampire Backgrounds) */
+.hazard { border-radius: 0; border: 1px solid #555; font-size: 1.6em; z-index: 1; opacity: 1; color: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; line-height: 1; }
 .vampire.color-sheriff { background-color: rgba(70, 130, 180, 0.7); }
 .vampire.color-vigilante { background-color: rgba(105, 105, 105, 0.7); }
 .vampire.color-outlaw { background-color: rgba(178, 34, 34, 0.7); }
 .vampire.color-bounty-hunter { background-color: rgba(34, 139, 34, 0.7); }
-
-/* Hazard specific appearances */
 .hazard-tombstone { background-color: transparent; border: none; font-size: 3em; color: #333; }
 .hazard-black-widow { background-color: #f7be73; border: none; color: black; font-size: 3em; }
 .hazard-grave-dust { background-color: plum; color: #333; font-size: 3em; }
 .hazard-dynamite { background-color: #ff4500; color: white; font-size: 3em; border: none; text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; }
 
 /* --- Movement Bar (D-Pad) Styles --- */
-#movement-bar {
-    display: grid;
-    grid-template-columns: repeat(3, 45px);
-    grid-template-rows: repeat(3, 45px);
-    gap: 2px;
-    width: fit-content;
-    margin: 15px auto 20px auto;
-    border: none;
-    padding: 0;
-    justify-items: center;
-    align-items: center;
-}
-.movement-buttons button.move-button { /* Selector already exists, just update styles */
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    font-size: 1.8em;
-    line-height: 45px; /* Match grid row height */
-    background-color: var(--vampire-purple); /* CHANGED */
-    color: white;                         /* ENSURED */
-    border: 1px solid rgba(255, 255, 255, 0.3); /* Lighter border on purple */
-    min-width: auto;
-}
-.movement-buttons button.move-button:hover:not(:disabled) {
-    background-color: var(--vampire-purple-hover); /* CHANGED */
-}
-/* Keep existing disabled style, maybe adjust border/color */
-.movement-buttons button.move-button:disabled {
-    background-color: #cccccc; /* Keep gray disabled */
-    color: #999999;
-    border-color: #bbbbbb;
-}
-
+#movement-bar { display: grid; grid-template-columns: repeat(3, 45px); grid-template-rows: repeat(3, 45px); gap: 2px; width: fit-content; margin: 15px auto 20px auto; border: none; padding: 0; justify-items: center; align-items: center; }
 #move-n { grid-row: 1; grid-column: 2; }
 #move-w { grid-row: 2; grid-column: 1; }
 #move-e { grid-row: 2; grid-column: 3; }
 #move-s { grid-row: 3; grid-column: 2; }
 #movement-bar.hidden { display: none; }
 
-
 /* --- Player Info & Status Bar --- */
-#player-info {
-    display: flex;
-    flex-direction: column;
-    /* align-items: center; */ /* Keep commented out as per layout drift test */
-    gap: 15px;
-    margin-top: 20px;
-    flex-wrap: wrap;
-}
+#player-info { display: flex; flex-direction: column; /* align-items: center; */ gap: 15px; margin-top: 20px; flex-wrap: wrap; }
 
 /* Base style for the status bar */
-#status-bar {
-    padding: 10px;
-    text-align: center;
-    font-weight: bold;
-    font-size: 1.2em;
-    margin-bottom: 15px;
-    border-radius: 5px;
-    transition: background-color 0.3s ease, color 0.3s ease;
-    color: #333; /* Default text color */
-    background-color: #eee; /* Default background */
-    width: 100%;         /* ADDED - Ensure it takes width for margin:auto */
-    max-width: 450px;    /* Keep max-width */
-    margin-left: auto;   /* Keep for centering fallback */
-    margin-right: auto;  /* Keep for centering fallback */
-    box-sizing: border-box; /* ADDED - Layout Drift Fix */
-}
+#status-bar { padding: 10px; text-align: center; font-weight: bold; font-size: 1.2em; margin-bottom: 15px; border-radius: 5px; transition: background-color 0.3s ease, color 0.3s ease; color: var(--dark-text); background-color: #eee; width: 100%; max-width: 450px; margin-left: auto; margin-right: auto; box-sizing: border-box; }
 
 /* Class-specific background and text colors */
 #status-bar.color-sheriff { background-color: #4682b4; color: white; }
@@ -469,36 +245,13 @@ button:disabled {
 #status-bar.color-vigilante span,
 #status-bar.color-outlaw span,
 #status-bar.color-bounty-hunter span {
-     color: white !important; /* Use !important to ensure override if needed */
+     color: white !important; /* Using !important for robustness */
 }
-/* Remove old generic span rule that made text brown */
-/* #status-bar span { color: #8b4513; ... } */
-
 
 /* Game Controls & Current Class Details */
-#game-controls,
-#current-class-details {
-    width: 100%;
-    max-width: 450px;
-    margin-left: auto;
-    margin-right: auto;
-    box-sizing: border-box; /* ADDED - Layout Drift Fix */
-}
-
-#game-controls.button-container {
-    margin-top: 10px;
-    margin-bottom: 10px;
-    width: auto; /* Overrides width: 100% */
-    max-width: none; /* Overrides max-width: 450px */
-    margin-left: 0; /* Override margin: auto */
-    margin-right: 0; /* Override margin: auto */
-    justify-content: center; /* Keep button centering */
-}
-/* Game Controls Buttons inherit purple theme */
-
-/* Current Class Details Box Styling */
-#current-class-details h3,
-#current-class-details h4 { margin-top: 10px; margin-bottom: 5px; }
+#game-controls, #current-class-details { width: 100%; max-width: 450px; margin-left: auto; margin-right: auto; box-sizing: border-box; }
+#game-controls.button-container { margin-top: 10px; margin-bottom: 10px; width: auto; max-width: none; margin-left: 0; margin-right: 0; justify-content: center; }
+#current-class-details h3, #current-class-details h4 { margin-top: 10px; margin-bottom: 5px; }
 #current-class-details #info-class-abilities { list-style: disc; margin-left: 20px; padding-left: 0; }
 #current-class-details #info-class-abilities li { margin-bottom: 5px; font-size: 0.9em; }
 #current-class-details h3 { margin-top: 0; margin-bottom: 15px; text-align: center; color: #5a3a3a; }
@@ -506,108 +259,25 @@ button:disabled {
 #current-class-details hr { border: none; border-top: 1px dashed #ccc; margin: 15px 0; }
 #current-class-details ul { padding-left: 20px; margin-top: 5px; }
 
-
 /* Game Log */
-#game-log-container {
-    margin-top: 20px;
-    text-align: left; /* Keep container text-align for button */
-    /* Centering the container itself might help overall layout */
-    max-width: 450px; /* Match other centered elements */
-    margin-left: auto;
-    margin-right: auto;
-    box-sizing: border-box; /* ADDED */
-}
-#btn-toggle-log {
-    margin-bottom: 5px;
-    /* background-color: #6c757d; */ /* REMOVED */
-    /* Inherits purple theme */
-}
-#game-log {
-    border: 1px solid #ccc;
-    background-color: #f8f8f8;
-    padding: 10px;
-    max-height: 150px;
-    overflow-y: auto;
-    border-radius: 4px;
-    font-size: 0.9em;
-    transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out, border 0.3s ease-out;
-}
+#game-log-container { margin-top: 20px; text-align: left; max-width: 450px; margin-left: auto; margin-right: auto; box-sizing: border-box; }
+#game-log { border: 1px solid #ccc; background-color: #f8f8f8; padding: 10px; max-height: 150px; overflow-y: auto; border-radius: 4px; font-size: 0.9em; transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out, border 0.3s ease-out; }
 #game-log.log-hidden { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; border: none; overflow: hidden; margin-top: 0; }
 #log-list { list-style: none; padding: 0; margin: 0; }
 #log-list li { padding: 2px 0; border-bottom: 1px dotted #eee; }
 #log-list li:last-child { border-bottom: none; }
 
-/* Dev Button (Back to Setup) */
-#btn-back-to-setup {
-    /* Assuming it's inside its own button-container */
-    /* background-color: #ffc107; */ /* REMOVED */
-    /* color: #333; */ /* REMOVED */
-    /* Inherits purple theme */
-}
-
 /* --- Gameplay Action Enhancements --- */
-
 /* Hazard Picker Panel */
 #hazard-picker .popup-content { max-width: 500px; }
 #hazard-picker-options { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; }
-#hazard-picker-options button {
-    min-width: 100px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.9em;
-    padding: 8px;
-    background-color: var(--vampire-purple); /* CHANGED */
-    color: white;                         /* CHANGED */
-    border: 1px solid rgba(255, 255, 255, 0.3); /* Lighter border */
-}
-#hazard-picker-options button .hazard-icon { font-size: 1.8em; }
-#hazard-picker-options button .hazard-cost {
-     font-size: 0.8em;
-     color: rgba(255, 255, 255, 0.8); /* Make cost lighter white */
-}
-#hazard-picker-options button:disabled {
-     background-color: #cccccc; /* Keep gray disabled */
-     opacity: 0.6;
-     color: #666666; /* Ensure text is readable */
-}
-#hazard-picker-options button:hover:not(:disabled) {
-    background-color: var(--vampire-purple-hover); /* CHANGED */
-}
-
-
 /* Target Highlighting */
 .grid-square.valid-target { background-color: rgba(0, 255, 0, 0.3) !important; outline: 1px solid darkgreen; cursor: crosshair; }
 .grid-square.invalid-target { /* Optional styling */ }
-
 /* Move/Pivot Action Buttons (Placeholder) */
 .direction-buttons button { min-width: 40px; font-size: 1.2em; padding: 5px 10px; }
-
 /* Style for inline error messages */
 .error-message { color: #b22222; font-weight: bold; margin-top: 10px; text-align: center; min-height: 1em; }
-
-/* Help Button Styling */
-.help-button { /* Selector exists, update styles */
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 1.2em;
-    font-weight: bold;
-    width: 35px;
-    height: 35px;
-    padding: 0;
-    border-radius: 50%;
-    /* background-color: #6c757d; */ /* REMOVED */
-    /* Inherits purple theme from base 'button' */
-    color: white; /* Ensure text is white */
-    border: 1px solid rgba(255, 255, 255, 0.3); /* Lighter border */
-    z-index: 10;
-    line-height: 33px; /* Adjust line-height to center '?' vertically */
-    text-align: center;
-}
-/* Hover state inherited */
-
 
 /* How to Play Screen Styling */
 #screen-how-to-play .how-to-play-content { text-align: left; }
@@ -615,5 +285,3 @@ button:disabled {
 #screen-how-to-play h3 { margin-top: 15px; margin-bottom: 5px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
 #screen-how-to-play ul { list-style: disc; margin-left: 25px; }
 #screen-how-to-play li { margin-bottom: 8px; }
-/* Back to Game button inherits purple theme */
-
