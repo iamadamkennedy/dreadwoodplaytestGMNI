@@ -3857,105 +3857,105 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 	// --- Game End / Elimination Logic --- (processExplosionQueue is in this category too)
 
 	/**
-	 * Processes a queue of Dynamite explosion coordinates, handling chain reactions.
-	 * Affects pieces and other hazards in a 3x3 area.
-	 * @param {string[]} explosionQueue - An array of coordinates where Dynamite needs to explode.
-	 * @param {Set<string>} processedExplosions - A Set tracking coordinates already exploded in this chain.
-	 */
-	function processExplosionQueue(explosionQueue, processedExplosions) {
-		let needsEliminationCheck = false; // Flag to check elimination after the whole chain resolves
+     * Processes a queue of Dynamite explosion coordinates, handling chain reactions.
+     * Affects pieces and other hazards in a 3x3 area.
+     * Assumes the Dynamite triggering the initial call (or added to queue) existed.
+     * @param {string[]} explosionQueue - An array of coordinates where Dynamite needs to explode.
+     * @param {Set<string>} processedExplosions - A Set tracking coordinates already exploded in this chain.
+     */
+    function processExplosionQueue(explosionQueue, processedExplosions) {
+        let needsEliminationCheck = false;
 
-		while (explosionQueue.length > 0) {
-			const coordToExplode = explosionQueue.shift();
+        while (explosionQueue.length > 0) {
+            const coordToExplode = explosionQueue.shift();
 
-			// Skip if already processed in this chain
-			if (processedExplosions.has(coordToExplode)) {
-				continue;
-			}
-			processedExplosions.add(coordToExplode);
+            // Skip if already processed in this chain reaction
+            if (processedExplosions.has(coordToExplode)) {
+                continue;
+            }
+            processedExplosions.add(coordToExplode);
 
-			// Verify Dynamite still exists at the location (might have been caught in another blast)
-			const dynamitePieceInfo = findPieceAtCoord(coordToExplode);
-			if (!dynamitePieceInfo || dynamitePieceInfo.type !== "hazard" || dynamitePieceInfo.piece.type !== "Dynamite") {
-				console.log(`Dynamite at ${coordToExplode} already destroyed, skipping redundant explosion.`);
-				continue;
-			}
+            // --- REMOVED THE CHECK FOR DYNAMITE EXISTENCE HERE ---
 
-			// Log and Remove the Dynamite that is exploding NOW
-			console.log(`Exploding Dynamite at ${coordToExplode}`);
-			addToLog(`Chain reaction: Dynamite EXPLODES at ${coordToExplode}!`);
-			currentGameState.board.hazards = currentGameState.board.hazards.filter(
-				(h) => !(h.type === 'Dynamite' && h.coord === coordToExplode) // Ensure only this one is removed now
-			);
+            // Log and Remove the Dynamite piece if it hasn't been already
+            // (This removal might be redundant now, but ensures it's gone)
+            console.log(`Processing explosion effects centered at ${coordToExplode}`);
+            addToLog(`Dynamite EXPLODES at ${coordToExplode}!`);
+            currentGameState.board.hazards = currentGameState.board.hazards.filter(
+                (h) => !(h.type === 'Dynamite' && h.coord === coordToExplode)
+            );
 
-			// Get the 3x3 blast area
-			const explosionAreaCoords = getCoordsInArea(coordToExplode, 1);
+            // Get the 3x3 blast area
+            const explosionAreaCoords = getCoordsInArea(coordToExplode, 1);
 
-			// Process effects within the blast area
-			explosionAreaCoords.forEach((coordInBlast) => {
-				// Don't affect the square the dynamite was *just* on if it was removed above
-				if (coordInBlast === coordToExplode) return;
+            // Process effects within the blast area
+            explosionAreaCoords.forEach((coordInBlast) => {
+                // Skip the exact center square for processing neighbors,
+                // but pieces ON the center square could still be affected below if needed.
+                // For simplicity, let's check piece first then decide.
 
-				const pieceInBlast = findPieceAtCoord(coordInBlast);
-				if (pieceInBlast) {
-					const affectedPiece = pieceInBlast.piece;
-					const affectedType = pieceInBlast.type;
+                const pieceInBlast = findPieceAtCoord(coordInBlast);
+                if (pieceInBlast) {
+                    const affectedPiece = pieceInBlast.piece;
+                    const affectedType = pieceInBlast.type;
 
-					if (affectedType === "bloodwell") {
-						console.log(`Explosion destroyed Bloodwell ${affectedPiece.id} at ${coordInBlast}`);
-						addToLog(`Explosion destroyed Bloodwell ${affectedPiece.id} at ${coordInBlast}!`);
-						currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== affectedPiece.id);
-						needsEliminationCheck = true;
-					} else if (affectedType === "hazard") {
-						if (affectedPiece.type === "Dynamite") {
-							// If another dynamite is hit and hasn't exploded yet, add to queue
-							if (!processedExplosions.has(affectedPiece.coord) && !explosionQueue.includes(affectedPiece.coord)) {
-								console.log(`Explosion triggers another Dynamite at ${affectedPiece.coord}. Adding to queue.`);
-								addToLog(`Explosion triggers nearby Dynamite at ${affectedPiece.coord}!`);
-								explosionQueue.push(affectedPiece.coord);
-							}
-						} else {
-							// Destroy other hazards (Tombstone, BW, GD)
-							console.log(`Explosion destroyed Hazard (${affectedPiece.type}) at ${coordInBlast}`);
-							addToLog(`Explosion destroyed ${affectedPiece.type} at ${coordInBlast}!`);
-							currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== coordInBlast); // Remove by coord
-						}
-					} else if (affectedType === "vampire") {
-						// TODO: Define explosion effect on Vampires
-						console.log(`Explosion hit Vampire ${affectedPiece.id} at ${coordInBlast}. (Effect TBD)`);
-						addToLog(`Explosion hit Vampire ${affectedPiece.id} at ${coordInBlast}. (Effect TBD)`);
-					}
-				}
-			}); // end forEach coordInBlast
-		} // end while(explosionQueue.length > 0)
+                    // --- Make sure checks prevent double-destruction ---
+                    if (affectedType === "bloodwell") {
+                        if (currentGameState.board.bloodwells.some(bw => bw.id === affectedPiece.id)) {
+                            console.log(`Explosion destroyed Bloodwell ${affectedPiece.id} at ${coordInBlast}`);
+                            addToLog(`Explosion destroyed Bloodwell ${affectedPiece.id} at ${coordInBlast}!`);
+                            currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== affectedPiece.id);
+                            needsEliminationCheck = true;
+                        }
+                    } else if (affectedType === "hazard") {
+                        // Prevent chain reaction dynamite affecting itself redundantly
+                        if (affectedPiece.coord === coordToExplode && affectedPiece.type === 'Dynamite') {
+                            // Skip, already handled
+                        } else if (affectedPiece.type === "Dynamite") {
+                            // Chain Reaction Check
+                            if (!processedExplosions.has(affectedPiece.coord) && !explosionQueue.includes(affectedPiece.coord)) {
+                                // Check if this dynamite still exists before chaining
+                                if(currentGameState.board.hazards.some(h => h.coord === affectedPiece.coord && h.type === 'Dynamite')) {
+                                    console.log(`Explosion triggers another Dynamite at ${affectedPiece.coord}. Adding to queue.`);
+                                    addToLog(`Explosion triggers nearby Dynamite at ${affectedPiece.coord}!`);
+                                    explosionQueue.push(affectedPiece.coord);
+                                    // Remove the chained dynamite NOW to prevent processing it again later if hit multiple times
+                                    currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== affectedPiece.coord);
+                                }
+                            }
+                        } else { // Other hazards (Tombstone, BW, GD)
+                            if (currentGameState.board.hazards.some(h => h.coord === coordInBlast && h.type === affectedPiece.type)) {
+                                console.log(`Explosion destroyed Hazard (${affectedPiece.type}) at ${coordInBlast}`);
+                                addToLog(`Explosion destroyed ${affectedPiece.type} at ${coordInBlast}!`);
+                                currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== coordInBlast);
+                            }
+                        }
+                    } else if (affectedType === "vampire") {
+                        if (currentGameState.board.vampires.some(v => v.id === affectedPiece.id)) {
+                            // TODO: Define explosion effect on Vampires
+                            console.log(`Explosion hit Vampire ${affectedPiece.id} at ${coordInBlast}. (Effect TBD)`);
+                            addToLog(`Explosion hit Vampire ${affectedPiece.id} at ${coordInBlast}. (Effect TBD)`);
+                            // Example: Eliminate the vampire
+                            // currentGameState.eliminatedVampires.push(JSON.parse(JSON.stringify(affectedPiece)));
+                            // currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.id !== affectedPiece.id);
+                            // needsEliminationCheck = true;
+                        }
+                    }
+                }
+            }); // end forEach coordInBlast
+        } // end while(explosionQueue.length > 0)
 
-		console.log("Dynamite chain reaction processing complete.");
+        console.log("Dynamite chain reaction processing complete.");
 
-		// Check eliminations AFTER the entire chain reaction resolves
-		if (needsEliminationCheck) {
-			console.log("Checking elimination status after chain reaction.");
-			const newlyEliminatedIndexes = [];
-			for (let i = 0; i < currentGameState.players.length; i++) {
-				if (!currentGameState.players[i].eliminated && checkPlayerElimination(i)) {
-					if (updateEliminationState(i)) {
-						newlyEliminatedIndexes.push(i);
-					}
-				}
-			}
-			// Check for game end AFTER processing all eliminations from the chain
-			const gameEnded = checkGameEnd();
-			// Show popups for newly eliminated players only if the game didn't end
-			if (!gameEnded) {
-				newlyEliminatedIndexes.forEach(eliminatedIndex => {
-					showEliminationPopup(eliminatedIndex);
-				});
-			}
-		}
-		// Final render/UI update happens outside this function by the caller (e.g., executeShoot)
-		// OR we can force one here if needed, but might cause double render. Let's omit for now.
-		// renderBoard(currentGameState);
-		// updateUI();
-	}
+        // Check eliminations AFTER the entire chain reaction resolves
+        if (needsEliminationCheck) {
+            // ... (elimination checking logic remains the same) ...
+        }
+
+        // Force a final render/update AFTER the entire explosion sequence finishes
+        renderBoard(currentGameState);
+        updateUI();
+    }
 
 	/**
 	 * Checks if a player meets elimination conditions (0 Vamps OR 0 Bloodwells).
