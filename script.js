@@ -4269,18 +4269,16 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
     }
 
     /**
-     * Highlights valid target squares on the board for throwing a specific hazard
+     * Highlights valid target squares (EMPTY SQUARES ONLY) on the board for throwing a hazard
      * ONLY in the direction the vampire is currently facing.
-     * IMPLEMENTATION BASED ON ASSUMED RULES (3 Sq Range, Forward Only, Blocked by Vamp/BW).
+     * Vampires/Bloodwells block Line of Sight for subsequent squares.
      * @param {object} vampire - The vampire object performing the throw.
      * @param {string} hazardType - The type of hazard being thrown.
      */
     function highlightThrowTargets(vampire, hazardType) {
-        clearHighlights(); // Clear previous target highlights
-        // Add null check for vampire and facing property
+        clearHighlights(); // Clear previous highlights first
         if (!vampire || !vampire.facing) {
              console.error("highlightThrowTargets: Invalid vampire or missing facing data.");
-             addToLog("Cannot highlight throw targets: Vampire data missing.");
              return;
         }
 
@@ -4288,56 +4286,53 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 
         const throwRange = 3; // Example: Max range of 3 squares
         const startCoord = vampire.coord;
-        const facingDirection = vampire.facing; // Get the single direction to check
+        const facingDirection = vampire.facing;
         let foundValidTarget = false;
         let currentCoord = startCoord;
+        // Path blocking rule: Does V/BW block line of sight for throwing? Assuming Yes.
         let pathBlocked = false;
 
-        // --- Only loop forward in the facing direction ---
         for (let distance = 1; distance <= throwRange; distance++) {
-            currentCoord = getAdjacentCoord(currentCoord, facingDirection); // Use the specific facing direction
+            currentCoord = getAdjacentCoord(currentCoord, facingDirection);
             if (!currentCoord) break; // Off board
 
             const squareElement = gameBoard.querySelector(`.grid-square[data-coord="${currentCoord}"]`);
-            if (!squareElement) continue; // Should not happen if coord is valid
+            if (!squareElement) continue;
 
-            // If path was blocked by a piece on the previous square, mark this as invalid and stop
+            // If path was blocked by V/BW on a *previous* square, mark subsequent squares as invalid
             if (pathBlocked) {
                 squareElement.classList.add('invalid-target');
-                continue; // Technically 'break' would also work as path is blocked
+                continue; // Stop checking this square, move to next iteration (or break if you prefer)
             }
 
+            // Check what's on the CURRENT square
             const piece = findPieceAtCoord(currentCoord);
 
-            // --- Check if the current square itself blocks the path or is invalid landing ---
-            let isInvalidLandingSpot = false;
             if (piece) {
-                // Cannot throw ONTO a Vampire or Bloodwell
-                if (piece.type === 'vampire' || piece.type === 'bloodwell') {
-                    isInvalidLandingSpot = true;
-                    pathBlocked = true; // This piece blocks further throws
-                }
-                // Add other rules here (e.g., cannot throw onto Black Widow?)
-            }
-
-            // Highlight based on validity
-            if (isInvalidLandingSpot) {
+                // --- Square is OCCUPIED ---
+                // ANY piece makes it an invalid landing spot
                 squareElement.classList.add('invalid-target');
+
+                // Check if this piece *also* blocks the path for squares *beyond* it
+                if (piece.type === 'vampire' || piece.type === 'bloodwell') {
+                    pathBlocked = true; // V/BW block subsequent squares
+                }
+                // If hazards block LoS, add: else if (piece.type === 'hazard') { pathBlocked = true; }
+
             } else {
+                // --- Square is EMPTY ---
+                // This is the only valid landing spot
                 squareElement.classList.add('valid-target');
                 foundValidTarget = true;
             }
 
-            // If this square was blocked, stop checking further
-            if (pathBlocked) break;
-        } // --- End For Loop ---
+            // Note: If pathBlocked became true in this iteration, the check at the start
+            // of the *next* iteration will catch it and mark subsequent squares invalid.
 
+        } // End for loop
 
         if (!foundValidTarget) {
-            addToLog("No valid targets in range for throw.");
-            // Consider auto-cancelling the throw state here if desired
-            // currentGameState.actionState.pendingAction = null;
-            // currentGameState.actionState.selectedHazardType = null;
+            addToLog("No valid (empty) targets in range for throw.");
         }
     }
 
