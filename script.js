@@ -4306,6 +4306,63 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 		}
 	}
 
+    /**
+     * Populates the hazard picker popup (#hazard-picker-options)
+     * with buttons for available hazards from the current player's pool.
+     * Disables options if count is 0 or player lacks AP.
+     */
+    function populateHazardPicker() {
+        // Ensure the container element and hazard pool exist
+        if (!hazardPickerOptions || !currentGameState?.hazardPool) {
+            console.error("Cannot populate hazard picker: Missing #hazard-picker-options element or game state hazard pool.");
+            if (popups.hazardPicker) popups.hazardPicker.style.display = 'none'; // Hide broken picker
+            return;
+        }
+
+        hazardPickerOptions.innerHTML = ''; // Clear any old options first
+
+        const hazardPool = currentGameState.hazardPool;
+        let canThrowSomething = false; // Track if any option is viable
+
+        // Iterate through the defined hazards in the pool
+        // (Could also use Object.keys(hazardPool).forEach(...) )
+        for (const hazardType in hazardPool) {
+            // Check if the property belongs to the object itself (not inherited)
+            if (hazardPool.hasOwnProperty(hazardType)) {
+                const count = hazardPool[hazardType] || 0; // Get count, default to 0
+                const cost = hazardType === "Dynamite" ? AP_COST.THROW_DYNAMITE : AP_COST.THROW_HAZARD;
+
+                // Create a button for this hazard type
+                const button = document.createElement('button');
+                button.classList.add('btn', 'btn-hazard-option'); // Add base button styling + specific class
+                button.dataset.hazardType = hazardType; // Store type in data attribute for the click handler
+                button.textContent = `${hazardType} (${count})`; // Display name and count
+
+                // Disable button if count is 0 OR player cannot afford the AP cost
+                if (count <= 0) {
+                    button.disabled = true;
+                    button.title = "None left in pool.";
+                } else if (currentGameState.currentAP < cost) {
+                    button.disabled = true;
+                    button.title = `Requires ${cost} AP (Have ${currentGameState.currentAP})`;
+                } else {
+                    // Only consider this a viable option if count > 0 and affordable
+                    canThrowSomething = true;
+                }
+
+                hazardPickerOptions.appendChild(button);
+            }
+        }
+
+        // Optional: If no hazards are available or affordable, display a message
+        if (!canThrowSomething) {
+             const p = document.createElement('p');
+             p.style.textAlign = 'center'; // Optional styling
+             p.textContent = "No hazards available or affordable.";
+             hazardPickerOptions.appendChild(p);
+             // Maybe disable the 'confirm' part of the picker logic if needed
+        }
+    }
 
 	// --- 5. Attach Event Listeners (Executed ONCE on script load) ---
 
