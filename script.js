@@ -2779,8 +2779,10 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 			// Update background/text color based on class
 			statusBarElement.classList.remove('color-sheriff', 'color-vigilante', 'color-outlaw', 'color-bounty-hunter');
 			if (classLower) {
-				statusBarElement.classList.add(`color-${classLower}`);
-			}
+                // Replace spaces with hyphens to create a valid CSS class name
+                const validClassName = `color-${classLower.replace(/ /g, '-')}`;
+                statusBarElement.classList.add(validClassName); // <--- FIXED LINE
+            }
 			// Update text content to include Class Name and AP
 			const turnText = playerClass ? `${playerClass}'s Turn` : "Unknown Player's Turn";
 			statusBarElement.innerHTML = `${turnText} | AP: <span id="status-ap-display">${currentAP}</span>`;
