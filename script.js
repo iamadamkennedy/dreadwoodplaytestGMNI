@@ -4146,7 +4146,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 		}
 
 		if (btnUndo) btnUndo.disabled = true;
-		if (movementBar) movementBar.classList.add("hidden"c);
+		if (movementBar) movementBar.classList.add("hidden");
 
 		// Re-attach main gameplay listeners (remove first to prevent duplicates)
 		// Ensure gameBoard exists before adding listeners
