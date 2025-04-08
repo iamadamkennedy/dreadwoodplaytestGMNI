@@ -23,10 +23,16 @@ document.addEventListener("DOMContentLoaded", () => {
         PIVOT: 1,
         SHOOT: 3,
         SILVER_BULLET: 3,
-        THROW_HAZARD: 1, // Base cost for Tombstone, Black Widow, Grave Dust
+        THROW_HAZARD: 1,
         THROW_DYNAMITE: 2,
         DISPEL: 3,
         BITE_FUSE: 1,
+        RAMPAGE: 2,
+        HAND_CANNON: 5,
+        ORDER_RESTORED: 3,
+        CONTRACT_PAYOFF: 3,
+        VENGEANCE_IS_MINE: 0 // Though cost is 0, still an action choice
+        // --- END ADD ---
     };
     const DIRECTIONS = ["N", "E", "S", "W"];
 
@@ -776,9 +782,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnShoot = document.getElementById("action-shoot");
     const btnThrow = document.getElementById("action-throw");
     const btnSilverBullet = document.getElementById("action-silver-bullet");
-    const btnDispel = document.getElementById("action-dispel");
-    const btnBiteFuse = document.getElementById("action-bite-fuse");
-    // const btnMoveFwd = document.getElementById('action-move-fwd'); // Currently not in HTML
+    const btnDispel = document.getElementById('action-dispel');
+    const btnBiteFuse = document.getElementById('action-bite-fuse');
+    const btnRampage = document.getElementById('action-rampage');
+    const btnHandCannon = document.getElementById('action-hand-cannon');
+    const btnContractPayoff = document.getElementById('action-contract-payoff');
+    const btnOrderRestored = document.getElementById('action-order-restored');
+    const btnVengeance = document.getElementById('action-vengeance');
 
     // Hazard Picker Elements (Inside the popup)
     const hazardPickerOptions = document.getElementById(
@@ -1287,6 +1297,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 resources.silverBullet <= 0 ||
                 isCursed;
 
+        // --- Rampage Button State (Outlaw) ---
+        if (btnRampage) { // Check if the button element exists
+            const isOutlaw = player.class === 'Outlaw';
+            const rampageUsed = resources.abilitiesUsed.includes('Rampage');
+            const canAffordRampage = currentAP >= AP_COST.RAMPAGE;
+
+            // Show button ONLY if player is Outlaw
+            btnRampage.style.display = isOutlaw ? 'inline-block' : 'none';
+
+            // Disable conditions: Not Outlaw, No Vamp Selected, Wrong Vamp Locked, Can't Afford, Already Used, Cursed
+            btnRampage.disabled = !isOutlaw || !isVampSelected || !canControlSelected || !canAffordRampage || rampageUsed || isCursed;
+
+            // Update tooltip to show if used
+            btnRampage.title = `Rampage (${AP_COST.RAMPAGE} AP, 1/game)${rampageUsed ? ' - USED' : ''}`;
+        }
         // --- Dispel / Bite Fuse ---
         const canAffordDispel = currentAP >= AP_COST.DISPEL;
         const canDispel =
@@ -1613,7 +1638,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updateUI();
         return true;
     }
-    function executeShoot(vampire, isSilverBullet = false) {
+    function executeShoot(vampire, isSilverBullet = false, overrideFacing = null, apCostOverride = null) {
         if (!vampire) {
             console.error("ExecuteShoot: No vampire.");
             return false;
@@ -1650,6 +1675,32 @@ document.addEventListener("DOMContentLoaded", () => {
             addToLog("No Silver Bullet.");
             return false;
         }
+        
+        // Reset 'wasShot' flag for the player starting their turn
+        if (playerResources) {
+            playerResources.wasShotSinceLastTurn = false;
+        }
+
+        // Calculate Base AP
+        let baseAP = 5; // Standard AP
+        if (currentGameState.turn === 1) { /* ... Set Turn 1 AP ... */ }
+
+        // *** Apply AP Bonuses from Previous Turn ***
+        let bonusAP = 0;
+        if (playerResources?.contractPayoffNextTurnBonus > 0) {
+            bonusAP += playerResources.contractPayoffNextTurnBonus;
+            addToLog(`Gained +${playerResources.contractPayoffNextTurnBonus} AP from Contract Payoff!`);
+            playerResources.contractPayoffNextTurnBonus = 0; // Reset bonus
+        }
+        if (playerResources?.vengeanceNextTurnBonus > 0) {
+            bonusAP += playerResources.vengeanceNextTurnBonus;
+            addToLog(`Gained +${playerResources.vengeanceNextTurnBonus} AP from Vengeance is Mine!`);
+            playerResources.vengeanceNextTurnBonus = 0; // Reset bonus
+        }
+        // TODO: Add Vigilante Blood Brothers check here? (If applicable this turn)
+
+        currentGameState.currentAP = baseAP + bonusAP; // Set final AP
+        // *** End Apply AP Bonuses ***
 
         saveStateToHistory(); // Save state *before* shooting
 
@@ -1788,6 +1839,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         const eliminatedVampPlayerIndex = targetPiece.player;
                         hitMessage = `Silver Bullet HIT & ELIMINATED enemy ${eliminatedVampId} at ${currentCoord}!`;
                         addToLog(hitMessage);
+
+                        const eliminatedVampData = findVampireById(eliminatedVampId); // Get data BEFORE removing
+                        if (eliminatedVampData) {
+                            currentGameState.eliminatedVampires.push(JSON.parse(JSON.stringify(eliminatedVampData))); // Store a copy
+                            console.log("Added to eliminated list:", eliminatedVampData.id);
+                        } else {
+                            console.error("Could not find data for eliminated vampire:", eliminatedVampId);
+                        }
 
                         // 1. Remove vampire from state
                         currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.id !== eliminatedVampId);
@@ -2362,6 +2421,78 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 6. Proceed to the actual next player's turn
         proceedToNextPlayerTurn();
+    }
+
+    /**
+     * Executes the Outlaw's Rampage ability. Costs 2 AP, 1/game.
+     * Fires two standard shots simultaneously Left and Right relative to current facing.
+     * Uses the modified executeShoot with 0 AP cost override for the individual shots.
+     * @param {object} vampire - The Outlaw vampire performing the action.
+     * @returns {boolean} - True if action successful, false otherwise.
+     */
+    function executeRampage(vampire) {
+        if (!vampire || currentGameState.players[vampire.player]?.class !== 'Outlaw') {
+            console.error("executeRampage called incorrectly (not Outlaw or no vampire).");
+            return false;
+        }
+        const cost = AP_COST.RAMPAGE;
+        const abilityName = "Rampage";
+        const playerResources = currentGameState.playerResources[vampire.player]; // Get resources for THIS player
+
+        // 1. Check AP
+        if (currentGameState.currentAP < cost) {
+            addToLog("Not enough AP for Rampage.");
+            return false;
+        }
+        // 2. Check 1/Game Use
+        if (playerResources.abilitiesUsed.includes(abilityName)) {
+            addToLog("Rampage already used this game.");
+            return false;
+        }
+        // 3. Check if Cursed
+        if (vampire.cursed) {
+            addToLog("Cannot use Rampage while cursed.");
+            return false;
+        }
+
+        // --- Action is Valid - Proceed ---
+        console.log(`Executing Rampage for ${vampire.id}`);
+        saveStateToHistory(); // Save state before Rampage action
+
+        // 4. Deduct AP & Mark Used
+        currentGameState.currentAP -= cost;
+        playerResources.abilitiesUsed.push(abilityName);
+        addToLog(`${vampire.id} uses RAMPAGE! Firing Left & Right... (${currentGameState.currentAP} AP left)`);
+
+        // 5. Set Lock-in and Last Action Vamp (if not already locked)
+        const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class; // Should be Outlaw here
+        if (currentPlayerClass !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
+            currentGameState.lockedInVampireIdThisTurn = vampire.id;
+            addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
+            console.log(`Non-Vigilante Lock-in: Set to ${vampire.id} by Rampage`);
+        }
+        currentGameState.lastActionVampId = vampire.id; // Rampage counts as the last action
+
+        // 6. Calculate Left/Right Facings relative to current facing
+        const currentFacing = vampire.facing;
+        const leftFacing = getNewFacing(currentFacing, 'L');
+        const rightFacing = getNewFacing(currentFacing, 'R');
+
+        // 7. Execute the two shots (pass overrideFacing and 0 cost override)
+        // The executeShoot function will handle logging the path/hits of each shot.
+        console.log(`Rampage: Firing Left (${leftFacing})`);
+        executeShoot(vampire, false, leftFacing, 0); // Standard shot, Left, 0 AP cost
+
+        console.log(`Rampage: Firing Right (${rightFacing})`);
+        executeShoot(vampire, false, rightFacing, 0); // Standard shot, Right, 0 AP cost
+
+        // 8. Update UI once after both shots are technically done processing
+        // (renderBoard is called within executeShoot if apCostOverride is null, which isn't the case here)
+        // We need a final render/update after both shots.
+        renderBoard(currentGameState); // Update board with results of both shots
+        updateUI(); // Update AP, button states (Rampage should now be disabled)
+
+        return true; // Rampage action completed
     }
 
     /**
@@ -3269,6 +3400,9 @@ document.addEventListener("DOMContentLoaded", () => {
             playerResources: playerData.map(() => ({
                 silverBullet: 1,
                 abilitiesUsed: [],
+                wasShotSinceLastTurn: false, // For Vigilante Vengeance trigger
+                contractPayoffNextTurnBonus: 0, // AP bonus for BH next turn
+                vengeanceNextTurnBonus: 0 // AP bonus for Vigilante next turn
             })),
             turn: 1,
             currentPlayerIndex: 0,
@@ -3280,6 +3414,8 @@ document.addEventListener("DOMContentLoaded", () => {
             },
             lockedInVampireIdThisTurn: null,
             lastActionVampId: null,
+            actionState: { pendingAction: null, selectedHazardType: null },
+            eliminatedVampires: [] // Global list to track for Sheriff revive
         };
 
         const pIdx = currentGameState.currentPlayerIndex;
@@ -3405,6 +3541,21 @@ document.addEventListener("DOMContentLoaded", () => {
             executeBiteFuse(selectedVampireObject); // Call the function
         } else {
             addToLog("Select a Vampire to Bite Fuse."); // Log if no vampire selected
+        }
+    });
+
+    // Listener for the Rampage button
+    btnRampage?.addEventListener('click', () => {
+        const selectedVampireObject = findVampireById(currentGameState?.selectedVampireId);
+        if (selectedVampireObject) {
+            // Make sure it's actually an Outlaw before executing
+            if (currentGameState.players[selectedVampireObject.player]?.class === 'Outlaw') {
+                executeRampage(selectedVampireObject);
+            } else {
+                addToLog("Only Outlaws can Rampage.");
+            }
+        } else {
+            addToLog("Select an Outlaw Vampire to use Rampage.");
         }
     });
 
