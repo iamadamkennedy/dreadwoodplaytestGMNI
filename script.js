@@ -1165,228 +1165,203 @@ document.addEventListener("DOMContentLoaded", () => {
         }); // End of Hazard loop scope for hazardElement
     }
 
-    // Updates the player info panel during gameplay (REWRITTEN for new layout/content)
     /**
      * Updates the player info panel and related gameplay button states.
+     * Hides unavailable ability buttons (class-specific, 1/game used).
+     * Disables visible buttons based on AP, curse status, selection, lock-in, etc.
      * @param {object} player - The current player object { name, class, eliminated }
      * @param {number} turn - The current turn number
      * @param {number} currentAP - The current action points
-     * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed }
-     */
-    /**
-     * Updates the player info panel and related gameplay button states.
-     * Includes logic to disable actions if player is locked into the wrong vampire.
-     * @param {object} player - The current player object { name, class, eliminated }
-     * @param {number} turn - The current turn number
-     * @param {number} currentAP - The current action points
-     * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed }
-     */
-    /**
-     * Updates the player info panel and related gameplay button states.
-     * Includes logic to disable actions if player is locked into the wrong vampire.
-     * @param {object} player - The current player object { name, class, eliminated }
-     * @param {number} turn - The current turn number
-     * @param {number} currentAP - The current action points
-     * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed }
-     */
-
-    /**
-     * Updates the player info panel and related gameplay button states.
-     * Includes logic to disable actions if player is locked into the wrong vampire,
-     * AND logic to keep movement buttons enabled during Swift Justice.
-     * @param {object} player - The current player object { name, class, eliminated }
-     * @param {number} turn - The current turn number
-     * @param {number} currentAP - The current action points
-     * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed }
+     * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed, wasShotSinceLastTurn, ... }
      */
     function updatePlayerInfoPanel(player, turn, currentAP, resources) {
         // --- Basic null checks ---
-        if (
-            !player ||
-            !resources ||
-            !currentClassAbilitiesList ||
-            !infoSilverBullet ||
-            !statusBarPlayer ||
-            !statusBarAP
-        ) {
-            console.error(
-                "Info Panel Error: One or more required elements not found or invalid data provided."
-            );
-            if (statusBarPlayer) statusBarPlayer.textContent = "Error";
-            if (statusBarAP) statusBarAP.textContent = "??";
-            // Clear other fields on error...
+        if (!player || !resources || !currentClassAbilitiesList || !infoSilverBullet || !statusBarPlayer || !statusBarAP) {
+            console.error("Info Panel Error: One or more required elements not found or invalid data provided.");
+            // Set error state... (Ensure all button refs below exist or add checks)
+            if(statusBarPlayer) statusBarPlayer.textContent = 'Error';
+            if(statusBarAP) statusBarAP.textContent = '??';
             return;
         }
-
+    
         // --- Update Status Bar ---
         statusBarPlayer.textContent = player.name;
         statusBarAP.textContent = currentAP;
-
-        // --- Update Class Details Panel (Abilities, Silver Bullet) ---
-        // (Your existing logic for displaying these goes here - Abbreviated)
-        const classData = CLASS_DATA[player.class];
-        const panelH3 = document.querySelector("#current-class-details h3");
-        if (panelH3) panelH3.textContent = `${player.class || "Unknown"} Info`;
-        currentClassAbilitiesList.innerHTML = "";
-        if (classData && classData.abilities) {
-            const availableActive = classData.abilities.filter(
-                (a) =>
-                    a.type === "Active" &&
-                    !resources.abilitiesUsed?.includes(a.name)
-            );
-            const passive = classData.abilities.filter(
-                (a) => a.type === "Passive"
-            );
-            if (availableActive.length > 0) {
-                /* ... render active ... */
-            }
-            if (availableActive.length > 0 && passive.length > 0) {
-                /* ... render hr ... */
-            }
-            if (passive.length > 0) {
-                /* ... render passive ... */
-            }
-        } else {
-            /* ... render 'not found' ... */
-        }
-        infoSilverBullet.textContent =
-            resources.silverBullet > 0
-                ? `Available (${resources.silverBullet})`
-                : "Used";
-        // --- End Class Details ---
-
+    
+        // --- Update Class Details Panel (Abilities, Silver Bullet Status) ---
+        // (Keep your existing logic for populating this section)
+        // ... abbreviated ...
+        infoSilverBullet.textContent = resources.silverBullet > 0 ? `Available (${resources.silverBullet})` : "Used";
+        // ... abbreviated ...
+    
         // ---== Update Action & Movement Button States ==---
-        const selectedVamp = findVampireById(
-            currentGameState.selectedVampireId
-        );
+        const selectedVamp = findVampireById(currentGameState.selectedVampireId);
         const isVampSelected = !!selectedVamp;
         const isCursed = selectedVamp?.cursed;
         const currentPlayerClass = player.class;
         const lockedVampId = currentGameState.lockedInVampireIdThisTurn;
-        const canControlSelected =
-            currentPlayerClass === "Vigilante" ||
-            !lockedVampId ||
-            !isVampSelected ||
-            selectedVamp?.id === lockedVampId; // Use optional chaining on selectedVamp
-
+        const canControlSelected = (currentPlayerClass === 'Vigilante' || !lockedVampId || !isVampSelected || selectedVamp?.id === lockedVampId);
+    
         let hazardOnVampSquare = null;
         if (selectedVamp) {
-            hazardOnVampSquare = currentGameState.board.hazards.find(
-                (h) => h.coord === selectedVamp.coord
-            );
+            hazardOnVampSquare = currentGameState.board.hazards.find(h => h.coord === selectedVamp.coord);
         }
-
-        // --- Standard Action Buttons ---
-        if (btnShoot)
-            btnShoot.disabled =
-                !isVampSelected ||
-                !canControlSelected ||
-                currentAP < AP_COST.SHOOT ||
-                isCursed;
-        if (btnThrow)
-            btnThrow.disabled =
-                !isVampSelected ||
-                !canControlSelected ||
-                currentAP < AP_COST.THROW_HAZARD ||
-                isCursed;
-        if (btnSilverBullet)
-            btnSilverBullet.disabled =
-                !isVampSelected ||
-                !canControlSelected ||
-                currentAP < AP_COST.SILVER_BULLET ||
-                resources.silverBullet <= 0 ||
-                isCursed;
-
-        // --- Rampage Button State (Outlaw) ---
-        if (btnRampage) { // Check if the button element exists
+    
+        // --- Visibility and Disable Logic for Each Button ---
+    
+        // Shoot Button (Always Visible)
+        if (btnShoot) {
+            btnShoot.style.display = 'inline-block';
+            btnShoot.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.SHOOT || isCursed;
+        }
+    
+        // Throw Button (Always Visible)
+        if (btnThrow) {
+            btnThrow.style.display = 'inline-block';
+            btnThrow.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.THROW_HAZARD || isCursed;
+        }
+    
+        // Silver Bullet Button (Always Visible)
+        if (btnSilverBullet) {
+            btnSilverBullet.style.display = 'inline-block';
+            btnSilverBullet.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.SILVER_BULLET || resources.silverBullet <= 0 || isCursed;
+            btnSilverBullet.title = `Silver Bullet Shot (${AP_COST.SILVER_BULLET} AP)${resources.silverBullet <=0 ? ' - USED' : ''}`;
+        }
+    
+        // Dispel Button (Always Visible - Core Action)
+        const canAffordDispel = currentAP >= AP_COST.DISPEL;
+        const canDispel = isVampSelected && hazardOnVampSquare?.type === 'Grave Dust' && canAffordDispel;
+        if (btnDispel) {
+            btnDispel.style.display = 'inline-block';
+            btnDispel.disabled = !canDispel || !canControlSelected; // Assuming cursed can Dispel
+        }
+    
+        // Bite Fuse Button (Always Visible - Core Action)
+        const canAffordBite = currentAP >= AP_COST.BITE_FUSE;
+        const canBite = isVampSelected && hazardOnVampSquare?.type === 'Dynamite' && canAffordBite;
+        if (btnBiteFuse) {
+            btnBiteFuse.style.display = 'inline-block';
+            btnBiteFuse.disabled = !canBite || !canControlSelected; // Assuming cursed can Bite Fuse
+        }
+    
+        // Rampage Button (Outlaw Only)
+        if (btnRampage) {
             const isOutlaw = player.class === 'Outlaw';
             const rampageUsed = resources.abilitiesUsed.includes('Rampage');
             const canAffordRampage = currentAP >= AP_COST.RAMPAGE;
-
-            // Show button ONLY if player is Outlaw
-            btnRampage.style.display = isOutlaw ? 'inline-block' : 'none';
-
-            // Disable conditions: Not Outlaw, No Vamp Selected, Wrong Vamp Locked, Can't Afford, Already Used, Cursed
-            btnRampage.disabled = !isOutlaw || !isVampSelected || !canControlSelected || !canAffordRampage || rampageUsed || isCursed;
-
-            // Update tooltip to show if used
-            btnRampage.title = `Rampage (${AP_COST.RAMPAGE} AP, 1/game)${rampageUsed ? ' - USED' : ''}`;
+            const isVisible = isOutlaw; // Visible only if Outlaw
+            const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordRampage && !rampageUsed && !isCursed;
+    
+            btnRampage.style.display = isVisible ? 'inline-block' : 'none';
+            if (isVisible) { // Only set disabled if visible
+                 btnRampage.disabled = !isAvailable;
+                 btnRampage.title = `Rampage (${AP_COST.RAMPAGE} AP, 1/game)${rampageUsed ? ' - USED' : ''}`;
+            }
         }
-        // --- Dispel / Bite Fuse ---
-        const canAffordDispel = currentAP >= AP_COST.DISPEL;
-        const canDispel =
-            isVampSelected &&
-            hazardOnVampSquare?.type === "Grave Dust" &&
-            canAffordDispel;
-        if (btnDispel) btnDispel.disabled = !canDispel || !canControlSelected;
-
-        const canAffordBite = currentAP >= AP_COST.BITE_FUSE;
-        const canBite =
-            isVampSelected &&
-            hazardOnVampSquare?.type === "Dynamite" &&
-            canAffordBite;
-        if (btnBiteFuse) btnBiteFuse.disabled = !canBite || !canControlSelected;
-
+    
+        // Hand Cannon Button (Outlaw Only)
+        if (btnHandCannon) {
+            const isOutlaw = player.class === 'Outlaw';
+            const handCannonUsed = resources.abilitiesUsed.includes('Hand Cannon'); // Assuming we track by name
+            const canAffordHandCannon = currentAP >= AP_COST.HAND_CANNON;
+            const isVisible = isOutlaw;
+            const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordHandCannon && !handCannonUsed && !isCursed;
+    
+            btnHandCannon.style.display = isVisible ? 'inline-block' : 'none';
+            if (isVisible) {
+                 btnHandCannon.disabled = !isAvailable;
+                 btnHandCannon.title = `Hand Cannon (${AP_COST.HAND_CANNON} AP, 1/game)${handCannonUsed ? ' - USED' : ''}`;
+            }
+        }
+    
+        // Contract Payoff Button (Bounty Hunter Only)
+         if (btnContractPayoff) {
+             const isBH = player.class === 'Bounty Hunter';
+             const contractUsed = resources.abilitiesUsed.includes('Contract Payoff');
+             const canAffordContract = currentAP >= AP_COST.CONTRACT_PAYOFF;
+             const isVisible = isBH;
+             // Condition: Need selected vamp, can control, enough AP, not used, not cursed.
+             // Trigger condition (destroying BW) is checked *after* activation in executeShoot.
+             const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordContract && !contractUsed && !isCursed;
+    
+             btnContractPayoff.style.display = isVisible ? 'inline-block' : 'none';
+             if (isVisible) {
+                  btnContractPayoff.disabled = !isAvailable;
+                  btnContractPayoff.title = `Contract Payoff (${AP_COST.CONTRACT_PAYOFF} AP, 1/game)${contractUsed ? ' - USED' : ''}`;
+             }
+         }
+    
+         // Order Restored Button (Sheriff Only)
+         if (btnOrderRestored) {
+              const isSheriff = player.class === 'Sheriff';
+              const orderUsed = resources.abilitiesUsed.includes('Order Restored');
+              const canAffordOrder = currentAP >= AP_COST.ORDER_RESTORED;
+              // Check if there's actually an eliminated Sheriff vamp TO revive
+              const playerIndex = currentGameState.currentPlayerIndex; // Get index for checking
+              const hasEliminatedAlly = currentGameState.eliminatedVampires.some(v => v.player === playerIndex && CLASS_DATA[v.class]?.color === 'color-sheriff'); // Check by player index and ensure it's a Sheriff type
+    
+              const isVisible = isSheriff;
+              // Condition: Sheriff, selected, can control, afford, not used, not cursed, *and* has an ally to revive
+              const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordOrder && !orderUsed && !isCursed && hasEliminatedAlly;
+               // TODO: Also needs validation for adjacent placement square, but that happens on execution
+    
+              btnOrderRestored.style.display = isVisible ? 'inline-block' : 'none';
+              if (isVisible) {
+                   btnOrderRestored.disabled = !isAvailable;
+                   btnOrderRestored.title = `Order Restored (${AP_COST.ORDER_RESTORED} AP, 1/game)${orderUsed ? ' - USED' : ''}${!hasEliminatedAlly ? ' (No Ally Down)' : ''}`;
+              }
+         }
+    
+        // Vengeance is Mine Button (Vigilante Only)
+         if (btnVengeance) {
+              const isVigilante = player.class === 'Vigilante';
+              const vengeanceUsed = resources.abilitiesUsed.includes('Vengeance is Mine');
+              const canAffordVengeance = currentAP >= AP_COST.VENGEANCE_IS_MINE; // Always true (cost 0)
+              const wasShot = resources.wasShotSinceLastTurn; // Check the trigger flag
+    
+              const isVisible = isVigilante;
+              // Condition: Vigilante, selected, can control, afford (always), not used, not cursed, *and* was shot since last turn
+              const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordVengeance && !vengeanceUsed && !isCursed && wasShot;
+    
+              btnVengeance.style.display = isVisible ? 'inline-block' : 'none';
+              if (isVisible) {
+                   btnVengeance.disabled = !isAvailable;
+                   btnVengeance.title = `Vengeance is Mine (${AP_COST.VENGEANCE_IS_MINE} AP, 1/game)${vengeanceUsed ? ' - USED' : ''}${!wasShot ? ' (Not Shot)' : ''}`;
+              }
+         }
+    
+    
         // --- Movement Buttons ---
-        // *** ADD THIS CHECK FOR SWIFT JUSTICE ***
+        // (Keep Swift Justice check and normal logic from previous step here)
         if (isSwiftJusticeMovePending) {
-            // If waiting for Swift Justice, FORCE movement buttons enabled, regardless of AP etc.
-            console.log(
-                "Swift Justice Pending - Forcing Movement Buttons Enabled"
-            );
-            if (btnMoveN) btnMoveN.disabled = false;
+            // Force enabled during SJ...
+            console.log("Swift Justice Pending - Forcing Movement Buttons Enabled");
+            if (btnMoveN) btnMoveN.disabled = false; // etc. for E, S, W
             if (btnMoveE) btnMoveE.disabled = false;
             if (btnMoveS) btnMoveS.disabled = false;
             if (btnMoveW) btnMoveW.disabled = false;
-            // Also ensure the movement bar is visible
-            if (movementBar && movementBar.classList.contains("hidden")) {
-                movementBar.classList.remove("hidden");
+            if (movementBar && movementBar.classList.contains('hidden')) {
+                 movementBar.classList.remove('hidden');
             }
         } else {
-            // --- Original Movement Button Logic (runs if NOT Swift Justice) ---
+            // Normal logic...
             const canAffordMoveOrPivot = currentAP >= AP_COST.MOVE;
-            const movesTakenThisTurn = selectedVamp?.movesThisTurn || 0; // Use optional chaining
+            const movesTakenThisTurn = selectedVamp?.movesThisTurn || 0;
             const canMoveForward = !isCursed || movesTakenThisTurn < 1;
-
-            // Disable based on selection, control lock, AP, and curse move limit
-            if (btnMoveN)
-                btnMoveN.disabled =
-                    !isVampSelected ||
-                    !canControlSelected ||
-                    !canAffordMoveOrPivot ||
-                    (selectedVamp?.facing === "N" && !canMoveForward);
-            if (btnMoveE)
-                btnMoveE.disabled =
-                    !isVampSelected ||
-                    !canControlSelected ||
-                    !canAffordMoveOrPivot ||
-                    (selectedVamp?.facing === "E" && !canMoveForward);
-            if (btnMoveS)
-                btnMoveS.disabled =
-                    !isVampSelected ||
-                    !canControlSelected ||
-                    !canAffordMoveOrPivot ||
-                    (selectedVamp?.facing === "S" && !canMoveForward);
-            if (btnMoveW)
-                btnMoveW.disabled =
-                    !isVampSelected ||
-                    !canControlSelected ||
-                    !canAffordMoveOrPivot ||
-                    (selectedVamp?.facing === "W" && !canMoveForward);
-
-            // Hide movement bar if no vampire is selected (and not doing Swift Justice)
-            if (
-                !isVampSelected &&
-                movementBar &&
-                !movementBar.classList.contains("hidden")
-            ) {
-                movementBar.classList.add("hidden");
+            if (btnMoveN) btnMoveN.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'N' && !canMoveForward);
+            // etc. for E, S, W...
+            if (btnMoveE) btnMoveE.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'E' && !canMoveForward);
+            if (btnMoveS) btnMoveS.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'S' && !canMoveForward);
+            if (btnMoveW) btnMoveW.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'W' && !canMoveForward);
+    
+            if (!isVampSelected && movementBar && !movementBar.classList.contains('hidden')) {
+                movementBar.classList.add('hidden');
             }
         }
         // --- End Movement Button Logic ---
+    
+    } // End of updatePlayerInfoPanel
 
-        // TODO: Class Ability Buttons...
-    }
 
     /**
      * Main UI update function, called after actions or turn changes.
