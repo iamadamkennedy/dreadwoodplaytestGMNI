@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentGameState = {
         // ... existing properties ...
         lockedInVampireIdThisTurn: null, // ADD THIS: Stores the ID of the locked-in vamp for non-Vigilantes
-        lastActionVampId: null // Keep this for Swift Justice later
+        lastActionVampId: null, // Keep this for Swift Justice later
         // ... rest of state
     };
     let gameHistory = []; // Stores previous game states for Undo
@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- Add these flags for Swift Justice state ---
     let isSwiftJusticeMovePending = false;
     let swiftJusticePlayerIndex = -1; // Store which player is performing SJ
-    let swiftJusticeVampId = null;    // Store which vampire is performing SJ
+    let swiftJusticeVampId = null; // Store which vampire is performing SJ
 
     // --- 2. Constants ---
     const AP_COST = {
@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
         THROW_HAZARD: 1, // Base cost for Tombstone, Black Widow, Grave Dust
         THROW_DYNAMITE: 2,
         DISPEL: 3,
-        BITE_FUSE: 1
+        BITE_FUSE: 1,
     };
     const DIRECTIONS = ["N", "E", "S", "W"];
 
@@ -776,8 +776,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnShoot = document.getElementById("action-shoot");
     const btnThrow = document.getElementById("action-throw");
     const btnSilverBullet = document.getElementById("action-silver-bullet");
-    const btnDispel = document.getElementById('action-dispel');
-    const btnBiteFuse = document.getElementById('action-bite-fuse');
+    const btnDispel = document.getElementById("action-dispel");
+    const btnBiteFuse = document.getElementById("action-bite-fuse");
     // const btnMoveFwd = document.getElementById('action-move-fwd'); // Currently not in HTML
 
     // Hazard Picker Elements (Inside the popup)
@@ -1164,122 +1164,204 @@ document.addEventListener("DOMContentLoaded", () => {
      * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed }
      */
     /**
- * Updates the player info panel and related gameplay button states.
- * Includes logic to disable actions if player is locked into the wrong vampire.
- * @param {object} player - The current player object { name, class, eliminated }
- * @param {number} turn - The current turn number
- * @param {number} currentAP - The current action points
- * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed }
- */
-/**
- * Updates the player info panel and related gameplay button states.
- * Includes logic to disable actions if player is locked into the wrong vampire.
- * @param {object} player - The current player object { name, class, eliminated }
- * @param {number} turn - The current turn number
- * @param {number} currentAP - The current action points
- * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed }
- */
+     * Updates the player info panel and related gameplay button states.
+     * Includes logic to disable actions if player is locked into the wrong vampire.
+     * @param {object} player - The current player object { name, class, eliminated }
+     * @param {number} turn - The current turn number
+     * @param {number} currentAP - The current action points
+     * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed }
+     */
+    /**
+     * Updates the player info panel and related gameplay button states.
+     * Includes logic to disable actions if player is locked into the wrong vampire.
+     * @param {object} player - The current player object { name, class, eliminated }
+     * @param {number} turn - The current turn number
+     * @param {number} currentAP - The current action points
+     * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed }
+     */
 
-/**
- * Updates the player info panel and related gameplay button states.
- * Includes logic to disable actions if player is locked into the wrong vampire,
- * AND logic to keep movement buttons enabled during Swift Justice.
- * @param {object} player - The current player object { name, class, eliminated }
- * @param {number} turn - The current turn number
- * @param {number} currentAP - The current action points
- * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed }
- */
-function updatePlayerInfoPanel(player, turn, currentAP, resources) {
-    // --- Basic null checks ---
-    if (!player || !resources || !currentClassAbilitiesList || !infoSilverBullet || !statusBarPlayer || !statusBarAP) {
-        console.error("Info Panel Error: One or more required elements not found or invalid data provided.");
-        if(statusBarPlayer) statusBarPlayer.textContent = 'Error';
-        if(statusBarAP) statusBarAP.textContent = '??';
-        // Clear other fields on error...
-        return;
-    }
-
-    // --- Update Status Bar ---
-    statusBarPlayer.textContent = player.name;
-    statusBarAP.textContent = currentAP;
-
-    // --- Update Class Details Panel (Abilities, Silver Bullet) ---
-    // (Your existing logic for displaying these goes here - Abbreviated)
-    const classData = CLASS_DATA[player.class];
-    const panelH3 = document.querySelector('#current-class-details h3');
-    if (panelH3) panelH3.textContent = `${player.class || 'Unknown'} Info`;
-    currentClassAbilitiesList.innerHTML = '';
-    if (classData && classData.abilities) {
-        const availableActive = classData.abilities.filter(a => a.type === 'Active' && !resources.abilitiesUsed?.includes(a.name));
-        const passive = classData.abilities.filter(a => a.type === 'Passive');
-        if (availableActive.length > 0) { /* ... render active ... */ }
-        if (availableActive.length > 0 && passive.length > 0) { /* ... render hr ... */ }
-        if (passive.length > 0) { /* ... render passive ... */ }
-    } else { /* ... render 'not found' ... */ }
-    infoSilverBullet.textContent = resources.silverBullet > 0 ? `Available (${resources.silverBullet})` : "Used";
-    // --- End Class Details ---
-
-    // ---== Update Action & Movement Button States ==---
-    const selectedVamp = findVampireById(currentGameState.selectedVampireId);
-    const isVampSelected = !!selectedVamp;
-    const isCursed = selectedVamp?.cursed;
-    const currentPlayerClass = player.class;
-    const lockedVampId = currentGameState.lockedInVampireIdThisTurn;
-    const canControlSelected = (currentPlayerClass === 'Vigilante' || !lockedVampId || !isVampSelected || selectedVamp?.id === lockedVampId); // Use optional chaining on selectedVamp
-
-    let hazardOnVampSquare = null;
-    if (selectedVamp) {
-        hazardOnVampSquare = currentGameState.board.hazards.find(h => h.coord === selectedVamp.coord);
-    }
-
-    // --- Standard Action Buttons ---
-    if (btnShoot) btnShoot.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.SHOOT || isCursed;
-    if (btnThrow) btnThrow.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.THROW_HAZARD || isCursed;
-    if (btnSilverBullet) btnSilverBullet.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.SILVER_BULLET || resources.silverBullet <= 0 || isCursed;
-
-    // --- Dispel / Bite Fuse ---
-    const canAffordDispel = currentAP >= AP_COST.DISPEL;
-    const canDispel = isVampSelected && hazardOnVampSquare?.type === 'Grave Dust' && canAffordDispel;
-    if (btnDispel) btnDispel.disabled = !canDispel || !canControlSelected;
-
-    const canAffordBite = currentAP >= AP_COST.BITE_FUSE;
-    const canBite = isVampSelected && hazardOnVampSquare?.type === 'Dynamite' && canAffordBite;
-    if (btnBiteFuse) btnBiteFuse.disabled = !canBite || !canControlSelected;
-
-    // --- Movement Buttons ---
-    // *** ADD THIS CHECK FOR SWIFT JUSTICE ***
-    if (isSwiftJusticeMovePending) {
-        // If waiting for Swift Justice, FORCE movement buttons enabled, regardless of AP etc.
-        console.log("Swift Justice Pending - Forcing Movement Buttons Enabled");
-        if (btnMoveN) btnMoveN.disabled = false;
-        if (btnMoveE) btnMoveE.disabled = false;
-        if (btnMoveS) btnMoveS.disabled = false;
-        if (btnMoveW) btnMoveW.disabled = false;
-        // Also ensure the movement bar is visible
-        if (movementBar && movementBar.classList.contains('hidden')) {
-             movementBar.classList.remove('hidden');
+    /**
+     * Updates the player info panel and related gameplay button states.
+     * Includes logic to disable actions if player is locked into the wrong vampire,
+     * AND logic to keep movement buttons enabled during Swift Justice.
+     * @param {object} player - The current player object { name, class, eliminated }
+     * @param {number} turn - The current turn number
+     * @param {number} currentAP - The current action points
+     * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed }
+     */
+    function updatePlayerInfoPanel(player, turn, currentAP, resources) {
+        // --- Basic null checks ---
+        if (
+            !player ||
+            !resources ||
+            !currentClassAbilitiesList ||
+            !infoSilverBullet ||
+            !statusBarPlayer ||
+            !statusBarAP
+        ) {
+            console.error(
+                "Info Panel Error: One or more required elements not found or invalid data provided."
+            );
+            if (statusBarPlayer) statusBarPlayer.textContent = "Error";
+            if (statusBarAP) statusBarAP.textContent = "??";
+            // Clear other fields on error...
+            return;
         }
-    } else {
-        // --- Original Movement Button Logic (runs if NOT Swift Justice) ---
-        const canAffordMoveOrPivot = currentAP >= AP_COST.MOVE;
-        const movesTakenThisTurn = selectedVamp?.movesThisTurn || 0; // Use optional chaining
-        const canMoveForward = !isCursed || movesTakenThisTurn < 1;
 
-        // Disable based on selection, control lock, AP, and curse move limit
-        if (btnMoveN) btnMoveN.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'N' && !canMoveForward);
-        if (btnMoveE) btnMoveE.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'E' && !canMoveForward);
-        if (btnMoveS) btnMoveS.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'S' && !canMoveForward);
-        if (btnMoveW) btnMoveW.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'W' && !canMoveForward);
+        // --- Update Status Bar ---
+        statusBarPlayer.textContent = player.name;
+        statusBarAP.textContent = currentAP;
 
-        // Hide movement bar if no vampire is selected (and not doing Swift Justice)
-         if (!isVampSelected && movementBar && !movementBar.classList.contains('hidden')) {
-            movementBar.classList.add('hidden');
+        // --- Update Class Details Panel (Abilities, Silver Bullet) ---
+        // (Your existing logic for displaying these goes here - Abbreviated)
+        const classData = CLASS_DATA[player.class];
+        const panelH3 = document.querySelector("#current-class-details h3");
+        if (panelH3) panelH3.textContent = `${player.class || "Unknown"} Info`;
+        currentClassAbilitiesList.innerHTML = "";
+        if (classData && classData.abilities) {
+            const availableActive = classData.abilities.filter(
+                (a) =>
+                    a.type === "Active" &&
+                    !resources.abilitiesUsed?.includes(a.name)
+            );
+            const passive = classData.abilities.filter(
+                (a) => a.type === "Passive"
+            );
+            if (availableActive.length > 0) {
+                /* ... render active ... */
+            }
+            if (availableActive.length > 0 && passive.length > 0) {
+                /* ... render hr ... */
+            }
+            if (passive.length > 0) {
+                /* ... render passive ... */
+            }
+        } else {
+            /* ... render 'not found' ... */
         }
-    }
-    // --- End Movement Button Logic ---
+        infoSilverBullet.textContent =
+            resources.silverBullet > 0
+                ? `Available (${resources.silverBullet})`
+                : "Used";
+        // --- End Class Details ---
 
-    // TODO: Class Ability Buttons...
-}
+        // ---== Update Action & Movement Button States ==---
+        const selectedVamp = findVampireById(
+            currentGameState.selectedVampireId
+        );
+        const isVampSelected = !!selectedVamp;
+        const isCursed = selectedVamp?.cursed;
+        const currentPlayerClass = player.class;
+        const lockedVampId = currentGameState.lockedInVampireIdThisTurn;
+        const canControlSelected =
+            currentPlayerClass === "Vigilante" ||
+            !lockedVampId ||
+            !isVampSelected ||
+            selectedVamp?.id === lockedVampId; // Use optional chaining on selectedVamp
+
+        let hazardOnVampSquare = null;
+        if (selectedVamp) {
+            hazardOnVampSquare = currentGameState.board.hazards.find(
+                (h) => h.coord === selectedVamp.coord
+            );
+        }
+
+        // --- Standard Action Buttons ---
+        if (btnShoot)
+            btnShoot.disabled =
+                !isVampSelected ||
+                !canControlSelected ||
+                currentAP < AP_COST.SHOOT ||
+                isCursed;
+        if (btnThrow)
+            btnThrow.disabled =
+                !isVampSelected ||
+                !canControlSelected ||
+                currentAP < AP_COST.THROW_HAZARD ||
+                isCursed;
+        if (btnSilverBullet)
+            btnSilverBullet.disabled =
+                !isVampSelected ||
+                !canControlSelected ||
+                currentAP < AP_COST.SILVER_BULLET ||
+                resources.silverBullet <= 0 ||
+                isCursed;
+
+        // --- Dispel / Bite Fuse ---
+        const canAffordDispel = currentAP >= AP_COST.DISPEL;
+        const canDispel =
+            isVampSelected &&
+            hazardOnVampSquare?.type === "Grave Dust" &&
+            canAffordDispel;
+        if (btnDispel) btnDispel.disabled = !canDispel || !canControlSelected;
+
+        const canAffordBite = currentAP >= AP_COST.BITE_FUSE;
+        const canBite =
+            isVampSelected &&
+            hazardOnVampSquare?.type === "Dynamite" &&
+            canAffordBite;
+        if (btnBiteFuse) btnBiteFuse.disabled = !canBite || !canControlSelected;
+
+        // --- Movement Buttons ---
+        // *** ADD THIS CHECK FOR SWIFT JUSTICE ***
+        if (isSwiftJusticeMovePending) {
+            // If waiting for Swift Justice, FORCE movement buttons enabled, regardless of AP etc.
+            console.log(
+                "Swift Justice Pending - Forcing Movement Buttons Enabled"
+            );
+            if (btnMoveN) btnMoveN.disabled = false;
+            if (btnMoveE) btnMoveE.disabled = false;
+            if (btnMoveS) btnMoveS.disabled = false;
+            if (btnMoveW) btnMoveW.disabled = false;
+            // Also ensure the movement bar is visible
+            if (movementBar && movementBar.classList.contains("hidden")) {
+                movementBar.classList.remove("hidden");
+            }
+        } else {
+            // --- Original Movement Button Logic (runs if NOT Swift Justice) ---
+            const canAffordMoveOrPivot = currentAP >= AP_COST.MOVE;
+            const movesTakenThisTurn = selectedVamp?.movesThisTurn || 0; // Use optional chaining
+            const canMoveForward = !isCursed || movesTakenThisTurn < 1;
+
+            // Disable based on selection, control lock, AP, and curse move limit
+            if (btnMoveN)
+                btnMoveN.disabled =
+                    !isVampSelected ||
+                    !canControlSelected ||
+                    !canAffordMoveOrPivot ||
+                    (selectedVamp?.facing === "N" && !canMoveForward);
+            if (btnMoveE)
+                btnMoveE.disabled =
+                    !isVampSelected ||
+                    !canControlSelected ||
+                    !canAffordMoveOrPivot ||
+                    (selectedVamp?.facing === "E" && !canMoveForward);
+            if (btnMoveS)
+                btnMoveS.disabled =
+                    !isVampSelected ||
+                    !canControlSelected ||
+                    !canAffordMoveOrPivot ||
+                    (selectedVamp?.facing === "S" && !canMoveForward);
+            if (btnMoveW)
+                btnMoveW.disabled =
+                    !isVampSelected ||
+                    !canControlSelected ||
+                    !canAffordMoveOrPivot ||
+                    (selectedVamp?.facing === "W" && !canMoveForward);
+
+            // Hide movement bar if no vampire is selected (and not doing Swift Justice)
+            if (
+                !isVampSelected &&
+                movementBar &&
+                !movementBar.classList.contains("hidden")
+            ) {
+                movementBar.classList.add("hidden");
+            }
+        }
+        // --- End Movement Button Logic ---
+
+        // TODO: Class Ability Buttons...
+    }
 
     /**
      * Main UI update function, called after actions or turn changes.
@@ -1398,10 +1480,16 @@ function updatePlayerInfoPanel(player, turn, currentAP, resources) {
             return false;
         }
         // --- Add Lock-in Check Block Here ---
-        const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
-        if (currentPlayerClass !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
+        const currentPlayerClass =
+            currentGameState.players[currentGameState.currentPlayerIndex].class;
+        if (
+            currentPlayerClass !== "Vigilante" &&
+            !currentGameState.lockedInVampireIdThisTurn
+        ) {
             currentGameState.lockedInVampireIdThisTurn = vampire.id;
-            addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
+            addToLog(
+                `Locked into controlling ${vampire.id} for the rest of the turn.`
+            );
             console.log(`Non-Vigilante Lock-in: Set to ${vampire.id}`);
         }
         currentGameState.lastActionVampId = vampire.id; // Track last action vamp
@@ -1437,19 +1525,25 @@ function updatePlayerInfoPanel(player, turn, currentAP, resources) {
         );
         // Inside executeMove function...
         // ... (code to check movement validity, save state, move vampire, deduct AP) ...
-        const hazardLandedOn = currentGameState.board.hazards.find(h => h.coord === targetCoord);
-        if (hazardLandedOn?.type === 'Grave Dust' && !vampire.cursed) {
+        const hazardLandedOn = currentGameState.board.hazards.find(
+            (h) => h.coord === targetCoord
+        );
+        if (hazardLandedOn?.type === "Grave Dust" && !vampire.cursed) {
             console.log("Curse by GD land.");
             const vampInState = findVampireById(vampire.id); // Get reference from state
-            if(vampInState){
+            if (vampInState) {
                 vampInState.cursed = true;
                 // --- ADD THIS LINE ---
                 vampInState.movesThisTurn = 0; // Reset move counter upon becoming cursed
                 // --- END ADD ---
                 addToLog(`${vampInState.id} CURSED by Grave Dust!`);
             } else {
-                console.error("executeMove: Could not find vampire in state to apply curse!");
-                addToLog(`ERROR: Failed to apply Curse from Grave Dust to ${vampire.id}`);
+                console.error(
+                    "executeMove: Could not find vampire in state to apply curse!"
+                );
+                addToLog(
+                    `ERROR: Failed to apply Curse from Grave Dust to ${vampire.id}`
+                );
             }
         }
         // ... (Bloodbath cure check logic remains the same) ...
@@ -1494,16 +1588,21 @@ function updatePlayerInfoPanel(player, turn, currentAP, resources) {
             return false;
         }
         // --- Add Lock-in Check Block Here ---
-        const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
-        if (currentPlayerClass !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
+        const currentPlayerClass =
+            currentGameState.players[currentGameState.currentPlayerIndex].class;
+        if (
+            currentPlayerClass !== "Vigilante" &&
+            !currentGameState.lockedInVampireIdThisTurn
+        ) {
             currentGameState.lockedInVampireIdThisTurn = vampire.id;
-            addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
+            addToLog(
+                `Locked into controlling ${vampire.id} for the rest of the turn.`
+            );
             console.log(`Non-Vigilante Lock-in: Set to ${vampire.id}`);
         }
         currentGameState.lastActionVampId = vampire.id; // Track last action vamp
         // --- End Lock-in Check Block ---
-    
-        
+
         saveStateToHistory();
         vampire.facing = newFacing;
         currentGameState.currentAP -= AP_COST.PIVOT;
@@ -1520,16 +1619,21 @@ function updatePlayerInfoPanel(player, turn, currentAP, resources) {
             return false;
         }
         // --- Add Lock-in Check Block Here ---
-        const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
-        if (currentPlayerClass !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
+        const currentPlayerClass =
+            currentGameState.players[currentGameState.currentPlayerIndex].class;
+        if (
+            currentPlayerClass !== "Vigilante" &&
+            !currentGameState.lockedInVampireIdThisTurn
+        ) {
             currentGameState.lockedInVampireIdThisTurn = vampire.id;
-            addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
+            addToLog(
+                `Locked into controlling ${vampire.id} for the rest of the turn.`
+            );
             console.log(`Non-Vigilante Lock-in: Set to ${vampire.id}`);
         }
         currentGameState.lastActionVampId = vampire.id; // Track last action vamp
         // --- End Lock-in Check Block ---
-    
-        
+
         const cost = isSilverBullet ? AP_COST.SILVER_BULLET : AP_COST.SHOOT;
         // Basic validation checks
         if (currentGameState.currentAP < cost) {
@@ -1858,16 +1962,21 @@ function updatePlayerInfoPanel(player, turn, currentAP, resources) {
             return false;
         }
         // --- Add Lock-in Check Block Here ---
-        const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
-        if (currentPlayerClass !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
+        const currentPlayerClass =
+            currentGameState.players[currentGameState.currentPlayerIndex].class;
+        if (
+            currentPlayerClass !== "Vigilante" &&
+            !currentGameState.lockedInVampireIdThisTurn
+        ) {
             currentGameState.lockedInVampireIdThisTurn = vampire.id;
-            addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
+            addToLog(
+                `Locked into controlling ${vampire.id} for the rest of the turn.`
+            );
             console.log(`Non-Vigilante Lock-in: Set to ${vampire.id}`);
         }
         currentGameState.lastActionVampId = vampire.id; // Track last action vamp
         // --- End Lock-in Check Block ---
-    
-        
+
         if (vampire.cursed) {
             addToLog("Cursed cannot throw.");
             return false;
@@ -1914,292 +2023,379 @@ function updatePlayerInfoPanel(player, turn, currentAP, resources) {
         return true;
     }
 
-/**
- * Executes the Dispel action: Removes Grave Dust from the vampire's current square.
- * @param {object} vampire - The vampire object performing the action (from findVampireById).
- * @returns {boolean} - True if the action was successful, false otherwise.
- */
-function executeDispel(vampire) {
-    if (!vampire) {
-         console.error("executeDispel called without vampire object");
-         return false;
-    }
-    const cost = AP_COST.DISPEL;
-
-    // --- Add Lock-in Check Block Here ---
-    const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
-    if (currentPlayerClass !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
-        currentGameState.lockedInVampireIdThisTurn = vampire.id;
-        addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
-        console.log(`Non-Vigilante Lock-in: Set to ${vampire.id}`);
-    }
-    currentGameState.lastActionVampId = vampire.id; // Track last action vamp
-    // --- End Lock-in Check Block ---
-
-    
-    // 1. Check AP
-    if (currentGameState.currentAP < cost) {
-        addToLog("Not enough AP to Dispel.");
-        return false;
-    }
-
-    // 2. Find Grave Dust hazard specifically on the vampire's current square
-    const hazardIndex = currentGameState.board.hazards.findIndex(h => h.coord === vampire.coord && h.type === 'Grave Dust');
-
-    // 3. Check if Grave Dust was actually found
-    if (hazardIndex === -1) {
-        addToLog(`Cannot Dispel: No Grave Dust found at ${vampire.coord}.`);
-        return false; // Action fails, no AP cost
-    }
-
-    // --- Action is Valid: Proceed ---
-    console.log(`Executing Dispel for ${vampire.id} at ${vampire.coord}`);
-    saveStateToHistory(); // Save state before modifying
-
-    // 4. Remove the Grave Dust from the board state hazards array
-    const removedHazard = currentGameState.board.hazards.splice(hazardIndex, 1)[0];
-    console.log("Dispelled hazard:", removedHazard);
-
-    // 5. Deduct AP cost
-    currentGameState.currentAP -= cost;
-
-    // 6. Log the action
-    addToLog(`${vampire.id} Dispelled Grave Dust at <span class="math-inline">\{vampire\.coord\}\. \(</span>{currentGameState.currentAP} AP left)`);
-
-    // 7. Update the display
-    renderBoard(currentGameState);
-    updateUI(); // Updates AP and potentially button states if needed
-
-    return true; // Action successful
-}
-
-/**
- * Executes the Bite the Fuse action: Removes Dynamite from the vampire's current square and Curses the vampire.
- * @param {object} vampire - The vampire object performing the action (from findVampireById).
- * @returns {boolean} - True if the action was successful, false otherwise.
- */
-function executeBiteFuse(vampire) {
-    if (!vampire) {
-        console.error("executeBiteFuse called without vampire object");
-        return false;
-    }
-    // --- Add Lock-in Check Block Here ---
-    const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
-    if (currentPlayerClass !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
-        currentGameState.lockedInVampireIdThisTurn = vampire.id;
-        addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
-        console.log(`Non-Vigilante Lock-in: Set to ${vampire.id}`);
-    }
-    currentGameState.lastActionVampId = vampire.id; // Track last action vamp
-    // --- End Lock-in Check Block ---
-
-    
-    const cost = AP_COST.BITE_FUSE;
-
-    // 1. Check AP
-    if (currentGameState.currentAP < cost) {
-        addToLog("Not enough AP to Bite the Fuse.");
-        return false;
-    }
-
-    // (Assuming cursed players *can* Bite Fuse based on previous analysis)
-
-    // 2. Find Dynamite hazard specifically on the vampire's current square
-    const hazardIndex = currentGameState.board.hazards.findIndex(h => h.coord === vampire.coord && h.type === 'Dynamite');
-
-    // 3. Check if Dynamite was actually found
-    if (hazardIndex === -1) {
-        addToLog(`Cannot Bite the Fuse: No Dynamite found at ${vampire.coord}.`);
-        return false; // Action fails, no AP cost
-    }
-
-    // --- Action is Valid: Proceed ---
-    console.log(`Executing Bite Fuse for ${vampire.id} at ${vampire.coord}`);
-    saveStateToHistory(); // Save state before modifying
-
-    // 4. Remove the Dynamite from the board state hazards array
-    const removedHazard = currentGameState.board.hazards.splice(hazardIndex, 1)[0];
-    console.log("Removed hazard by biting fuse:", removedHazard);
-
-    // 5. Deduct AP cost
-    currentGameState.currentAP -= cost;
-
-    // 6. Apply Curse to the vampire (Modify the object within currentGameState)
-    const vampInState = findVampireById(vampire.id);
-     if (vampInState) {
-         vampInState.cursed = true; // Apply the curse
-         // --- ADD THIS LINE ---
-         vampInState.movesThisTurn = 0; // Reset move counter upon becoming cursed
-         // --- END ADD ---
-         addToLog(`${vampInState.id} Bit the Fuse at <span class="math-inline">\{vampInState\.coord\}, removing Dynamite and becoming CURSED\! \(</span>{currentGameState.currentAP} AP left)`);
-     } else {
-         console.error("executeBiteFuse Error: Could not find vampire in state array to apply curse!");
-         addToLog(`ERROR: Failed to apply Curse effect after Bite Fuse by ${vampire.id}`);
-     }
-
-    // 7. Update the display
-    renderBoard(currentGameState); // Show curse border, remove hazard
-    updateUI(); // Update AP, potentially button states
-
-    return true; // Action successful
-}
-
-/**
- * Called when the current player clicks "End Turn".
- * Checks for end-of-turn abilities like Swift Justice before proceeding to the next player.
- */
-/**
- * Called when the current player clicks "End Turn".
- * Checks for end-of-turn abilities like Swift Justice before proceeding to the next player.
- */
-function nextTurn() {
-    // 1. Check for pending actions (like throw target selection)
-    if (currentGameState.actionState?.pendingAction) {
-        addToLog("Cannot end turn: Action pending. Cancel or complete.");
-        return; // Stop if an action hasn't fully resolved
-    }
-
-    // 2. Identify the player whose turn is ending
-    const endingPlayerIndex = currentGameState.currentPlayerIndex;
-    const endingPlayer = currentGameState.players[endingPlayerIndex];
-    // Get the ID of the last vampire that performed an AP-costing action this turn
-    const potentialSwiftJusticeVampId = currentGameState.lastActionVampId;
-
-    let swiftJusticeTriggered = false; // Flag to check if we paused for SJ input
-
-    // 3. Check if Swift Justice *can* be triggered
-    // Conditions: Player is Sheriff, not eliminated, took an action with one of their vamps, that vamp isn't cursed.
-    if (endingPlayer?.class === 'Sheriff' && !endingPlayer.eliminated && potentialSwiftJusticeVampId) {
-        const lastVamp = findVampireById(potentialSwiftJusticeVampId);
-        // Ensure the last acted vampire exists, belongs to the Sheriff, and is not cursed
-        if (lastVamp && lastVamp.player === endingPlayerIndex && !lastVamp.cursed) {
-
-            // 4. Prompt the player
-            if (confirm(`Execute Swift Justice for ${lastVamp.id}? (Move 1 square free)`)) {
-                // --- Player chose YES ---
-                isSwiftJusticeMovePending = true;     // Set the global flag
-                swiftJusticePlayerIndex = endingPlayerIndex;  // Store who is doing it
-                swiftJusticeVampId = potentialSwiftJusticeVampId; // Store which vamp is doing it
-
-                addToLog(`Sheriff ${lastVamp.id} prepares Swift Justice. Select move direction (N, E, S, W).`);
-                updateUI(); // Update UI (might highlight D-pad or show status)
-
-                // IMPORTANT: Pause here! Do not proceed to next player yet.
-                // Execution will continue when a direction button is clicked (via executeSwiftJusticeMove).
-                swiftJusticeTriggered = true; // Mark that we paused
-
-            } else {
-                // --- Player chose NO ---
-                addToLog("Sheriff declined Swift Justice.");
-                // Don't set the flag, just proceed normally below.
-            }
-        } else {
-             // Log why SJ wasn't offered (e.g., last vamp cursed, or ID mismatch)
-             if (!lastVamp) console.warn("Swift Justice check failed: Last acted vamp not found?");
-             else if (lastVamp.player !== endingPlayerIndex) console.warn("Swift Justice check failed: Last acted vamp belongs to wrong player?");
-             else if (lastVamp.cursed) addToLog("Swift Justice cannot be performed by a cursed Sheriff.");
-             // Proceed normally below.
+    /**
+     * Executes the Dispel action: Removes Grave Dust from the vampire's current square.
+     * @param {object} vampire - The vampire object performing the action (from findVampireById).
+     * @returns {boolean} - True if the action was successful, false otherwise.
+     */
+    function executeDispel(vampire) {
+        if (!vampire) {
+            console.error("executeDispel called without vampire object");
+            return false;
         }
-    } // else: Not a Sheriff or other conditions failed, proceed normally below.
+        const cost = AP_COST.DISPEL;
 
+        // --- Add Lock-in Check Block Here ---
+        const currentPlayerClass =
+            currentGameState.players[currentGameState.currentPlayerIndex].class;
+        if (
+            currentPlayerClass !== "Vigilante" &&
+            !currentGameState.lockedInVampireIdThisTurn
+        ) {
+            currentGameState.lockedInVampireIdThisTurn = vampire.id;
+            addToLog(
+                `Locked into controlling ${vampire.id} for the rest of the turn.`
+            );
+            console.log(`Non-Vigilante Lock-in: Set to ${vampire.id}`);
+        }
+        currentGameState.lastActionVampId = vampire.id; // Track last action vamp
+        // --- End Lock-in Check Block ---
 
-    // 5. Proceed to next player IF Swift Justice wasn't triggered/paused
-    if (!swiftJusticeTriggered) {
-        // Save the final state of the ended turn *before* transitioning
-        saveStateToHistory();
-        // Transition to the next player's turn (this function handles resets etc.)
-        proceedToNextPlayerTurn();
-    }
-    // If swiftJusticeTriggered is true, this function effectively ends here,
-    // waiting for the player's directional input.
-}
+        // 1. Check AP
+        if (currentGameState.currentAP < cost) {
+            addToLog("Not enough AP to Dispel.");
+            return false;
+        }
 
-/**
- * Handles the logic to advance to the next player's turn after all end-of-turn effects/choices are done.
- * Finds next active player, resets AP/state, updates UI.
- */
-function proceedToNextPlayerTurn() {
-    console.log("Proceeding to next player's turn...");
+        // 2. Find Grave Dust hazard specifically on the vampire's current square
+        const hazardIndex = currentGameState.board.hazards.findIndex(
+            (h) => h.coord === vampire.coord && h.type === "Grave Dust"
+        );
 
-    // --- Reset trackers for the new turn ---
-    // Note: lastActionVampId is reset in nextTurn BEFORE the prompt now.
-    // currentGameState.lastActionVampId = null; // Can likely remove this duplicate reset
-    currentGameState.lockedInVampireIdThisTurn = null;
-    // --- End Resets ---
+        // 3. Check if Grave Dust was actually found
+        if (hazardIndex === -1) {
+            addToLog(`Cannot Dispel: No Grave Dust found at ${vampire.coord}.`);
+            return false; // Action fails, no AP cost
+        }
 
-    // --- Advance Player Index ---
-    let nextPlayerIndex = (currentGameState.currentPlayerIndex + 1) % numberOfPlayers;
-    let loopCheck = 0;
+        // --- Action is Valid: Proceed ---
+        console.log(`Executing Dispel for ${vampire.id} at ${vampire.coord}`);
+        saveStateToHistory(); // Save state before modifying
 
-    while (
-        currentGameState.players[nextPlayerIndex]?.eliminated &&
-        loopCheck < numberOfPlayers
-    ) {
-        console.log(`nextTurn/proceed: Skipping P${nextPlayerIndex} because eliminated status is: ${currentGameState.players[nextPlayerIndex]?.eliminated}`);
-        nextPlayerIndex = (nextPlayerIndex + 1) % numberOfPlayers;
-        loopCheck++;
-    }
+        // 4. Remove the Grave Dust from the board state hazards array
+        const removedHazard = currentGameState.board.hazards.splice(
+            hazardIndex,
+            1
+        )[0];
+        console.log("Dispelled hazard:", removedHazard);
 
-    // Error check
-    const activePlayers = currentGameState.players.filter(p => !p.eliminated);
-     if (activePlayers.length > 0 && loopCheck >= numberOfPlayers) {
-         console.error("Error in proceedToNextPlayerTurn: Could not find next active player! State:", currentGameState);
-         addToLog("Error advancing turn!");
-         return;
-     } else if (activePlayers.length === 0 && currentGameState.turn > 0) {
-         console.log("proceedToNextPlayerTurn found no active players left. Game should have ended.");
-         return;
-     }
+        // 5. Deduct AP cost
+        currentGameState.currentAP -= cost;
 
-    // --- Set New Turn State ---
-    const previousPlayerIndexForTurnIncrement = currentGameState.currentPlayerIndex;
-    currentGameState.currentPlayerIndex = nextPlayerIndex;
+        // 6. Log the action
+        addToLog(
+            `${vampire.id} Dispelled Grave Dust at <span class="math-inline">\{vampire\.coord\}\. \(</span>{currentGameState.currentAP} AP left)`
+        );
 
-    // Increment turn number if wrapped around
-     if ( currentGameState.currentPlayerIndex <= previousPlayerIndexForTurnIncrement &&
-         !(numberOfPlayers === 1 && currentGameState.currentPlayerIndex === previousPlayerIndexForTurnIncrement) ) {
-          if(currentGameState.turn > 0 || numberOfPlayers > 1) {
-              currentGameState.turn++;
-              console.log(`Advanced to Turn ${currentGameState.turn}`);
-          }
-     }
+        // 7. Update the display
+        renderBoard(currentGameState);
+        updateUI(); // Updates AP and potentially button states if needed
 
-    // Set AP for the new player
-    const playerIndex = currentGameState.currentPlayerIndex;
-    if (currentGameState.turn === 1) {
-        if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][playerIndex];
-        else if (numberOfPlayers === 3) currentGameState.currentAP = 6;
-        else if (numberOfPlayers === 2) currentGameState.currentAP = 5;
-        else currentGameState.currentAP = 5;
-     } else { currentGameState.currentAP = 5; }
-    // TODO: Vigilante Blood Brothers check
-
-    // Reset other turn-specific state variables
-    currentGameState.selectedVampireId = null;
-    currentGameState.actionState = { pendingAction: null, selectedHazardType: null };
-
-    clearHighlights();
-    if (movementBar) movementBar.classList.add("hidden");
-    btnUndo.disabled = true;
-
-    // Reset movesThisTurn for ALL vampires
-    if (currentGameState.board?.vampires) {
-        currentGameState.board.vampires.forEach(v => (v.movesThisTurn = 0));
+        return true; // Action successful
     }
 
-    // Update UI for the new player
-    renderBoard(currentGameState);
-    updateUI(); // CRITICAL: Call updateUI *after* all state is set for the new turn
+    /**
+     * Executes the Bite the Fuse action: Removes Dynamite from the vampire's current square and Curses the vampire.
+     * @param {object} vampire - The vampire object performing the action (from findVampireById).
+     * @returns {boolean} - True if the action was successful, false otherwise.
+     */
+    function executeBiteFuse(vampire) {
+        if (!vampire) {
+            console.error("executeBiteFuse called without vampire object");
+            return false;
+        }
+        // --- Add Lock-in Check Block Here ---
+        const currentPlayerClass =
+            currentGameState.players[currentGameState.currentPlayerIndex].class;
+        if (
+            currentPlayerClass !== "Vigilante" &&
+            !currentGameState.lockedInVampireIdThisTurn
+        ) {
+            currentGameState.lockedInVampireIdThisTurn = vampire.id;
+            addToLog(
+                `Locked into controlling ${vampire.id} for the rest of the turn.`
+            );
+            console.log(`Non-Vigilante Lock-in: Set to ${vampire.id}`);
+        }
+        currentGameState.lastActionVampId = vampire.id; // Track last action vamp
+        // --- End Lock-in Check Block ---
 
-    // Log start of new turn
-    const currentPlayer = currentGameState.players[currentGameState.currentPlayerIndex];
-     if (currentPlayer && !currentPlayer.eliminated) {
-         addToLog( `--- Turn ${currentGameState.turn} - ${currentPlayer.name}'s turn (${currentPlayer.class}). AP: ${currentGameState.currentAP} ---` );
-     } else {
-         if (!currentPlayer) console.error("Could not find current player object for logging turn start.");
-         else if (currentPlayer.eliminated) console.error(`ERROR: Started turn for already eliminated player: P${currentGameState.currentPlayerIndex} (${currentPlayer.name})`);
-     }
-}
+        const cost = AP_COST.BITE_FUSE;
+
+        // 1. Check AP
+        if (currentGameState.currentAP < cost) {
+            addToLog("Not enough AP to Bite the Fuse.");
+            return false;
+        }
+
+        // (Assuming cursed players *can* Bite Fuse based on previous analysis)
+
+        // 2. Find Dynamite hazard specifically on the vampire's current square
+        const hazardIndex = currentGameState.board.hazards.findIndex(
+            (h) => h.coord === vampire.coord && h.type === "Dynamite"
+        );
+
+        // 3. Check if Dynamite was actually found
+        if (hazardIndex === -1) {
+            addToLog(
+                `Cannot Bite the Fuse: No Dynamite found at ${vampire.coord}.`
+            );
+            return false; // Action fails, no AP cost
+        }
+
+        // --- Action is Valid: Proceed ---
+        console.log(
+            `Executing Bite Fuse for ${vampire.id} at ${vampire.coord}`
+        );
+        saveStateToHistory(); // Save state before modifying
+
+        // 4. Remove the Dynamite from the board state hazards array
+        const removedHazard = currentGameState.board.hazards.splice(
+            hazardIndex,
+            1
+        )[0];
+        console.log("Removed hazard by biting fuse:", removedHazard);
+
+        // 5. Deduct AP cost
+        currentGameState.currentAP -= cost;
+
+        // 6. Apply Curse to the vampire (Modify the object within currentGameState)
+        const vampInState = findVampireById(vampire.id);
+        if (vampInState) {
+            vampInState.cursed = true; // Apply the curse
+            // --- ADD THIS LINE ---
+            vampInState.movesThisTurn = 0; // Reset move counter upon becoming cursed
+            // --- END ADD ---
+            addToLog(
+                `${vampInState.id} Bit the Fuse at <span class="math-inline">\{vampInState\.coord\}, removing Dynamite and becoming CURSED\! \(</span>{currentGameState.currentAP} AP left)`
+            );
+        } else {
+            console.error(
+                "executeBiteFuse Error: Could not find vampire in state array to apply curse!"
+            );
+            addToLog(
+                `ERROR: Failed to apply Curse effect after Bite Fuse by ${vampire.id}`
+            );
+        }
+
+        // 7. Update the display
+        renderBoard(currentGameState); // Show curse border, remove hazard
+        updateUI(); // Update AP, potentially button states
+
+        return true; // Action successful
+    }
+
+    /**
+     * Called when the current player clicks "End Turn".
+     * Checks for end-of-turn abilities like Swift Justice before proceeding to the next player.
+     */
+    /**
+     * Called when the current player clicks "End Turn".
+     * Checks for end-of-turn abilities like Swift Justice before proceeding to the next player.
+     */
+    function nextTurn() {
+        // 1. Check for pending actions (like throw target selection)
+        if (currentGameState.actionState?.pendingAction) {
+            addToLog("Cannot end turn: Action pending. Cancel or complete.");
+            return; // Stop if an action hasn't fully resolved
+        }
+
+        // 2. Identify the player whose turn is ending
+        const endingPlayerIndex = currentGameState.currentPlayerIndex;
+        const endingPlayer = currentGameState.players[endingPlayerIndex];
+        // Get the ID of the last vampire that performed an AP-costing action this turn
+        const potentialSwiftJusticeVampId = currentGameState.lastActionVampId;
+
+        let swiftJusticeTriggered = false; // Flag to check if we paused for SJ input
+
+        // 3. Check if Swift Justice *can* be triggered
+        // Conditions: Player is Sheriff, not eliminated, took an action with one of their vamps, that vamp isn't cursed.
+        if (
+            endingPlayer?.class === "Sheriff" &&
+            !endingPlayer.eliminated &&
+            potentialSwiftJusticeVampId
+        ) {
+            const lastVamp = findVampireById(potentialSwiftJusticeVampId);
+            // Ensure the last acted vampire exists, belongs to the Sheriff, and is not cursed
+            if (
+                lastVamp &&
+                lastVamp.player === endingPlayerIndex &&
+                !lastVamp.cursed
+            ) {
+                // 4. Prompt the player
+                if (
+                    confirm(
+                        `Execute Swift Justice for ${lastVamp.id}? (Move 1 square free)`
+                    )
+                ) {
+                    // --- Player chose YES ---
+                    isSwiftJusticeMovePending = true; // Set the global flag
+                    swiftJusticePlayerIndex = endingPlayerIndex; // Store who is doing it
+                    swiftJusticeVampId = potentialSwiftJusticeVampId; // Store which vamp is doing it
+
+                    addToLog(
+                        `Sheriff ${lastVamp.id} prepares Swift Justice. Select move direction (N, E, S, W).`
+                    );
+                    updateUI(); // Update UI (might highlight D-pad or show status)
+
+                    // IMPORTANT: Pause here! Do not proceed to next player yet.
+                    // Execution will continue when a direction button is clicked (via executeSwiftJusticeMove).
+                    swiftJusticeTriggered = true; // Mark that we paused
+                } else {
+                    // --- Player chose NO ---
+                    addToLog("Sheriff declined Swift Justice.");
+                    // Don't set the flag, just proceed normally below.
+                }
+            } else {
+                // Log why SJ wasn't offered (e.g., last vamp cursed, or ID mismatch)
+                if (!lastVamp)
+                    console.warn(
+                        "Swift Justice check failed: Last acted vamp not found?"
+                    );
+                else if (lastVamp.player !== endingPlayerIndex)
+                    console.warn(
+                        "Swift Justice check failed: Last acted vamp belongs to wrong player?"
+                    );
+                else if (lastVamp.cursed)
+                    addToLog(
+                        "Swift Justice cannot be performed by a cursed Sheriff."
+                    );
+                // Proceed normally below.
+            }
+        } // else: Not a Sheriff or other conditions failed, proceed normally below.
+
+        // 5. Proceed to next player IF Swift Justice wasn't triggered/paused
+        if (!swiftJusticeTriggered) {
+            // Save the final state of the ended turn *before* transitioning
+            saveStateToHistory();
+            // Transition to the next player's turn (this function handles resets etc.)
+            proceedToNextPlayerTurn();
+        }
+        // If swiftJusticeTriggered is true, this function effectively ends here,
+        // waiting for the player's directional input.
+    }
+
+    /**
+     * Handles the logic to advance to the next player's turn after all end-of-turn effects/choices are done.
+     * Finds next active player, resets AP/state, updates UI.
+     */
+    function proceedToNextPlayerTurn() {
+        console.log("Proceeding to next player's turn...");
+
+        // --- Reset trackers for the new turn ---
+        // Note: lastActionVampId is reset in nextTurn BEFORE the prompt now.
+        // currentGameState.lastActionVampId = null; // Can likely remove this duplicate reset
+        currentGameState.lockedInVampireIdThisTurn = null;
+        // --- End Resets ---
+
+        // --- Advance Player Index ---
+        let nextPlayerIndex =
+            (currentGameState.currentPlayerIndex + 1) % numberOfPlayers;
+        let loopCheck = 0;
+
+        while (
+            currentGameState.players[nextPlayerIndex]?.eliminated &&
+            loopCheck < numberOfPlayers
+        ) {
+            console.log(
+                `nextTurn/proceed: Skipping P${nextPlayerIndex} because eliminated status is: ${currentGameState.players[nextPlayerIndex]?.eliminated}`
+            );
+            nextPlayerIndex = (nextPlayerIndex + 1) % numberOfPlayers;
+            loopCheck++;
+        }
+
+        // Error check
+        const activePlayers = currentGameState.players.filter(
+            (p) => !p.eliminated
+        );
+        if (activePlayers.length > 0 && loopCheck >= numberOfPlayers) {
+            console.error(
+                "Error in proceedToNextPlayerTurn: Could not find next active player! State:",
+                currentGameState
+            );
+            addToLog("Error advancing turn!");
+            return;
+        } else if (activePlayers.length === 0 && currentGameState.turn > 0) {
+            console.log(
+                "proceedToNextPlayerTurn found no active players left. Game should have ended."
+            );
+            return;
+        }
+
+        // --- Set New Turn State ---
+        const previousPlayerIndexForTurnIncrement =
+            currentGameState.currentPlayerIndex;
+        currentGameState.currentPlayerIndex = nextPlayerIndex;
+
+        // Increment turn number if wrapped around
+        if (
+            currentGameState.currentPlayerIndex <=
+                previousPlayerIndexForTurnIncrement &&
+            !(
+                numberOfPlayers === 1 &&
+                currentGameState.currentPlayerIndex ===
+                    previousPlayerIndexForTurnIncrement
+            )
+        ) {
+            if (currentGameState.turn > 0 || numberOfPlayers > 1) {
+                currentGameState.turn++;
+                console.log(`Advanced to Turn ${currentGameState.turn}`);
+            }
+        }
+
+        // Set AP for the new player
+        const playerIndex = currentGameState.currentPlayerIndex;
+        if (currentGameState.turn === 1) {
+            if (numberOfPlayers === 4)
+                currentGameState.currentAP = [4, 5, 6, 8][playerIndex];
+            else if (numberOfPlayers === 3) currentGameState.currentAP = 6;
+            else if (numberOfPlayers === 2) currentGameState.currentAP = 5;
+            else currentGameState.currentAP = 5;
+        } else {
+            currentGameState.currentAP = 5;
+        }
+        // TODO: Vigilante Blood Brothers check
+
+        // Reset other turn-specific state variables
+        currentGameState.selectedVampireId = null;
+        currentGameState.actionState = {
+            pendingAction: null,
+            selectedHazardType: null,
+        };
+
+        clearHighlights();
+        if (movementBar) movementBar.classList.add("hidden");
+        btnUndo.disabled = true;
+
+        // Reset movesThisTurn for ALL vampires
+        if (currentGameState.board?.vampires) {
+            currentGameState.board.vampires.forEach(
+                (v) => (v.movesThisTurn = 0)
+            );
+        }
+
+        // Update UI for the new player
+        renderBoard(currentGameState);
+        updateUI(); // CRITICAL: Call updateUI *after* all state is set for the new turn
+
+        // Log start of new turn
+        const currentPlayer =
+            currentGameState.players[currentGameState.currentPlayerIndex];
+        if (currentPlayer && !currentPlayer.eliminated) {
+            addToLog(
+                `--- Turn ${currentGameState.turn} - ${currentPlayer.name}'s turn (${currentPlayer.class}). AP: ${currentGameState.currentAP} ---`
+            );
+        } else {
+            if (!currentPlayer)
+                console.error(
+                    "Could not find current player object for logging turn start."
+                );
+            else if (currentPlayer.eliminated)
+                console.error(
+                    `ERROR: Started turn for already eliminated player: P${currentGameState.currentPlayerIndex} (${currentPlayer.name})`
+                );
+        }
+    }
 
     // --- Event Listener Handlers ---
     function handleBoardClick(event) {
@@ -2232,69 +2428,79 @@ function proceedToNextPlayerTurn() {
     }
     // Handles selecting/deselecting a vampire
     /**
- * Handles clicks on the board, specifically selecting/deselecting vampires.
- * Prevents non-Vigilantes from switching vampires after locking in.
- * @param {Event} event - The click event.
- */
-/**
- * Handles clicks on the board, specifically selecting/deselecting vampires.
- * Prevents non-Vigilantes from switching vampires after locking in.
- * @param {Event} event - The click event.
- */
-function handleVampireSelection(event) {
-    // This function is called when no other action (like throw target) is pending
-    const clickedVampireElement = event.target.closest('.vampire');
+     * Handles clicks on the board, specifically selecting/deselecting vampires.
+     * Prevents non-Vigilantes from switching vampires after locking in.
+     * @param {Event} event - The click event.
+     */
+    /**
+     * Handles clicks on the board, specifically selecting/deselecting vampires.
+     * Prevents non-Vigilantes from switching vampires after locking in.
+     * @param {Event} event - The click event.
+     */
+    function handleVampireSelection(event) {
+        // This function is called when no other action (like throw target) is pending
+        const clickedVampireElement = event.target.closest(".vampire");
 
-    if (clickedVampireElement) {
-        // Clicked directly on a vampire piece
-        const vampireId = clickedVampireElement.dataset.id;
-        const ownerIndex = parseInt(clickedVampireElement.dataset.player);
+        if (clickedVampireElement) {
+            // Clicked directly on a vampire piece
+            const vampireId = clickedVampireElement.dataset.id;
+            const ownerIndex = parseInt(clickedVampireElement.dataset.player);
 
-        // Check if it belongs to the current player
-        if (ownerIndex === currentGameState.currentPlayerIndex) {
+            // Check if it belongs to the current player
+            if (ownerIndex === currentGameState.currentPlayerIndex) {
+                // --- Lock-in Check for Non-Vigilantes ---
+                const currentPlayerClass =
+                    currentGameState.players[
+                        currentGameState.currentPlayerIndex
+                    ].class;
+                const lockedVampId = currentGameState.lockedInVampireIdThisTurn;
 
-            // --- Lock-in Check for Non-Vigilantes ---
-            const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
-            const lockedVampId = currentGameState.lockedInVampireIdThisTurn;
+                // If NOT Vigilante, AND a lock is set, AND trying to select the OTHER vamp
+                if (
+                    currentPlayerClass !== "Vigilante" &&
+                    lockedVampId &&
+                    vampireId !== lockedVampId
+                ) {
+                    addToLog(
+                        `Locked into controlling ${lockedVampId}. Cannot switch vampires this turn.`
+                    );
+                    return; // PREVENT the selection change by exiting the function
+                }
+                // --- End Lock-in Check ---
 
-            // If NOT Vigilante, AND a lock is set, AND trying to select the OTHER vamp
-            if (currentPlayerClass !== 'Vigilante' && lockedVampId && vampireId !== lockedVampId) {
-                addToLog(`Locked into controlling ${lockedVampId}. Cannot switch vampires this turn.`);
-                return; // PREVENT the selection change by exiting the function
+                // If check passes (or is Vigilante), proceed with selection logic:
+                if (currentGameState.selectedVampireId !== vampireId) {
+                    console.log(`Selected vampire ${vampireId}`);
+                    currentGameState.selectedVampireId = vampireId;
+                    if (movementBar) movementBar.classList.remove("hidden"); // Show D-Pad
+                    renderBoard(currentGameState); // Update selection highlight
+                    updateUI(); // Update button states based on new selection
+                }
+            } else {
+                // Clicked opponent's vampire
+                addToLog("Cannot select opponent's vampire.");
+                if (currentGameState.selectedVampireId) {
+                    currentGameState.selectedVampireId = null;
+                    if (movementBar) movementBar.classList.add("hidden");
+                    renderBoard(currentGameState);
+                    updateUI();
+                }
             }
-            // --- End Lock-in Check ---
-
-            // If check passes (or is Vigilante), proceed with selection logic:
-            if (currentGameState.selectedVampireId !== vampireId) {
-                console.log(`Selected vampire ${vampireId}`);
-                currentGameState.selectedVampireId = vampireId;
-                if(movementBar) movementBar.classList.remove('hidden'); // Show D-Pad
-                renderBoard(currentGameState); // Update selection highlight
-                updateUI(); // Update button states based on new selection
+        } else if (event.target.closest(".grid-square")) {
+            // Clicked on an empty square (or hazard/BW) - deselect current vampire
+            if (
+                !currentGameState.actionState?.pendingAction &&
+                currentGameState.selectedVampireId
+            ) {
+                console.log("Deselecting vampire by clicking elsewhere.");
+                currentGameState.selectedVampireId = null;
+                if (movementBar) movementBar.classList.add("hidden");
+                renderBoard(currentGameState);
+                updateUI();
+                clearHighlights();
             }
-
-        } else {
-            // Clicked opponent's vampire
-            addToLog("Cannot select opponent's vampire.");
-             if (currentGameState.selectedVampireId) {
-                 currentGameState.selectedVampireId = null;
-                 if(movementBar) movementBar.classList.add('hidden');
-                 renderBoard(currentGameState);
-                 updateUI();
-             }
-        }
-    } else if (event.target.closest('.grid-square')) {
-        // Clicked on an empty square (or hazard/BW) - deselect current vampire
-        if (!currentGameState.actionState?.pendingAction && currentGameState.selectedVampireId) {
-            console.log("Deselecting vampire by clicking elsewhere.");
-            currentGameState.selectedVampireId = null;
-            if(movementBar) movementBar.classList.add('hidden');
-            renderBoard(currentGameState);
-            updateUI();
-            clearHighlights();
         }
     }
-}
 
     // Listener for the OK button on the elimination popup
     const btnCloseElimination = document.getElementById(
@@ -2897,7 +3103,7 @@ function handleVampireSelection(event) {
                 selectedHazardType: null,
             },
             lockedInVampireIdThisTurn: null,
-            lastActionVampId: null        
+            lastActionVampId: null,
         };
 
         const pIdx = currentGameState.currentPlayerIndex;
@@ -3100,12 +3306,56 @@ function handleVampireSelection(event) {
         }
     };
 
-    // Attach the handler to each d-pad button
-    // Use optional chaining on button references in case HTML elements aren't found
-    btnMoveN?.addEventListener("click", () => handleMovementButtonClick("N"));
-    btnMoveE?.addEventListener("click", () => handleMovementButtonClick("E"));
-    btnMoveS?.addEventListener("click", () => handleMovementButtonClick("S"));
-    btnMoveW?.addEventListener("click", () => handleMovementButtonClick("W"));
+    // --- Example D-Pad Button Handler ---
+
+    const handleDirectionButtonClick = (direction) => {
+        // *** ADD THIS CHECK AT THE VERY BEGINNING ***
+        console.log(
+            `D-Pad Click: ${direction}. Swift Justice Pending? ${isSwiftJusticeMovePending}`
+        ); // Debug log
+        if (isSwiftJusticeMovePending) {
+            console.log("Calling executeSwiftJusticeMove...");
+            executeSwiftJusticeMove(direction); // Call the special function
+            return; // IMPORTANT: Stop processing here for Swift Justice move
+        }
+        // *** END SWIFT JUSTICE CHECK ***
+
+        // --- If NOT Swift Justice, proceed with NORMAL move/pivot logic ---
+        const selectedVamp = findVampireById(
+            currentGameState.selectedVampireId
+        );
+        if (!selectedVamp) {
+            addToLog("Select a Vampire first.");
+            return;
+        }
+
+        // Check if the clicked direction matches the vampire's current facing
+        if (direction === selectedVamp.facing) {
+            // --- Attempt NORMAL MOVE action ---
+            addToLog(`Attempting Move ${direction}...`);
+            const targetCoord = getAdjacentCoord(selectedVamp.coord, direction); // Pass direction
+            if (targetCoord) {
+                // Make sure you pass the vampire object and the target coordinate
+                executeMove(selectedVamp, targetCoord);
+            } else {
+                addToLog("Cannot move forward off the board.");
+            }
+        } else {
+            // --- Attempt NORMAL PIVOT action ---
+            addToLog(`Attempting Pivot to ${direction}...`);
+            // Make sure you pass the vampire object and the new facing direction
+            executePivot(selectedVamp, direction);
+        }
+    };
+
+    // --- Ensure your listeners call this handler ---
+    // (If you don't have a shared handler, add the 'if (isSwiftJusticeMovePending)'
+    // block at the start of EACH button's individual listener function)
+
+    btnMoveN?.addEventListener("click", () => handleDirectionButtonClick("N"));
+    btnMoveE?.addEventListener("click", () => handleDirectionButtonClick("E"));
+    btnMoveS?.addEventListener("click", () => handleDirectionButtonClick("S"));
+    btnMoveW?.addEventListener("click", () => handleDirectionButtonClick("W"));
 
     classButtons.forEach((button) => {
         button.addEventListener("click", () => {
