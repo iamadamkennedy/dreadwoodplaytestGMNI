@@ -228,6 +228,21 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 
 	// --- 4. Function Definitions ---
 
+    /**
+     * Gets the emoji icon for a given hazard type.
+     * @param {string} hazardType - The name of the hazard.
+     * @returns {string} - The emoji string or '?' if not found.
+     */
+    function getHazardEmoji(hazardType) {
+        switch (hazardType) {
+            case "Tombstone": return "🪦";
+            case "Black Widow": return "🕷️";
+            case "Grave Dust": return "💩";
+            case "Dynamite": return "💥";
+            default: return "?"; // Fallback
+        }
+    }
+
 	// --- Coordinate Helper Functions ---
 	function getRowColFromCoord(coord) {
 		if (!coord || typeof coord !== 'string' || coord.length < 2) return null;
@@ -3271,7 +3286,18 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 			console.error("executeThrow: Missing vampire object.");
 			return false;
 		}
-		const cost = hazardType === "Dynamite" ? AP_COST.THROW_DYNAMITE : AP_COST.THROW_HAZARD;
+		
+        const count = hazardPool[hazardType] || 0;
+        const cost = hazardType === "Dynamite" ? AP_COST.THROW_DYNAMITE : AP_COST.THROW_HAZARD;
+        const emoji = getHazardEmoji(hazardType); // <<< Get the emoji
+
+        const button = document.createElement('button');
+        button.classList.add('btn', 'btn-hazard-option');
+        button.dataset.hazardType = hazardType;
+
+        // Prepend the emoji to the text content
+        button.textContent = `${emoji} <span class="math-inline">\{hazardType\} \(</span>{count})`; // <<< MODIFIED LINE
+
 		if (currentGameState.currentAP < cost) {
 			addToLog(`Not enough AP to Throw ${hazardType}.`);
 			return false;
@@ -4174,6 +4200,117 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
              updateUI(); // Update UI to show deselection
         }
     } // --- End handleBoardClick ---
+
+    /**
+     * Handles the selection of a specific hazard type from the picker popup.
+     * Updates the action state to 'throw-select-target' and highlights valid targets.
+     * @param {string} hazardType - The type of hazard selected (e.g., "Tombstone").
+     */
+    function handleHazardSelection(hazardType) {
+        const selectedVamp = findVampireById(currentGameState?.selectedVampireId);
+
+        // Safety check: Ensure a vampire is still selected
+        if (!selectedVamp) {
+            console.error("handleHazardSelection Error: No vampire selected when hazard type was chosen.");
+            addToLog("Error: Vampire selection lost. Please re-select and try throw again.");
+            // Reset throw state
+            if (popups.hazardPicker) popups.hazardPicker.style.display = "none";
+            currentGameState.actionState.pendingAction = null;
+            currentGameState.actionState.selectedHazardType = null;
+            clearHighlights();
+            updateUI();
+            return;
+        }
+
+        console.log(`Hazard type selected: ${hazardType}`);
+
+        // Update the action state
+        currentGameState.actionState.selectedHazardType = hazardType;
+        currentGameState.actionState.pendingAction = "throw-select-target"; // Now waiting for target coord click
+
+        // Hide the hazard picker popup
+        if (popups.hazardPicker) popups.hazardPicker.style.display = "none";
+
+        // Highlight the valid target squares on the board for throwing
+        highlightThrowTargets(selectedVamp, hazardType); // <<< We need to define this next!
+
+        addToLog(`Selected ${hazardType}. Click a highlighted square to throw.`);
+        // No updateUI() needed here, highlighting handles visual change. handleBoardClick will call updateUI after target selection.
+    }
+
+    /**
+     * Highlights valid target squares on the board for throwing a specific hazard
+     * from the vampire's current location.
+     * IMPLEMENTATION BASED ON ASSUMED RULES (3 Sq Range, Cardinal, Blocked by Vamp/BW).
+     * @param {object} vampire - The vampire object performing the throw.
+     * @param {string} hazardType - The type of hazard being thrown.
+     */
+    function highlightThrowTargets(vampire, hazardType) {
+        clearHighlights(); // Clear any previous target highlights
+        if (!vampire) return;
+
+        console.log(`Highlighting throw targets for ${vampire.id} throwing ${hazardType}...`);
+
+        const throwRange = 3; // Example: Max range of 3 squares
+        const startCoord = vampire.coord;
+        let foundValidTarget = false;
+
+        DIRECTIONS.forEach(dir => { // Check North, East, South, West
+            let currentCoord = startCoord;
+            let pathBlocked = false;
+
+            for (let distance = 1; distance <= throwRange; distance++) {
+                currentCoord = getAdjacentCoord(currentCoord, dir);
+                if (!currentCoord) break; // Off board
+
+                const squareElement = gameBoard.querySelector(`.grid-square[data-coord="${currentCoord}"]`);
+                if (!squareElement) continue;
+
+                const piece = findPieceAtCoord(currentCoord);
+
+                // --- Check if the path is blocked BEFORE this square ---
+                // If path is already blocked, we can't target this square or beyond
+                if (pathBlocked) {
+                    squareElement.classList.add('invalid-target'); // Indicate unreachable
+                    continue; // Don't check further this direction if path blocked
+                }
+
+                // --- Check if the current square itself blocks the path or is invalid landing ---
+                let isInvalidLandingSpot = false;
+                if (piece) {
+                    // Cannot throw ONTO a Vampire or Bloodwell
+                    if (piece.type === 'vampire' || piece.type === 'bloodwell') {
+                        isInvalidLandingSpot = true;
+                        pathBlocked = true; // Blocks further path
+                    }
+                    // Add other blocking rules? E.g., Cannot throw onto Black Widow?
+                    // if (piece.type === 'hazard' && piece.piece.type === 'Black Widow') {
+                    //     isInvalidLandingSpot = true;
+                    //     pathBlocked = true;
+                    // }
+                }
+
+                // Highlight based on validity
+                if (isInvalidLandingSpot) {
+                    squareElement.classList.add('invalid-target');
+                } else {
+                    squareElement.classList.add('valid-target');
+                    foundValidTarget = true;
+                }
+
+                // If this square was blocked, stop checking further in this direction
+                if (pathBlocked) break;
+            }
+        });
+
+        if (!foundValidTarget) {
+            addToLog("No valid targets in range for throw.");
+            // Optional: Cancel the throw action automatically if no targets?
+            // currentGameState.actionState.pendingAction = null;
+            // currentGameState.actionState.selectedHazardType = null;
+            // updateUI();
+        }
+    }
 
 	// --- Batch 5 Ends Here ---
 	// Next batch will start with Initialization (initializeGame).
