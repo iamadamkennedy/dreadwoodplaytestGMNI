@@ -12,6 +12,10 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     let gameHistory = []; // Stores previous game states for Undo
     let lastActiveScreenId = "playerCount"; // Track where help was opened from
+    // --- Add these flags for Swift Justice state ---
+    let isSwiftJusticeMovePending = false;
+    let swiftJusticePlayerIndex = -1; // Store which player is performing SJ
+    let swiftJusticeVampId = null;    // Store which vampire is performing SJ
 
     // --- 2. Constants ---
     const AP_COST = {
@@ -1167,11 +1171,18 @@ document.addEventListener("DOMContentLoaded", () => {
  * @param {number} currentAP - The current action points
  * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed }
  */
+/**
+ * Updates the player info panel and related gameplay button states.
+ * Includes logic to disable actions if player is locked into the wrong vampire.
+ * @param {object} player - The current player object { name, class, eliminated }
+ * @param {number} turn - The current turn number
+ * @param {number} currentAP - The current action points
+ * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed }
+ */
 function updatePlayerInfoPanel(player, turn, currentAP, resources) {
     // --- Basic null checks ---
     if (!player || !resources || !currentClassAbilitiesList || !infoSilverBullet || !statusBarPlayer || !statusBarAP) {
         console.error("Info Panel Error: One or more required elements not found or invalid data provided.");
-        // Set error state...
         if(statusBarPlayer) statusBarPlayer.textContent = 'Error';
         if(statusBarAP) statusBarAP.textContent = '??';
         return;
@@ -1182,7 +1193,6 @@ function updatePlayerInfoPanel(player, turn, currentAP, resources) {
     statusBarAP.textContent = currentAP;
 
     // --- Update Class Details Panel ---
-    // ... (Existing logic to display abilities and silver bullet status) ...
     const classData = CLASS_DATA[player.class];
     const panelH3 = document.querySelector('#current-class-details h3');
     if (panelH3) panelH3.textContent = `${player.class || 'Unknown'} Info`;
@@ -1190,11 +1200,34 @@ function updatePlayerInfoPanel(player, turn, currentAP, resources) {
     if (classData && classData.abilities) {
         const availableActive = classData.abilities.filter(a => a.type === 'Active' && !resources.abilitiesUsed?.includes(a.name));
         const passive = classData.abilities.filter(a => a.type === 'Passive');
-        // (Render logic for active/passive abilities - kept concise here)
-         if (availableActive.length > 0) { /* ... render active ... */ }
-         if (availableActive.length > 0 && passive.length > 0) { /* ... render hr ... */ }
-         if (passive.length > 0) { /* ... render passive ... */ }
-    } else { /* ... render 'not found' ... */ }
+        // Render Active Abilities
+        if (availableActive.length > 0) {
+            const activeHeader = document.createElement('h4');
+            activeHeader.textContent = "Active Abilities";
+            currentClassAbilitiesList.appendChild(activeHeader);
+            availableActive.forEach(ability => {
+                const li = document.createElement('li');
+                const costText = ability.apCost > 0 ? ` (${ability.apCost} AP)` : " (0 AP)";
+                li.innerHTML = `<strong>${ability.name}${costText}:</strong> ${ability.techDesc || ability.description}`;
+                currentClassAbilitiesList.appendChild(li);
+            });
+        }
+        // Render Divider
+        if (availableActive.length > 0 && passive.length > 0) {
+            currentClassAbilitiesList.appendChild(document.createElement('hr'));
+        }
+        // Render Passive Abilities
+        if (passive.length > 0) {
+            const passiveHeader = document.createElement('h4');
+            passiveHeader.textContent = "Passive Abilities";
+            currentClassAbilitiesList.appendChild(passiveHeader);
+            passive.forEach(ability => {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${ability.name}:</strong> ${ability.techDesc || ability.description}`;
+                currentClassAbilitiesList.appendChild(li);
+            });
+        }
+    } else { /* render 'not found' */ const li = document.createElement('li'); li.textContent = "Ability data not found."; currentClassAbilitiesList.appendChild(li); }
     infoSilverBullet.textContent = resources.silverBullet > 0 ? `Available (${resources.silverBullet})` : "Used";
     // --- End Class Details ---
 
@@ -1203,11 +1236,10 @@ function updatePlayerInfoPanel(player, turn, currentAP, resources) {
     const selectedVamp = findVampireById(currentGameState.selectedVampireId);
     const isVampSelected = !!selectedVamp;
     const isCursed = selectedVamp?.cursed;
-    const currentPlayerClass = player.class; // Get class from the passed player object
+    const currentPlayerClass = player.class;
     const lockedVampId = currentGameState.lockedInVampireIdThisTurn;
 
-    // *** Determine if the selected vampire can be controlled ***
-    // True if Vigilante, OR if no lock is set yet, OR if the selected matches the lock
+    // *** Check if the selected vampire can be controlled ***
     const canControlSelected = (currentPlayerClass === 'Vigilante' || !lockedVampId || !isVampSelected || selectedVamp.id === lockedVampId);
     if (!canControlSelected) {
         console.log(`UI Update: Control locked to ${lockedVampId}, selected is ${selectedVamp?.id}. Disabling actions.`);
@@ -1219,22 +1251,22 @@ function updatePlayerInfoPanel(player, turn, currentAP, resources) {
         hazardOnVampSquare = currentGameState.board.hazards.find(h => h.coord === selectedVamp.coord);
     }
 
-    // --- Standard Action Buttons ---
+    // --- Standard Action Buttons --- (Added !canControlSelected check)
     if (btnShoot) btnShoot.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.SHOOT || isCursed;
     if (btnThrow) btnThrow.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.THROW_HAZARD || isCursed;
     if (btnSilverBullet) btnSilverBullet.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.SILVER_BULLET || resources.silverBullet <= 0 || isCursed;
 
-    // --- Dispel Button State ---
+    // --- Dispel Button State --- (Added !canControlSelected check)
     const canAffordDispel = currentAP >= AP_COST.DISPEL;
     const canDispel = isVampSelected && hazardOnVampSquare?.type === 'Grave Dust' && canAffordDispel;
-    if (btnDispel) btnDispel.disabled = !canDispel || !canControlSelected; // Add !canControlSelected
+    if (btnDispel) btnDispel.disabled = !canDispel || !canControlSelected;
 
-    // --- Bite Fuse Button State ---
+    // --- Bite Fuse Button State --- (Added !canControlSelected check)
     const canAffordBite = currentAP >= AP_COST.BITE_FUSE;
     const canBite = isVampSelected && hazardOnVampSquare?.type === 'Dynamite' && canAffordBite;
-    if (btnBiteFuse) btnBiteFuse.disabled = !canBite || !canControlSelected; // Add !canControlSelected
+    if (btnBiteFuse) btnBiteFuse.disabled = !canBite || !canControlSelected;
 
-    // --- Movement Buttons ---
+    // --- Movement Buttons --- (Added !canControlSelected check)
     const canAffordMoveOrPivot = currentAP >= AP_COST.MOVE;
     const movesTakenThisTurn = selectedVamp?.movesThisTurn || 0;
     const canMoveForward = !isCursed || movesTakenThisTurn < 1;
@@ -2209,6 +2241,11 @@ function executeBiteFuse(vampire) {
  * Prevents non-Vigilantes from switching vampires after locking in.
  * @param {Event} event - The click event.
  */
+/**
+ * Handles clicks on the board, specifically selecting/deselecting vampires.
+ * Prevents non-Vigilantes from switching vampires after locking in.
+ * @param {Event} event - The click event.
+ */
 function handleVampireSelection(event) {
     // This function is called when no other action (like throw target) is pending
     const clickedVampireElement = event.target.closest('.vampire');
@@ -2228,13 +2265,11 @@ function handleVampireSelection(event) {
             // If NOT Vigilante, AND a lock is set, AND trying to select the OTHER vamp
             if (currentPlayerClass !== 'Vigilante' && lockedVampId && vampireId !== lockedVampId) {
                 addToLog(`Locked into controlling ${lockedVampId}. Cannot switch vampires this turn.`);
-                // Optionally provide feedback like shaking the piece slightly?
                 return; // PREVENT the selection change by exiting the function
             }
             // --- End Lock-in Check ---
 
             // If check passes (or is Vigilante), proceed with selection logic:
-            // Select it if not already selected
             if (currentGameState.selectedVampireId !== vampireId) {
                 console.log(`Selected vampire ${vampireId}`);
                 currentGameState.selectedVampireId = vampireId;
@@ -2242,19 +2277,10 @@ function handleVampireSelection(event) {
                 renderBoard(currentGameState); // Update selection highlight
                 updateUI(); // Update button states based on new selection
             }
-            // Optional: Handle clicking the already selected vampire (e.g., deselect)
-            // else {
-            //    console.log(`Deselecting vampire ${vampireId}`);
-            //    currentGameState.selectedVampireId = null;
-            //    if(movementBar) movementBar.classList.add('hidden');
-            //    renderBoard(currentGameState);
-            //    updateUI();
-            // }
 
         } else {
             // Clicked opponent's vampire
             addToLog("Cannot select opponent's vampire.");
-            // Deselect currently selected friendly vampire if any
              if (currentGameState.selectedVampireId) {
                  currentGameState.selectedVampireId = null;
                  if(movementBar) movementBar.classList.add('hidden');
@@ -2264,7 +2290,6 @@ function handleVampireSelection(event) {
         }
     } else if (event.target.closest('.grid-square')) {
         // Clicked on an empty square (or hazard/BW) - deselect current vampire
-        // Only deselect if no action is pending (this check might be redundant if called correctly)
         if (!currentGameState.actionState?.pendingAction && currentGameState.selectedVampireId) {
             console.log("Deselecting vampire by clicking elsewhere.");
             currentGameState.selectedVampireId = null;
