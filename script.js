@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", ()=>{
 		// --- 1. Top-Level State Variables ---
 		let numberOfPlayers = 0;
 		let currentPlayerSetupIndex = 0;
