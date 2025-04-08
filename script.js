@@ -1777,60 +1777,77 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
                 // --- Check Piece Interactions (if not blocked/passed through hazard) ---
-                else if (targetType === "vampire") {
-                    // Inside the for loop in executeShoot...
-                    // Inside executeShoot's loop, for Silver Bullet hit:
-                    if (
-                        isSilverBullet &&
-                        targetPiece.player !== shooterPlayerIndex
-                    ) {
+                
+                else if (targetType === 'vampire') {
+                    // Hitting a Vampire piece
+
+                    // --- Case 1: Silver Bullet Hit ---
+                    if (isSilverBullet && targetPiece.player !== shooterPlayerIndex) {
+                        // Successfully hit an enemy vampire with a Silver Bullet
                         const eliminatedVampId = targetPiece.id;
                         const eliminatedVampPlayerIndex = targetPiece.player;
                         hitMessage = `Silver Bullet HIT & ELIMINATED enemy ${eliminatedVampId} at ${currentCoord}!`;
                         addToLog(hitMessage);
 
                         // 1. Remove vampire from state
-                        currentGameState.board.vampires = currentGameState.board.vampires.filter(
-                            (v) => v.id !== eliminatedVampId
-                        );
-
+                        currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.id !== eliminatedVampId);
                         // 2. Update Board & UI visuals
                         renderBoard(currentGameState);
                         updateUI();
-
-                        // 3. Check if player should be eliminated and update their state
+                        // 3. Check for player elimination
                         let wasEliminated = false;
                         if (checkPlayerElimination(eliminatedVampPlayerIndex)) {
-                            if (
-                                updateEliminationState(
-                                    eliminatedVampPlayerIndex
-                                )
-                            ) {
-                                // Sets flag, removes pieces
-                                wasEliminated = true;
-                            }
+                             if(updateEliminationState(eliminatedVampPlayerIndex)) { wasEliminated = true; }
                         }
+                        // 4. Check for game end
+                        const gameEnded = checkGameEnd();
+                        // 5. Show elim popup if needed
+                        if (!gameEnded && wasEliminated) { showEliminationPopup(eliminatedVampPlayerIndex); }
 
-                        // 4. Check if the game ended AFTER updating state
-                        const gameEnded = checkGameEnd(); // Shows victory popup if needed
-
-                        // 5. If the game DID NOT end AND a player was just eliminated, show the elim popup
-                        if (!gameEnded && wasEliminated) {
-                            showEliminationPopup(eliminatedVampPlayerIndex);
-                        }
-
-                        shotResolved = true;
-                        break; // Stop shot path
+                        shotResolved = true; // Stop bullet path
+                        break; // Exit loop
                     }
-                    // ... other conditions like hitting friendly vamp, bloodwell, etc. ...
+                    // --- Case 2: Bounty Hunter Marked Man ---
+                    // Check if it's a standard shot, from a BH, hitting an enemy
+                    else if (!isSilverBullet && shooterClass === 'Bounty Hunter' && targetPiece.player !== shooterPlayerIndex) {
+                        const targetVampInState = findVampireById(targetPiece.id); // Get reference to modify
 
-                    // If the shot hit *something* that stops it (Vamp, BW, Tombstone(non-BH), Dynamite, BWidow)
-                    // We need to ensure shotResolved is true and break the loop.
-                    // The code placing 'shotResolved = true; break;' needs to be INSIDE each block that stops the shot.
-                    // Let's ensure it's correctly placed for the SB hit case:
-                    shotResolved = true; // Set it here again just to be safe within this block
-                    break; // Stop shot path after SB hit
-                }
+                        if (targetVampInState && !targetVampInState.cursed) {
+                            // Apply Curse if target exists and isn't already cursed
+                            targetVampInState.cursed = true;
+                            targetVampInState.movesThisTurn = 0; // Reset moves upon becoming cursed
+
+                            hitMessage = `Shot HIT enemy ${targetPiece.id} at ${currentCoord}. Target is CURSED (Marked Man)!`;
+                            addToLog(`Marked Man: ${targetPiece.id} is now CURSED!`);
+                            console.log(`Applied curse via Marked Man to ${targetPiece.id}`);
+
+                            // Update board immediately to show curse effect
+                            renderBoard(currentGameState);
+                            // Update UI in case curse affects button states
+                            updateUI();
+
+                        } else if (targetVampInState && targetVampInState.cursed) {
+                            // Hit an already cursed enemy - no extra effect
+                            hitMessage = `Shot hit already cursed enemy ${targetPiece.id} at ${currentCoord}.`;
+                            addToLog(hitMessage);
+                        } else {
+                            // Error case: Couldn't find target vamp state? Unlikely but handle defensively.
+                            console.error(`Marked Man Error: Could not find target vamp ${targetPiece.id} in state.`);
+                            hitMessage = `Shot hit enemy ${targetPiece.id} at ${currentCoord}, but failed to apply curse (error).`;
+                            addToLog(hitMessage);
+                        }
+                        shotResolved = true; // Stop bullet path
+                        break; // Exit loop
+                    }
+                    // --- Case 3: Any Other Vampire Hit (Friendly, or Non-BH hitting Enemy) ---
+                    else {
+                        // Includes: Standard shot hitting friendly, Silver Bullet hitting friendly, Non-BH standard shot hitting enemy
+                        hitMessage = `Shot hit ${targetPiece.id} at ${currentCoord} (no effect).`;
+                        addToLog(hitMessage);
+                        shotResolved = true; // Stop bullet path
+                        break; // Exit loop
+                    }
+                } // End handling 'vampire' target type
 
                 // Inside executeShoot's loop, for Bloodwell destruction:
                 else if (targetType === "bloodwell") {
