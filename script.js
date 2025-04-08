@@ -2100,9 +2100,7 @@ document.addEventListener("DOMContentLoaded", () => {
         currentGameState.currentAP -= cost;
 
         // 6. Log the action
-        addToLog(
-            `${vampire.id} Dispelled Grave Dust at <span class="math-inline">\{vampire\.coord\}\. \(</span>{currentGameState.currentAP} AP left)`
-        );
+        addToLog(`${vampire.id} Dispelled Grave Dust at <span class="math-inline">\{vampire\.coord\}\. \(</span>{currentGameState.currentAP} AP left)`);
 
         // 7. Update the display
         renderBoard(currentGameState);
@@ -2183,9 +2181,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // --- ADD THIS LINE ---
             vampInState.movesThisTurn = 0; // Reset move counter upon becoming cursed
             // --- END ADD ---
-            addToLog(
-                `${vampInState.id} Bit the Fuse at <span class="math-inline">\{vampInState\.coord\}, removing Dynamite and becoming CURSED\! \(</span>{currentGameState.currentAP} AP left)`
-            );
+            addToLog(`${vampInState.id} Bit the Fuse at <span class="math-inline">\{vampInState\.coord\}, removing Dynamite and becoming CURSED\! \(</span>{currentGameState.currentAP} AP left)`);
         } else {
             console.error(
                 "executeBiteFuse Error: Could not find vampire in state array to apply curse!"
