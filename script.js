@@ -1201,25 +1201,30 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Order Restored Button (Sheriff Only)
-        if (btnOrderRestored) {
-            const isSheriff = player.class === "Sheriff";
-            const orderUsed = resources.abilitiesUsed.includes("Order Restored");
-            const canAffordOrder = currentAP >= AP_COST.ORDER_RESTORED;
-            // Check if there's actually an eliminated Sheriff vamp TO revive
-            const playerIndex = currentGameState.currentPlayerIndex; // Get index for checking
-            const hasEliminatedAlly = currentGameState.eliminatedVampires.some((v) => v.player === playerIndex && CLASS_DATA[v.class]?.color === "color-sheriff"); // Check by player index and ensure it's a Sheriff type
+         if (btnOrderRestored) {
+             const isSelectedSheriff = selectedVampClass === 'Sheriff'; // Check SELECTED vampire's class
+             const orderUsed = resources.abilitiesUsed.includes('Order Restored');
+             const canAffordOrder = currentAP >= AP_COST.ORDER_RESTORED;
+             // Check if there's actually an eliminated Sheriff vamp TO revive BELONGING TO THIS PLAYER
+             const playerIndex = currentGameState.currentPlayerIndex; // Get index for checking
+             // Ensure eliminatedVampires array exists before trying to use .some()
+             const hasEliminatedAlly = currentGameState.eliminatedVampires?.some(
+                 v => v.player === playerIndex && currentGameState.players[v.player]?.class === 'Sheriff' // Ensure it's a Sheriff from THIS player
+             ) ?? false; // Default to false if eliminatedVampires is null/undefined
+    
+             // *** CORRECTED VISIBILITY LOGIC ***
+             // Show button ONLY if selected vamp is Sheriff AND there's an ally to revive
+             const isVisible = isSelectedSheriff && hasEliminatedAlly;
+             btnOrderRestored.style.display = isVisible ? 'inline-block' : 'none';
+    
+             // If visible, set disabled state based on other conditions
+             if (isVisible) {
+                 // Can now simplify the disabled check slightly, no need for hasEliminatedAlly again
+                 btnOrderRestored.disabled = !isVampSelected || !canControlSelected || !canAffordOrder || orderUsed || isCursed;
+                 btnOrderRestored.title = `Order Restored (${AP_COST.ORDER_RESTORED} AP, 1/game)${orderUsed ? ' - USED' : ''}`;
+             }
+         }
 
-            const isVisible = isSheriff;
-            // Condition: Sheriff, selected, can control, afford, not used, not cursed, *and* has an ally to revive
-            const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordOrder && !orderUsed && !isCursed && hasEliminatedAlly;
-            // TODO: Also needs validation for adjacent placement square, but that happens on execution
-
-            btnOrderRestored.style.display = isVisible ? "inline-block" : "none";
-            if (isVisible) {
-                btnOrderRestored.disabled = !isAvailable;
-                btnOrderRestored.title = `Order Restored (${AP_COST.ORDER_RESTORED} AP, 1/game)${orderUsed ? " - USED" : ""}${!hasEliminatedAlly ? " (No Ally Down)" : ""}`;
-            }
-        }
 
         // Vengeance is Mine Button (Vigilante Only)
         if (btnVengeance) {
@@ -1316,23 +1321,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // --- Update Status Bar Color and Text ---
         if (statusBarElement) {
-            const playerClass = player.class; // e.g., "Sheriff"
-            const classLower = playerClass?.toLowerCase(); // e.g., "sheriff", handle potential undefined
-
+            const player = currentGameState.players[idx]; // Get player object
+            const playerClass = player?.class; // e.g., "Sheriff"
+            const classLower = playerClass?.toLowerCase(); // e.g., "sheriff"
+            const apValue = currentGameState.currentAP; // Get current AP
+    
             // Remove existing color classes first
-            statusBarElement.classList.remove("color-sheriff", "color-vigilante", "color-outlaw", "color-bounty-hunter");
-
+            statusBarElement.classList.remove('color-sheriff', 'color-vigilante', 'color-outlaw', 'color-bounty-hunter');
+    
             // Add the new class if playerClass exists
             if (classLower) {
                 statusBarElement.classList.add(`color-${classLower}`);
             } else {
-                // Fallback if class is missing - apply default styles directly
-                statusBarElement.style.backgroundColor = "#eee";
-                statusBarElement.style.color = "#333";
+                 // Fallback if class is missing - apply default styles directly
+                 statusBarElement.style.backgroundColor = '#eee';
+                 statusBarElement.style.color = '#333';
             }
-
-            // Set the main text content, replacing previous content
-            statusBarElement.textContent = playerClass ? `${playerClass}'s Turn` : "Unknown Player's Turn";
+    
+            // Set the innerHTML to include Class Name and AP
+            const turnText = playerClass ? `${playerClass}'s Turn` : "Unknown Player's Turn";
+            // Use innerHTML to structure the content including the AP value
+            // IMPORTANT: Ensure the status-ap ID here matches the one your updatePlayerInfoPanel might also update,
+            // or decide if this single update is sufficient.
+            statusBarElement.innerHTML = `${turnText} | AP: <span id="status-ap-display">${apValue}</span>`;
+            // Note: Changed the inner span ID slightly to status-ap-display to avoid potential conflicts
+            // if #status-ap is used elsewhere as a primary target. Adjust if needed.
+    
         } else {
             console.warn("Status bar element (#status-bar) not found.");
         }
