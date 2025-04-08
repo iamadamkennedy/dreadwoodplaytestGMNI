@@ -1638,393 +1638,272 @@ document.addEventListener("DOMContentLoaded", () => {
         updateUI();
         return true;
     }
+    /**
+     * Executes a shot from the vampire.
+     * Handles standard shots, Silver Bullets, and shots originating from abilities (like Rampage).
+     * Includes checks for Sharpshooter and Marked Man passives.
+     *
+     * @param {object} vampire - The vampire object performing the shot.
+     * @param {boolean} [isSilverBullet=false] - Whether this is a Silver Bullet shot.
+     * @param {string | null} [overrideFacing=null] - Optional facing direction to use instead of vampire's current facing (for Rampage).
+     * @param {number | null} [apCostOverride=null] - Optional AP cost to use instead of standard cost (use 0 for Rampage shots).
+     * @returns {boolean} - True if the shot attempt was processed, false otherwise.
+     */
     function executeShoot(vampire, isSilverBullet = false, overrideFacing = null, apCostOverride = null) {
         if (!vampire) {
-            console.error("ExecuteShoot: No vampire.");
+            console.error("ExecuteShoot: No vampire provided.");
             return false;
         }
-        // --- Add Lock-in Check Block Here ---
-        const currentPlayerClass =
-            currentGameState.players[currentGameState.currentPlayerIndex].class;
-        if (
-            currentPlayerClass !== "Vigilante" &&
-            !currentGameState.lockedInVampireIdThisTurn
-        ) {
-            currentGameState.lockedInVampireIdThisTurn = vampire.id;
-            addToLog(
-                `Locked into controlling ${vampire.id} for the rest of the turn.`
-            );
-            console.log(`Non-Vigilante Lock-in: Set to ${vampire.id}`);
-        }
-        currentGameState.lastActionVampId = vampire.id; // Track last action vamp
-        // --- End Lock-in Check Block ---
 
-        const cost = isSilverBullet ? AP_COST.SILVER_BULLET : AP_COST.SHOOT;
-        // Basic validation checks
-        if (currentGameState.currentAP < cost) {
-            addToLog(`Not enough AP.`);
+        // --- Determine AP Cost ---
+        // Use override if provided (e.g., 0 for Rampage), otherwise use standard cost based on Silver Bullet
+        const cost = apCostOverride ?? (isSilverBullet ? AP_COST.SILVER_BULLET : AP_COST.SHOOT);
+        // ^ The '??' (Nullish Coalescing Operator) returns left side if it's NOT null/undefined, otherwise returns right side.
+        console.log(`executeShoot: Determined cost = ${cost} (apCostOverride=${apCostOverride}, isSilverBullet=${isSilverBullet})`); // Debug Log
+
+        // --- Basic validation checks ---
+        // Check AP *unless* it's an override cost (like Rampage's free shots)
+        if (apCostOverride === null && currentGameState.currentAP < cost) {
+            addToLog(`Not enough AP to Shoot (Need ${cost}, Have ${currentGameState.currentAP}).`);
             return false;
         }
+        // Check AP even for override if cost > 0 (though currently only 0 override is used)
+        else if (apCostOverride !== null && apCostOverride > 0 && currentGameState.currentAP < cost) {
+            addToLog(`Not enough AP for Ability Shot (Need ${cost}, Have ${currentGameState.currentAP}).`);
+            return false;
+        }
+
         if (vampire.cursed) {
             addToLog("Cursed cannot shoot.");
             return false;
         }
-        const playerResources =
-            currentGameState.playerResources[vampire.player];
-        if (isSilverBullet && playerResources.silverBullet <= 0) {
-            addToLog("No Silver Bullet.");
+        const playerResources = currentGameState.playerResources[vampire.player];
+        if (isSilverBullet && (playerResources.silverBullet <= 0)) { // Check includes null/undefined check implicitly
+            addToLog("No Silver Bullet left.");
             return false;
         }
-        
-        // Reset 'wasShot' flag for the player starting their turn
-        if (playerResources) {
-            playerResources.wasShotSinceLastTurn = false;
+
+        // --- Lock-in & Last Action Tracking ---
+        const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
+        // Set lock-in only if it's a standard player action (not an override like Rampage)
+        if (apCostOverride === null && currentPlayerClass !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
+            currentGameState.lockedInVampireIdThisTurn = vampire.id;
+            addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
+            console.log(`Non-Vigilante Lock-in: Set to ${vampire.id} by Shoot`);
         }
-
-        // Calculate Base AP
-        let baseAP = 5; // Standard AP
-        if (currentGameState.turn === 1) { /* ... Set Turn 1 AP ... */ }
-
-        // *** Apply AP Bonuses from Previous Turn ***
-        let bonusAP = 0;
-        if (playerResources?.contractPayoffNextTurnBonus > 0) {
-            bonusAP += playerResources.contractPayoffNextTurnBonus;
-            addToLog(`Gained +${playerResources.contractPayoffNextTurnBonus} AP from Contract Payoff!`);
-            playerResources.contractPayoffNextTurnBonus = 0; // Reset bonus
+        // Track last action only if it's a standard player action
+        if (apCostOverride === null) {
+            currentGameState.lastActionVampId = vampire.id;
         }
-        if (playerResources?.vengeanceNextTurnBonus > 0) {
-            bonusAP += playerResources.vengeanceNextTurnBonus;
-            addToLog(`Gained +${playerResources.vengeanceNextTurnBonus} AP from Vengeance is Mine!`);
-            playerResources.vengeanceNextTurnBonus = 0; // Reset bonus
+        // --- End Lock-in ---
+
+        // --- Save State & Deduct AP ---
+        // Only save history and deduct AP if it's a player-initiated action (not internal Rampage call)
+        if (apCostOverride === null) {
+            saveStateToHistory();
+            currentGameState.currentAP -= cost; // Deduct the calculated cost
+            if (isSilverBullet) {
+                playerResources.silverBullet--; // Deduct Silver Bullet resource
+            }
+        } else {
+            // If called by Rampage (apCostOverride is 0), don't save history again or deduct AP here
+            console.log("executeShoot called with apCostOverride=0, skipping AP deduction and history save.");
         }
-        // TODO: Add Vigilante Blood Brothers check here? (If applicable this turn)
+        // --- End Save State & AP Deduction ---
 
-        currentGameState.currentAP = baseAP + bonusAP; // Set final AP
-        // *** End Apply AP Bonuses ***
-
-        saveStateToHistory(); // Save state *before* shooting
-
+        // --- Prepare Shot ---
         const shooterPlayerIndex = vampire.player;
         const shooterClass = currentGameState.players[shooterPlayerIndex].class;
+        const facingToUse = overrideFacing || vampire.facing; // Use override facing if provided
         let currentCoord = vampire.coord;
-        let hitMessage = `Shot from ${vampire.coord} facing ${vampire.facing} travelled off board.`;
+        let hitMessage = `Shot from ${vampire.coord} facing ${facingToUse} travelled off board.`;
         let shotResolved = false;
 
-        addToLog(
-            `${vampire.id} ${
-                isSilverBullet ? "fires a Silver Bullet" : "shoots"
-            } facing ${vampire.facing}...`
-        );
+        addToLog(`${vampire.id} shoots facing ${facingToUse}... ${isSilverBullet ? '(Silver Bullet)' : ''} ${apCostOverride !== null ? '(Part of Ability)' : ''}`);
 
-        if (isSilverBullet) {
-            playerResources.silverBullet--;
-        }
-        currentGameState.currentAP -= cost;
-
-        // Trace path square by square
+        // --- Trace Path ---
         for (let i = 0; i < 9 && !shotResolved; i++) {
-            const nextCoord = getAdjacentCoord(currentCoord, vampire.facing);
+            const nextCoord = getAdjacentCoord(currentCoord, facingToUse); // Use facingToUse
             if (!nextCoord) {
-                hitMessage = `Shot from ${vampire.coord} went off the board.`;
+                hitMessage = `Shot from ${vampire.coord} facing ${facingToUse} went off the board.`;
                 shotResolved = true;
                 break;
             }
             currentCoord = nextCoord;
-
             const pieceAtCoord = findPieceAtCoord(currentCoord);
+
             if (pieceAtCoord) {
                 const targetType = pieceAtCoord.type;
                 const targetPiece = pieceAtCoord.piece;
 
-                // --- Check Hazard Interactions ---
+                // --- Hazard Interactions ---
                 if (targetType === "hazard") {
-                    // Rule: Tombstone blocks LoS/Path (stops shot), unless BH. Destroys Tombstone. Special SB case.
                     if (targetPiece.type === "Tombstone") {
-                        // --- Sharpshooter Check ---
-                        // Check if the shooter belongs to the Bounty Hunter class
                         if (shooterClass === "Bounty Hunter") {
-                            // Bounty Hunter's shot passes through Tombstone without stopping or destroying it.
-                            addToLog(
-                                `Shot passes through Tombstone at ${currentCoord} (Sharpshooter).`
-                            );
-                            console.log(
-                                `BH Sharpshooter ignores Tombstone at ${currentCoord}. Shot continues.`
-                            );
-                            continue; // <<< Skips the rest of this block and continues the 'for' loop to the next square
-                        }
-                        // --- End Sharpshooter Check ---
-                        else {
-                            // --- Non-BH hit Tombstone (Existing Logic) ---
-                            const vampBehind = currentGameState.board.vampires.find(
-                                (v) =>
-                                    v.coord === currentCoord &&
-                                    v.player !== shooterPlayerIndex
-                            );
-                            if (isSilverBullet && vampBehind) {
-                                // Special Case: SB hits Tombstone shielding enemy Vamp - TS destroyed, SB wasted
-                                hitMessage = `Silver Bullet shattered Tombstone at ${currentCoord}, but ${vampBehind.id} was protected! (SB Wasted)`;
-                                addToLog(
-                                    "Tombstone destroyed by Silver Bullet."
-                                ); // Specific log
-                                currentGameState.board.hazards = currentGameState.board.hazards.filter(
-                                    (h) => h.coord !== currentCoord
-                                ); // Destroy TS
+                            addToLog(`Shot passes through Tombstone at ${currentCoord} (Sharpshooter).`);
+                            console.log(`BH Sharpshooter ignores Tombstone at ${currentCoord}. Shot continues.`);
+                            continue; // Skip rest of loop iteration, shot continues
+                        } else { // Non-BH hits Tombstone
+                            const vampBehind = findVampireById(targetPiece.coord) && targetPiece.player !== shooterPlayerIndex; // Simpler check
+                            if (isSilverBullet && vampBehind) { // Check vampBehind FIRST
+                                hitMessage = `Silver Bullet shattered Tombstone at ${currentCoord}, but ${findVampireById(targetPiece.coord)?.id || 'vampire'} was protected! (SB Wasted)`;
+                                addToLog("Tombstone destroyed by blocked Silver Bullet.");
                             } else {
-                                // Standard Hit or SB hit tombstone without vamp behind: Destroy Tombstone
                                 hitMessage = `Shot DESTROYED Tombstone at ${currentCoord}!`;
-                                // No need for separate addToLog here, hitMessage covers it below.
-                                currentGameState.board.hazards = currentGameState.board.hazards.filter(
-                                    (h) => h.coord !== currentCoord
-                                ); // Destroy TS
                             }
-                            // Shot stops here for non-BH after hitting a Tombstone
+                            currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
                             shotResolved = true;
-                            break; // <<< Stops the 'for' loop tracing the shot path
-                            // --- End Non-BH Logic ---
+                            break; // Shot stops
                         }
-                    }
-                    // Rule: Dynamite blocks LoS/Path, Explodes when hit, potentially causing chain reactions.
-                    else if (targetPiece.type === "Dynamite") {
-                        const initialExplosionCoord = currentCoord; // Where the shot hit
+                    } else if (targetPiece.type === "Dynamite") {
+                        const initialExplosionCoord = currentCoord;
                         hitMessage = `Shot hit Dynamite at ${initialExplosionCoord}. It EXPLODES, starting potential chain reaction!`;
-                        shotResolved = true; // Mark shot as resolved
-
-                        console.log(
-                            `Dynamite hit by shot at ${initialExplosionCoord}. Initiating explosion processing.`
-                        );
-                        addToLog(
-                            `Shot triggers Dynamite at ${initialExplosionCoord}!`
-                        );
-
-                        // --- Initiate Chain Reaction Processing ---
-                        const explosionQueue = [initialExplosionCoord]; // Start queue with the first dynamite hit
-                        const processedExplosions = new Set(); // Keep track of coords already exploded in this chain
-
-                        // Call the function to handle the explosion queue
-                        processExplosionQueue(
-                            explosionQueue,
-                            processedExplosions
-                        );
-                        // --- End Chain Reaction Initiation ---
-
-                        // The shot stops after hitting the first dynamite. The queue handles the rest.
-                        break;
-                    }
-                    // Rule: Black Widow is destroyed when hit, stops shot.
-                    else if (targetPiece.type === "Black Widow") {
+                        shotResolved = true;
+                        console.log(`Dynamite hit by shot at ${initialExplosionCoord}. Initiating explosion processing.`);
+                        addToLog(`Shot triggers Dynamite at ${initialExplosionCoord}!`);
+                        const explosionQueue = [initialExplosionCoord];
+                        const processedExplosions = new Set();
+                        processExplosionQueue(explosionQueue, processedExplosions);
+                        break; // Shot stops
+                    } else if (targetPiece.type === "Black Widow") {
                         hitMessage = `Shot destroyed Black Widow at ${currentCoord}!`;
-                        currentGameState.board.hazards = currentGameState.board.hazards.filter(
-                            (h) => h.coord !== currentCoord
-                        );
+                        currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
                         shotResolved = true;
                         break; // Stop shot path
-                    }
-                    // Rule: Grave Dust allows pass-through.
-                    else if (targetPiece.type === "Grave Dust") {
-                        addToLog(
-                            `Shot passes through Grave Dust at ${currentCoord}.`
-                        );
+                    } else if (targetPiece.type === "Grave Dust") {
+                        addToLog(`Shot passes through Grave Dust at ${currentCoord}.`);
                         continue; // Shot continues
                     }
                 }
-                // --- Check Piece Interactions (if not blocked/passed through hazard) ---
-                
+                // --- Piece Interactions ---
                 else if (targetType === 'vampire') {
-                    // Hitting a Vampire piece
-
-                    // --- Case 1: Silver Bullet Hit ---
+                    // Case 1: Silver Bullet Hit Enemy
                     if (isSilverBullet && targetPiece.player !== shooterPlayerIndex) {
-                        // Successfully hit an enemy vampire with a Silver Bullet
                         const eliminatedVampId = targetPiece.id;
                         const eliminatedVampPlayerIndex = targetPiece.player;
                         hitMessage = `Silver Bullet HIT & ELIMINATED enemy ${eliminatedVampId} at ${currentCoord}!`;
                         addToLog(hitMessage);
-
-                        const eliminatedVampData = findVampireById(eliminatedVampId); // Get data BEFORE removing
-                        if (eliminatedVampData) {
-                            currentGameState.eliminatedVampires.push(JSON.parse(JSON.stringify(eliminatedVampData))); // Store a copy
-                            console.log("Added to eliminated list:", eliminatedVampData.id);
-                        } else {
-                            console.error("Could not find data for eliminated vampire:", eliminatedVampId);
-                        }
-
-                        // 1. Remove vampire from state
+                        const eliminatedVampData = findVampireById(eliminatedVampId);
+                        if (eliminatedVampData) currentGameState.eliminatedVampires.push(JSON.parse(JSON.stringify(eliminatedVampData)));
                         currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.id !== eliminatedVampId);
-                        // 2. Update Board & UI visuals
-                        renderBoard(currentGameState);
-                        updateUI();
-                        // 3. Check for player elimination
+                        // Defer render/UI until after loop break if part of Rampage? No, elimination needs immediate render.
+                        renderBoard(currentGameState); // Render needed immediately for elimination visual
+                        updateUI();                 // Update UI needed immediately
                         let wasEliminated = false;
                         if (checkPlayerElimination(eliminatedVampPlayerIndex)) {
-                             if(updateEliminationState(eliminatedVampPlayerIndex)) { wasEliminated = true; }
+                            if(updateEliminationState(eliminatedVampPlayerIndex)) { wasEliminated = true; }
                         }
-                        // 4. Check for game end
                         const gameEnded = checkGameEnd();
-                        // 5. Show elim popup if needed
                         if (!gameEnded && wasEliminated) { showEliminationPopup(eliminatedVampPlayerIndex); }
-
-                        shotResolved = true; // Stop bullet path
-                        break; // Exit loop
                     }
-                    // --- Case 2: Bounty Hunter Marked Man ---
-                    // Check if it's a standard shot, from a BH, hitting an enemy
+                    // Case 2: Bounty Hunter Marked Man (Standard shot hitting Enemy)
                     else if (!isSilverBullet && shooterClass === 'Bounty Hunter' && targetPiece.player !== shooterPlayerIndex) {
-                        const targetVampInState = findVampireById(targetPiece.id); // Get reference to modify
-
+                        const targetVampInState = findVampireById(targetPiece.id);
                         if (targetVampInState && !targetVampInState.cursed) {
-                            // Apply Curse if target exists and isn't already cursed
                             targetVampInState.cursed = true;
-                            targetVampInState.movesThisTurn = 0; // Reset moves upon becoming cursed
-
+                            targetVampInState.movesThisTurn = 0;
                             hitMessage = `Shot HIT enemy ${targetPiece.id} at ${currentCoord}. Target is CURSED (Marked Man)!`;
                             addToLog(`Marked Man: ${targetPiece.id} is now CURSED!`);
-                            console.log(`Applied curse via Marked Man to ${targetPiece.id}`);
-
-                            // Update board immediately to show curse effect
-                            renderBoard(currentGameState);
-                            // Update UI in case curse affects button states
-                            updateUI();
-
+                            renderBoard(currentGameState); // Render needed for curse visual
+                            updateUI();                 // Update UI needed
                         } else if (targetVampInState && targetVampInState.cursed) {
-                            // Hit an already cursed enemy - no extra effect
                             hitMessage = `Shot hit already cursed enemy ${targetPiece.id} at ${currentCoord}.`;
                             addToLog(hitMessage);
-                        } else {
-                            // Error case: Couldn't find target vamp state? Unlikely but handle defensively.
-                            console.error(`Marked Man Error: Could not find target vamp ${targetPiece.id} in state.`);
-                            hitMessage = `Shot hit enemy ${targetPiece.id} at ${currentCoord}, but failed to apply curse (error).`;
-                            addToLog(hitMessage);
-                        }
-                        shotResolved = true; // Stop bullet path
-                        break; // Exit loop
+                        } else { /* Error handling */ }
                     }
-                    // --- Case 3: Any Other Vampire Hit (Friendly, or Non-BH hitting Enemy) ---
+                    // Case 3: Any Other Vampire Hit
                     else {
-                        // Includes: Standard shot hitting friendly, Silver Bullet hitting friendly, Non-BH standard shot hitting enemy
                         hitMessage = `Shot hit ${targetPiece.id} at ${currentCoord} (no effect).`;
                         addToLog(hitMessage);
-                        shotResolved = true; // Stop bullet path
-                        break; // Exit loop
                     }
-                } // End handling 'vampire' target type
-
-                // Inside executeShoot's loop, for Bloodwell destruction:
-                else if (targetType === "bloodwell") {
-                    const targetBW = targetPiece; // The Bloodwell piece that was hit
+                    shotResolved = true; // Shot always stops on hitting a vampire
+                    break;
+                }
+                // Case: Hit Bloodwell
+                else if (targetType === 'bloodwell') {
+                    const targetBW = targetPiece;
                     const targetBWCoord = targetBW.coord;
-                    const targetBWPlayerIndex = targetBW.player; // *** Owner of the BW being shot ***
+                    const targetBWPlayerIndex = targetBW.player;
                     const targetBWId = targetBW.id;
-
-                    let isProtectedBySheriff = false; // Assume not protected initially
-
-                    // --- Sheriff "Under My Protection" Check ---
-                    // Check only applies to standard shots (for now, assume !isSilverBullet is standard)
-                    if (!isSilverBullet) {
-                        // Find the player index of the Sheriff faction (if one exists and is active)
-                        const sheriffPlayerIndex = currentGameState.players.findIndex(
-                            (p) => p.class === "Sheriff" && !p.eliminated
-                        );
-
-                        // *** ADDED CHECK: Protection only applies if the target BW BELONGS to the Sheriff player ***
-                        if (
-                            sheriffPlayerIndex !== -1 &&
-                            targetBWPlayerIndex === sheriffPlayerIndex
-                        ) {
-                            // Only proceed if an active Sheriff exists AND they own the target Bloodwell
-
-                            // Find all active Sheriff vampires on the board belonging to that player
-                            const activeSheriffVamps = currentGameState.board.vampires.filter(
-                                (v) => v.player === sheriffPlayerIndex
-                                // Assuming protection works even if Sheriff is cursed
-                            );
-
-                            // Check the 3x3 area around each active Sheriff vamp
+                    let isProtectedBySheriff = false;
+                    if (!isSilverBullet) { // Check protection only for standard shots
+                        const sheriffPlayerIndex = currentGameState.players.findIndex(p => p.class === 'Sheriff' && !p.eliminated);
+                        if (sheriffPlayerIndex !== -1 && targetBWPlayerIndex === sheriffPlayerIndex) {
+                            const activeSheriffVamps = currentGameState.board.vampires.filter(v => v.player === sheriffPlayerIndex);
                             for (const sheriffVamp of activeSheriffVamps) {
-                                const protectionZone = getCoordsInArea(
-                                    sheriffVamp.coord,
-                                    1
-                                ); // Get 3x3 area
-                                // Check if the target Bloodwell's coordinate is in this Sheriff's zone
+                                const protectionZone = getCoordsInArea(sheriffVamp.coord, 1);
                                 if (protectionZone.includes(targetBWCoord)) {
-                                    // Bloodwell is owned by the Sheriff AND is in a protection zone!
-                                    isProtectedBySheriff = true; // Found protection!
-                                    console.log(
-                                        `Sheriff's own Bloodwell at ${targetBWCoord} is protected by ${sheriffVamp.id} at ${sheriffVamp.coord}.`
-                                    );
-                                    // Update hitMessage here, as it won't be destroyed
+                                    isProtectedBySheriff = true;
                                     hitMessage = `Shot blocked! Sheriff's Bloodwell at ${targetBWCoord} is under protection!`;
-                                    addToLog(hitMessage); // Log the block message
-                                    break; // Stop checking other Sheriffs once protection is confirmed
+                                    addToLog(hitMessage);
+                                    break;
                                 }
                             }
                         }
-                        // Implicitly else: If no active Sheriff, or the BW doesn't belong to the Sheriff, isProtectedBySheriff remains false.
                     }
-                    // --- End Sheriff Protection Check ---
 
-                    // --- Apply Outcome ---
                     if (isProtectedBySheriff) {
-                        // Shot is blocked by protection, stop the bullet path here.
-                        shotResolved = true;
+                        shotResolved = true; // Stop shot
                         break;
-                    } else {
-                        // --- Not Protected: Proceed with Destruction ---
-                        // Ensure hitMessage reflects destruction if not protected
+                    } else { // Not protected -> Destroy
                         hitMessage = `Shot DESTROYED Bloodwell ${targetBWId} at ${targetBWCoord}!`;
-                        addToLog(hitMessage); // Log destruction
-
-                        // 1. Remove Bloodwell from state
-                        currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(
-                            (bw) => bw.id !== targetBWId
-                        );
-
-                        // 2. Update Board & UI visuals
+                        addToLog(hitMessage);
+                        currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== targetBWId);
+                        // Defer render/UI if part of Rampage? No, BW destruction needs immediate render/checks
                         renderBoard(currentGameState);
                         updateUI();
-
-                        // 3. Check if player should be eliminated and update their state
                         let wasEliminated = false;
                         if (checkPlayerElimination(targetBWPlayerIndex)) {
-                            if (updateEliminationState(targetBWPlayerIndex)) {
-                                // Sets flag, removes pieces
-                                wasEliminated = true;
-                            }
+                            if(updateEliminationState(targetBWPlayerIndex)) { wasEliminated = true; }
                         }
+                        const gameEnded = checkGameEnd();
+                        if (!gameEnded && wasEliminated) { showEliminationPopup(targetBWPlayerIndex); }
 
-                        // 4. Check if the game ended AFTER updating state
-                        const gameEnded = checkGameEnd(); // Shows victory popup if needed
-
-                        // 5. If the game DID NOT end AND a player was just eliminated, show the elim popup
-                        if (!gameEnded && wasEliminated) {
-                            showEliminationPopup(targetBWPlayerIndex);
+                        // *** Add Contract Payoff Trigger Check ***
+                        if(shooterClass === 'Bounty Hunter' && apCostOverride === null) { // Check if BH made the shot via normal action
+                                const bhResources = currentGameState.playerResources[shooterPlayerIndex];
+                                if(bhResources.abilitiesUsed.includes('Contract Payoff Triggered')) { // Check if ability active
+                                    let bonus = (numberOfPlayers === 2) ? 3 : 5;
+                                    bhResources.contractPayoffNextTurnBonus = bonus; // Set bonus for next turn
+                                    addToLog(`Contract Payoff: Gaining +${bonus} AP next turn!`);
+                                    // Remove trigger? Or is the ability itself marked used? Assume mark used in execute func
+                                    // bhResources.abilitiesUsed = bhResources.abilitiesUsed.filter(a => a !== 'Contract Payoff Triggered');
+                                }
                         }
+                        // *** End Contract Payoff Check ***
 
-                        shotResolved = true;
-                        break; // Stop shot path after destruction
-                        // --- End Destruction Logic ---
+                        // *** Add Outlaw Daring Escape Trigger Check ***
+                        if(shooterClass === 'Outlaw' && apCostOverride === null){ // Check if Outlaw made shot via normal action
+                            // TODO: Implement Daring Escape logic - needs state tracking (1/turn) and UI prompt/action later
+                            addToLog("Outlaw Daring Escape may trigger (TBD).");
+                        }
+                        // *** End Daring Escape Check ***
+
+                        shotResolved = true; // Stop shot
+                        break;
                     }
-                } // End handling 'bloodwell' target type
-            }
-            // If square was empty, shot continues
+                } // End Bloodwell Check
+            } // end if(pieceAtCoord)
+        } // end for loop (shot path)
+
+        // --- Final Logging & UI Update ---
+        // Final log message built from hitMessage within the loop
+        const finalLogAPMsg = (apCostOverride === null) ? ` (${currentGameState.currentAP} AP left)` : ' (Rampage Shot)';
+        // Avoid double logging hit message if already logged (e.g. for protection)
+        if (!hitMessage.startsWith('Shot blocked!')) {
+            addToLog(hitMessage + finalLogAPMsg);
+        }
+        if (isSilverBullet && !shotResolved && hitMessage.includes("off board")) {
+            addToLog("Silver Bullet did not hit anything before leaving board.");
         }
 
-        // Final log message and UI update
-        addToLog(hitMessage + ` (${currentGameState.currentAP} AP left)`);
-        if (
-            isSilverBullet &&
-            !shotResolved &&
-            hitMessage.includes("off board")
-        ) {
-            // Clarify SB miss log
-            addToLog(
-                "Silver Bullet did not hit anything before leaving board."
-            );
+        // Update display *unless* called from Rampage (which handles final update)
+        if (apCostOverride === null) {
+            renderBoard(currentGameState);
+            updateUI();
         }
 
-        renderBoard(currentGameState);
-        updateUI();
-        // TODO: Check win/loss conditions
-        return true; // Indicate action attempt success (even if shot missed/blocked)
+        return true; // Indicate shot attempt occurred
     }
 
     function executeThrow(vampire, hazardType, targetCoord) {
