@@ -4056,7 +4056,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 	 * Initializes the game state, board, and UI for starting a new game.
 	 */
 	function initializeGame() {
-    	alert("DEBUG: 1 - initializeGame Started"); // << ADD ALERT
+		alert("DEBUG: 1 - initializeGame Started"); // << ADDED ALERT
 		console.log("Initializing game with player data:", JSON.stringify(playerData));
 		gameHistory = []; // Reset history
 
@@ -4114,7 +4114,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 			},
 			eliminatedVampires: []
 		};
-		alert("DEBUG: 2 - Game State Defined"); // << ADD ALERT
+		alert("DEBUG: 2 - Game State Defined"); // << ADDED ALERT
 
 		// --- Set Initial AP ---
 		const pIdx = currentGameState.currentPlayerIndex;
@@ -4124,42 +4124,69 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 			else if (numberOfPlayers === 2) currentGameState.currentAP = 5;
 			else currentGameState.currentAP = 5; // Default/fallback
 		} else {
-			currentGameState.currentAP = 5; // Should not happen on init, but fallback
+			// This block shouldn't typically run during initialization,
+			// but serves as a fallback if initializeGame were called mid-game somehow.
+			console.warn("initializeGame called after turn 1, setting AP to default 5.");
+			currentGameState.currentAP = 5;
 		}
 		console.log(`Initial AP set to: ${currentGameState.currentAP} for Player ${pIdx+1}`);
-		alert("DEBUG: 3 - Initial AP Set"); // << ADD ALERT
+		alert("DEBUG: 3 - Initial AP Set"); // << ADDED ALERT
 
 		// --- Setup Board and UI ---
 		generateGrid();
-		alert("DEBUG: 4 - Grid Generated"); // << ADD ALERT
+		alert("DEBUG: 4 - Grid Generated"); // << ADDED ALERT
 		renderBoard(currentGameState);
-		alert("DEBUG: 5 - Board Rendered"); // << ADD ALERT
+		alert("DEBUG: 5 - Board Rendered"); // << ADDED ALERT
 		updateUI(); // Set status bar, info panel, buttons
-		alert("DEBUG: 6 - UI Updated"); // << ADD ALERT
+		alert("DEBUG: 6 - UI Updated"); // << ADDED ALERT
 
 		// --- Final Setup ---
-		logList.innerHTML = `<li>Game Started: ${layoutName}</li>`;
-		if (gameLog) gameLog.scrollTop = 0;
+		// Ensure logList element exists before manipulating it
+		if (logList) {
+			logList.innerHTML = `<li>Game Started: ${layoutName}</li>`;
+			// Ensure gameLog element exists before manipulating scroll position
+			if (gameLog) gameLog.scrollTop = 0;
+		} else {
+			console.error("logList element not found during initialization.");
+		}
+
 		if (btnUndo) btnUndo.disabled = true;
 		if (movementBar) movementBar.classList.add("hidden");
 
 		// Re-attach main gameplay listeners (remove first to prevent duplicates)
-		gameBoard.removeEventListener("click", handleBoardClick);
-		gameBoard.addEventListener("click", handleBoardClick);
-		if (btnUndo) btnUndo.removeEventListener("click", undoLastAction);
-		if (btnUndo) btnUndo.addEventListener("click", undoLastAction);
-		if (btnEndTurn) btnEndTurn.removeEventListener("click", nextTurn);
-		if (btnEndTurn) btnEndTurn.addEventListener("click", nextTurn);
-		alert("DEBUG: 7 - Listeners Attached"); // << ADD ALERT
+		// Ensure gameBoard exists before adding listeners
+		if (gameBoard) {
+			gameBoard.removeEventListener("click", handleBoardClick);
+			gameBoard.addEventListener("click", handleBoardClick);
+		} else {
+			console.error("gameBoard element not found during initialization.");
+		}
+
+		// Ensure buttons exist before adding listeners
+		if (btnUndo) {
+			btnUndo.removeEventListener("click", undoLastAction);
+			btnUndo.addEventListener("click", undoLastAction);
+		}
+		if (btnEndTurn) {
+			btnEndTurn.removeEventListener("click", nextTurn);
+			btnEndTurn.addEventListener("click", nextTurn);
+		}
+		alert("DEBUG: 7 - Listeners Attached"); // << ADDED ALERT
 
 		showScreen("gameplay");
-		alert("DEBUG: 8 - showScreen('gameplay') Called"); // << ADD ALERT
+		alert("DEBUG: 8 - showScreen('gameplay') Called"); // << ADDED ALERT
+
 		const player = currentGameState.players[pIdx];
 		if (player) {
 			addToLog(`--- Turn ${currentGameState.turn} - ${player.name}'s turn (${player.class}). AP: ${currentGameState.currentAP} ---`);
+		} else {
+			// This case should ideally not happen if playerData is correctly processed
+			console.error(`Could not find player data for index ${pIdx} at the start of the game.`);
+			addToLog(`--- Turn ${currentGameState.turn} - Player ${pIdx + 1}'s turn. AP: ${currentGameState.currentAP} ---`);
 		}
-		alert("DEBUG: 9 - initializeGame Finished!"); // << ADD ALERT
+		alert("DEBUG: 9 - initializeGame Finished!"); // << ADDED ALERT
 	}
+
 
 	// --- 5. Attach Event Listeners (Executed ONCE on script load) ---
 
