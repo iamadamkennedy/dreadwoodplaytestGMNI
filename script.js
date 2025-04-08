@@ -310,6 +310,27 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 		return Math.abs(rc1.row - rc2.row) + Math.abs(rc1.col - rc2.col);
 	}
 
+    /**
+     * Increments the count of a specific hazard type in the global hazard pool.
+     * @param {string} hazardType - The type of hazard returning to the pool (e.g., "Tombstone", "Dynamite").
+     */
+    function returnHazardToPool(hazardType) {
+        if (!currentGameState || !currentGameState.hazardPool) {
+            console.error("returnHazardToPool: Cannot access hazard pool in game state!");
+            return;
+        }
+        // Check if the hazard type exists in the pool object
+        if (currentGameState.hazardPool.hasOwnProperty(hazardType)) {
+            currentGameState.hazardPool[hazardType]++; // Increment the count
+            console.log(`Returned ${hazardType} to pool. New count: ${currentGameState.hazardPool[hazardType]}`);
+        } else {
+            // Log a warning if trying to return an unknown type (shouldn't happen with valid types)
+            console.warn(`returnHazardToPool: Tried to return unknown hazard type "${hazardType}" to pool.`);
+        }
+        // Optional: Update UI immediately if the hazard picker might be open?
+        // Or rely on populateHazardPicker being called next time Throw is clicked. Let's rely on next call.
+    }
+
 	/**
 	 * Gets all valid coordinates within a square radius around a center coordinate.
 	 * Includes the center coordinate itself.
@@ -3149,6 +3170,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 							hitMessage = `Shot DESTROYED Tombstone at ${currentCoord}!`;
 							// Silver bullet check (wasted if blocked by Tombstone)
 							// Note: Rules might vary on if SB *destroys* the blocking Tombstone. Assuming yes here.
+                            returnHazardToPool("Tombstone"); // <<< ADD THIS
 							if (isSilverBullet) {
 								hitMessage = `Silver Bullet shattered Tombstone at ${currentCoord} (Shot Blocked)!`;
 							}
@@ -3162,11 +3184,13 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 						addToLog(`Shot triggers Dynamite at ${currentCoord}!`);
 						const explosionQueue = [currentCoord];
 						const processedExplosions = new Set();
+                        returnHazardToPool("Dynamite"); // <<< ADD THIS (Return the one hit by the shot)
 						// Need to remove this dynamite first before processing queue
 						currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
 						processExplosionQueue(explosionQueue, processedExplosions); // This handles chains & subsequent updates
 					} else if (targetPiece.type === "Black Widow") {
 						hitMessage = `Shot destroyed Black Widow at ${currentCoord}!`;
+                        returnHazardToPool("Black Widow"); // <<< ADD THIS
 						currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
 						shotResolved = true; // Shot stops
 					} else if (targetPiece.type === "Grave Dust") {
@@ -3394,6 +3418,10 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 
 		// Remove the hazard
 		const removedHazard = currentGameState.board.hazards.splice(hazardIndex, 1)[0];
+        if (removedHazard) { // Check splice worked
+            returnHazardToPool(removedHazard.type); // <<< ADD THIS (Should be "Grave Dust")
+            console.log("Dispelled hazard:", removedHazard.type);
+        }
 		console.log("Dispelled hazard:", removedHazard?.type);
 
 		// Deduct AP
@@ -3458,6 +3486,10 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 
 		// Remove the Dynamite
 		const removedHazard = currentGameState.board.hazards.splice(hazardIndex, 1)[0];
+        if (removedHazard) { // Check splice worked
+            returnHazardToPool(removedHazard.type); // <<< ADD THIS (Should be "Dynamite")
+            console.log("Removed hazard by biting fuse:", removedHazard.type);
+        }
 		console.log("Removed hazard by biting fuse:", removedHazard?.type);
 
 		// Deduct AP
@@ -3919,6 +3951,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
                                     console.log(`Explosion triggers another Dynamite at ${affectedPiece.coord}. Adding to queue.`);
                                     addToLog(`Explosion triggers nearby Dynamite at ${affectedPiece.coord}!`);
                                     explosionQueue.push(affectedPiece.coord);
+                                    returnHazardToPool("Dynamite"); // <<< ADD THIS (Return the chained dynamite)
                                     // Remove the chained dynamite NOW to prevent processing it again later if hit multiple times
                                     currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== affectedPiece.coord);
                                 }
@@ -3927,6 +3960,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
                             if (currentGameState.board.hazards.some(h => h.coord === coordInBlast && h.type === affectedPiece.type)) {
                                 console.log(`Explosion destroyed Hazard (${affectedPiece.type}) at ${coordInBlast}`);
                                 addToLog(`Explosion destroyed ${affectedPiece.type} at ${coordInBlast}!`);
+                                returnHazardToPool(affectedPiece.type); // <<< ADD THIS
                                 currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== coordInBlast);
                             }
                         }
