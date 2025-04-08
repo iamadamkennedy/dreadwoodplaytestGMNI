@@ -1074,68 +1074,102 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     /**
-     * Updates the player info panel and related gameplay button states.
-     * Hides unavailable ability buttons (class-specific, 1/game used).
-     * Disables visible buttons based on AP, curse status, selection, lock-in, etc.
+     * Updates the player info panel content (abilities, silver bullet) and action button states.
+     * Called by updateUI.
      * @param {object} player - The current player object { name, class, eliminated }
      * @param {number} turn - The current turn number
      * @param {number} currentAP - The current action points
-     * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed, wasShotSinceLastTurn, ... }
+     * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed, ... }
      */
     function updatePlayerInfoPanel(player, turn, currentAP, resources) {
-        // --- Basic null checks ---
-        if (!player || !resources || !currentClassAbilitiesList || !infoSilverBullet || !statusBarPlayer || !statusBarAP) {
-            console.error("Info Panel Error: One or more required elements not found or invalid data provided.");
-            // Set error state... (Ensure all button refs below exist or add checks)
-            if (statusBarPlayer) statusBarPlayer.textContent = "Error";
-            if (statusBarAP) statusBarAP.textContent = "??";
+        // --- Basic null checks for required DOM elements ---
+        // Added checks for elements this function directly updates
+        if (!player || !resources || !currentClassAbilitiesList || !infoSilverBullet ) {
+            console.error("Info Panel Update Error: Missing required elements or data.");
+            // Handle error state display if necessary
+            if(currentClassAbilitiesList) currentClassAbilitiesList.innerHTML = '<li>Error</li>';
+            if(infoSilverBullet) infoSilverBullet.textContent = 'Error';
             return;
         }
-
-        // --- Update Status Bar ---
-        statusBarPlayer.textContent = player.name;
-        statusBarAP.textContent = currentAP;
-
+    
         // --- Update Class Details Panel (Abilities, Silver Bullet Status) ---
-        // (Keep your existing logic for populating this section)
-        // ... abbreviated ...
+        // Populate abilities list
+         if (currentClassAbilitiesList && CLASS_DATA[player.class]?.abilities) {
+            currentClassAbilitiesList.innerHTML = ''; // Clear previous list
+            CLASS_DATA[player.class].abilities.forEach(ability => {
+                const li = document.createElement('li');
+                const isUsed = resources.abilitiesUsed.includes(ability.name);
+                const apCostText = (ability.apCost > 0) ? ` (${ability.apCost} AP)` : (ability.apCost === 0 ? ` (0 AP)`: ''); // Show 0 AP cost
+                // Determine 'USED' text: only for Active abilities, check if name is in resources.abilitiesUsed
+                const usedText = (ability.type === 'Active' && ability.apCost >= 0 && isUsed) ? ' - USED' : '';
+                // Use techDesc for display if available, otherwise fall back to description
+                const displayDesc = ability.techDesc || ability.description;
+                li.innerHTML = `<strong>${ability.name} (${ability.type})${apCostText}${usedText}:</strong> ${displayDesc}`;
+                currentClassAbilitiesList.appendChild(li);
+            });
+        } else if (currentClassAbilitiesList) {
+             currentClassAbilitiesList.innerHTML = '<li>No abilities defined for this class.</li>'; // Handle missing abilities data
+        }
+    
+        // Update Silver Bullet status
         infoSilverBullet.textContent = resources.silverBullet > 0 ? `Available (${resources.silverBullet})` : "Used";
-        // ... abbreviated ...
-
+    
+    
         // ---== Update Action & Movement Button States ==---
         const selectedVamp = findVampireById(currentGameState.selectedVampireId);
         const isVampSelected = !!selectedVamp;
         const isCursed = selectedVamp?.cursed;
-        const currentPlayerClass = player.class;
+        // Get class from the SELECTED vampire if one is selected
+        const selectedVampClass = isVampSelected ? currentGameState.players[selectedVamp.player]?.class : null;
         const lockedVampId = currentGameState.lockedInVampireIdThisTurn;
-        const canControlSelected = currentPlayerClass === "Vigilante" || !lockedVampId || !isVampSelected || selectedVamp?.id === lockedVampId;
-
+        // Check if the CURRENT player can control the SELECTED vamp (Vigilante or not locked or matches lock)
+        const canControlSelected = (player.class === 'Vigilante' || !lockedVampId || !isVampSelected || selectedVamp?.id === lockedVampId);
+    
         let hazardOnVampSquare = null;
         if (selectedVamp) {
             hazardOnVampSquare = currentGameState.board.hazards.find((h) => h.coord === selectedVamp.coord);
         }
-
+    
         // --- Visibility and Disable Logic for Each Button ---
-
+    
+        // Get button references (ensure these are defined globally or pass them in)
+        // Assuming they are global consts as per original code structure
+        const btnShoot = document.getElementById("action-shoot");
+        const btnThrow = document.getElementById("action-throw");
+        const btnSilverBullet = document.getElementById("action-silver-bullet");
+        const btnDispel = document.getElementById("action-dispel");
+        const btnBiteFuse = document.getElementById("action-bite-fuse");
+        const btnRampage = document.getElementById("action-rampage");
+        const btnHandCannon = document.getElementById("action-hand-cannon");
+        const btnContractPayoff = document.getElementById("action-contract-payoff");
+        const btnOrderRestored = document.getElementById("action-order-restored");
+        const btnVengeance = document.getElementById("action-vengeance");
+        const movementBar = document.getElementById("movement-bar"); // Need movementBar ref
+        const btnMoveN = document.getElementById("move-n");
+        const btnMoveW = document.getElementById("move-w");
+        const btnMoveE = document.getElementById("move-e");
+        const btnMoveS = document.getElementById("move-s");
+    
+    
         // Shoot Button (Always Visible)
         if (btnShoot) {
             btnShoot.style.display = "inline-block";
             btnShoot.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.SHOOT || isCursed;
         }
-
+    
         // Throw Button (Always Visible)
         if (btnThrow) {
             btnThrow.style.display = "inline-block";
             btnThrow.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.THROW_HAZARD || isCursed;
         }
-
+    
         // Silver Bullet Button (Always Visible)
         if (btnSilverBullet) {
             btnSilverBullet.style.display = "inline-block";
             btnSilverBullet.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.SILVER_BULLET || resources.silverBullet <= 0 || isCursed;
             btnSilverBullet.title = `Silver Bullet Shot (${AP_COST.SILVER_BULLET} AP)${resources.silverBullet <= 0 ? " - USED" : ""}`;
         }
-
+    
         // Dispel Button (Always Visible - Core Action)
         const canAffordDispel = currentAP >= AP_COST.DISPEL;
         const canDispel = isVampSelected && hazardOnVampSquare?.type === "Grave Dust" && canAffordDispel;
@@ -1143,7 +1177,7 @@ document.addEventListener("DOMContentLoaded", () => {
             btnDispel.style.display = "inline-block";
             btnDispel.disabled = !canDispel || !canControlSelected; // Assuming cursed can Dispel
         }
-
+    
         // Bite Fuse Button (Always Visible - Core Action)
         const canAffordBite = currentAP >= AP_COST.BITE_FUSE;
         const canBite = isVampSelected && hazardOnVampSquare?.type === "Dynamite" && canAffordBite;
@@ -1151,62 +1185,55 @@ document.addEventListener("DOMContentLoaded", () => {
             btnBiteFuse.style.display = "inline-block";
             btnBiteFuse.disabled = !canBite || !canControlSelected; // Assuming cursed can Bite Fuse
         }
-
+    
+    
+        // --- Class-Specific Ability Buttons ---
+    
         // Rampage Button (Outlaw Only)
         if (btnRampage) {
-            const isOutlaw = player.class === "Outlaw";
-            const rampageUsed = resources.abilitiesUsed.includes("Rampage");
+            const isSelectedOutlaw = selectedVampClass === 'Outlaw'; // Check SELECTED vampire's class
+            const rampageUsed = resources.abilitiesUsed.includes('Rampage');
             const canAffordRampage = currentAP >= AP_COST.RAMPAGE;
-            const isVisible = isOutlaw; // Visible only if Outlaw
-            const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordRampage && !rampageUsed && !isCursed;
-
-            btnRampage.style.display = isVisible ? "inline-block" : "none";
-            if (isVisible) {
-                // Only set disabled if visible
-                btnRampage.disabled = !isAvailable;
-                btnRampage.title = `Rampage (${AP_COST.RAMPAGE} AP, 1/game)${rampageUsed ? " - USED" : ""}`;
+            // Show if Outlaw is selected, hide otherwise
+            btnRampage.style.display = isSelectedOutlaw ? 'inline-block' : 'none';
+            // If visible, set disabled state based on other conditions
+            if (isSelectedOutlaw) {
+                btnRampage.disabled = !isVampSelected || !canControlSelected || !canAffordRampage || rampageUsed || isCursed;
+                btnRampage.title = `Rampage (${AP_COST.RAMPAGE} AP, 1/game)${rampageUsed ? ' - USED' : ''}`;
             }
         }
-
+    
         // Hand Cannon Button (Outlaw Only)
         if (btnHandCannon) {
-            const isOutlaw = player.class === "Outlaw";
-            const handCannonUsed = resources.abilitiesUsed.includes("Hand Cannon"); // Assuming we track by name
+            const isSelectedOutlaw = selectedVampClass === 'Outlaw'; // Check SELECTED vampire's class
+            const handCannonUsed = resources.abilitiesUsed.includes('Hand Cannon');
             const canAffordHandCannon = currentAP >= AP_COST.HAND_CANNON;
-            const isVisible = isOutlaw;
-            const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordHandCannon && !handCannonUsed && !isCursed;
-
-            btnHandCannon.style.display = isVisible ? "inline-block" : "none";
-            if (isVisible) {
-                btnHandCannon.disabled = !isAvailable;
-                btnHandCannon.title = `Hand Cannon (${AP_COST.HAND_CANNON} AP, 1/game)${handCannonUsed ? " - USED" : ""}`;
+            btnHandCannon.style.display = isSelectedOutlaw ? 'inline-block' : 'none'; // Show/Hide
+            if (isSelectedOutlaw) {
+                btnHandCannon.disabled = !isVampSelected || !canControlSelected || !canAffordHandCannon || handCannonUsed || isCursed;
+                btnHandCannon.title = `Hand Cannon (${AP_COST.HAND_CANNON} AP, 1/game)${handCannonUsed ? ' - USED' : ''}`;
             }
         }
-
+    
         // Contract Payoff Button (Bounty Hunter Only)
-        if (btnContractPayoff) {
-            const isBH = player.class === "Bounty Hunter";
-            const contractUsed = resources.abilitiesUsed.includes("Contract Payoff");
-            const canAffordContract = currentAP >= AP_COST.CONTRACT_PAYOFF;
-            const isVisible = isBH;
-            // Condition: Need selected vamp, can control, enough AP, not used, not cursed.
-            // Trigger condition (destroying BW) is checked *after* activation in executeShoot.
-            const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordContract && !contractUsed && !isCursed;
-
-            btnContractPayoff.style.display = isVisible ? "inline-block" : "none";
-            if (isVisible) {
-                btnContractPayoff.disabled = !isAvailable;
-                btnContractPayoff.title = `Contract Payoff (${AP_COST.CONTRACT_PAYOFF} AP, 1/game)${contractUsed ? " - USED" : ""}`;
-            }
-        }
-
-        // Order Restored Button (Sheriff Only)
+         if (btnContractPayoff) {
+             const isSelectedBH = selectedVampClass === 'Bounty Hunter'; // Check SELECTED vampire's class
+             const contractUsed = resources.abilitiesUsed.includes('Contract Payoff') || resources.abilitiesUsed.includes('Contract Payoff Triggered'); // Check both temp and final state
+             const canAffordContract = currentAP >= AP_COST.CONTRACT_PAYOFF;
+             btnContractPayoff.style.display = isSelectedBH ? 'inline-block' : 'none'; // Show/Hide
+             if (isSelectedBH) {
+                 btnContractPayoff.disabled = !isVampSelected || !canControlSelected || !canAffordContract || contractUsed || isCursed;
+                 btnContractPayoff.title = `Contract Payoff (${AP_COST.CONTRACT_PAYOFF} AP, 1/game)${contractUsed ? ' - USED' : ''}`;
+             }
+         }
+    
+         // Order Restored Button (Sheriff Only) - Includes Visibility Fix
          if (btnOrderRestored) {
              const isSelectedSheriff = selectedVampClass === 'Sheriff'; // Check SELECTED vampire's class
              const orderUsed = resources.abilitiesUsed.includes('Order Restored');
              const canAffordOrder = currentAP >= AP_COST.ORDER_RESTORED;
              // Check if there's actually an eliminated Sheriff vamp TO revive BELONGING TO THIS PLAYER
-             const playerIndex = currentGameState.currentPlayerIndex; // Get index for checking
+             const playerIndex = currentGameState.currentPlayerIndex; // Get current player index for check
              // Ensure eliminatedVampires array exists before trying to use .some()
              const hasEliminatedAlly = currentGameState.eliminatedVampires?.some(
                  v => v.player === playerIndex && currentGameState.players[v.player]?.class === 'Sheriff' // Ensure it's a Sheriff from THIS player
@@ -1215,71 +1242,86 @@ document.addEventListener("DOMContentLoaded", () => {
              // *** CORRECTED VISIBILITY LOGIC ***
              // Show button ONLY if selected vamp is Sheriff AND there's an ally to revive
              const isVisible = isSelectedSheriff && hasEliminatedAlly;
-             btnOrderRestored.style.display = isVisible ? 'inline-block' : 'none';
+             btnOrderRestored.style.display = isVisible ? 'inline-block' : 'none'; // Set display based on combined condition
     
              // If visible, set disabled state based on other conditions
              if (isVisible) {
-                 // Can now simplify the disabled check slightly, no need for hasEliminatedAlly again
+                 // Simplify the disabled check, no need for hasEliminatedAlly again here
                  btnOrderRestored.disabled = !isVampSelected || !canControlSelected || !canAffordOrder || orderUsed || isCursed;
                  btnOrderRestored.title = `Order Restored (${AP_COST.ORDER_RESTORED} AP, 1/game)${orderUsed ? ' - USED' : ''}`;
+                 // Removed the redundant "(No Ally Down)" from title as button is now hidden in that case
              }
          }
-
-
-        // Vengeance is Mine Button (Vigilante Only)
-        if (btnVengeance) {
-            const isVigilante = player.class === "Vigilante";
-            const vengeanceUsed = resources.abilitiesUsed.includes("Vengeance is Mine");
-            const canAffordVengeance = currentAP >= AP_COST.VENGEANCE_IS_MINE; // Always true (cost 0)
-            const wasShot = resources.wasShotSinceLastTurn; // Check the trigger flag
-
-            const isVisible = isVigilante;
-            // Condition: Vigilante, selected, can control, afford (always), not used, not cursed, *and* was shot since last turn
-            const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordVengeance && !vengeanceUsed && !isCursed && wasShot;
-
-            btnVengeance.style.display = isVisible ? "inline-block" : "none";
-            if (isVisible) {
-                btnVengeance.disabled = !isAvailable;
-                btnVengeance.title = `Vengeance is Mine (${AP_COST.VENGEANCE_IS_MINE} AP, 1/game)${vengeanceUsed ? " - USED" : ""}${!wasShot ? " (Not Shot)" : ""}`;
-            }
-        }
-
-        // --- Movement Buttons ---
-        // (Keep Swift Justice check and normal logic from previous step here)
-        if (isSwiftJusticeMovePending) {
-            // Force enabled during SJ...
-            console.log("Swift Justice Pending - Forcing Movement Buttons Enabled");
-            if (btnMoveN) btnMoveN.disabled = false; // etc. for E, S, W
-            if (btnMoveE) btnMoveE.disabled = false;
-            if (btnMoveS) btnMoveS.disabled = false;
-            if (btnMoveW) btnMoveW.disabled = false;
-            if (movementBar && movementBar.classList.contains("hidden")) {
-                movementBar.classList.remove("hidden");
+    
+         // Vengeance is Mine Button (Vigilante Only)
+         if (btnVengeance) {
+             const isSelectedVigilante = selectedVampClass === 'Vigilante'; // Check SELECTED vampire's class
+             const vengeanceUsed = resources.abilitiesUsed.includes('Vengeance is Mine');
+             const canAffordVengeance = currentAP >= AP_COST.VENGEANCE_IS_MINE; // Always true (cost 0)
+             const wasShot = resources.wasShotSinceLastTurn; // Check trigger flag
+    
+             // Show only if selected vamp is Vigilante
+             btnVengeance.style.display = isSelectedVigilante ? 'inline-block' : 'none'; // Show/Hide
+    
+             // If visible, determine disabled state
+             if (isSelectedVigilante) {
+                 const isAvailable = isVampSelected && canControlSelected && canAffordVengeance && !vengeanceUsed && !isCursed && wasShot;
+                 btnVengeance.disabled = !isAvailable;
+                 btnVengeance.title = `Vengeance is Mine (${AP_COST.VENGEANCE_IS_MINE} AP, 1/game)${vengeanceUsed ? ' - USED' : ''}${!wasShot ? ' (Not Shot)' : ''}`;
+             }
+         }
+    
+    
+        // --- Movement Buttons Visibility & State ---
+        if(movementBar) { // Check if movementBar exists
+            if (!isVampSelected) {
+                 movementBar.classList.add('hidden'); // Hide if no vampire selected
+            } else {
+                 movementBar.classList.remove('hidden'); // Show if vampire selected
+    
+                 // Handle disabling movement buttons based on AP, Facing, Curse, Swift Justice
+                 if (isSwiftJusticeMovePending) {
+                    // Force enabled during SJ (assuming the buttons themselves exist)
+                    console.log("Swift Justice Pending - Forcing Movement Buttons Enabled");
+                    if (btnMoveN) btnMoveN.disabled = false;
+                    if (btnMoveE) btnMoveE.disabled = false;
+                    if (btnMoveS) btnMoveS.disabled = false;
+                    if (btnMoveW) btnMoveW.disabled = false;
+                } else {
+                    // Normal turn logic for disabling movement/pivot
+                    const canAffordMoveOrPivot = currentAP >= AP_COST.MOVE; // Cost is 1 for both
+                    const movesTakenThisTurn = selectedVamp?.movesThisTurn || 0;
+                    // Can move forward if NOT cursed, OR if cursed AND have taken 0 moves since becoming cursed
+                    const canMoveForward = !isCursed || movesTakenThisTurn < 1;
+    
+                    // Disable forward button if facing matches AND cannot move forward
+                    if (btnMoveN) btnMoveN.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'N' && !canMoveForward);
+                    if (btnMoveE) btnMoveE.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'E' && !canMoveForward);
+                    if (btnMoveS) btnMoveS.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'S' && !canMoveForward);
+                    if (btnMoveW) btnMoveW.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'W' && !canMoveForward);
+    
+                    // All pivot directions (buttons not matching current facing) are disabled only by AP or lock-in
+                    // Re-enable pivot buttons if they were disabled by the 'cannot move forward' logic incorrectly
+                     if (selectedVamp?.facing !== 'N' && btnMoveN) btnMoveN.disabled = !canControlSelected || !canAffordMoveOrPivot;
+                     if (selectedVamp?.facing !== 'E' && btnMoveE) btnMoveE.disabled = !canControlSelected || !canAffordMoveOrPivot;
+                     if (selectedVamp?.facing !== 'S' && btnMoveS) btnMoveS.disabled = !canControlSelected || !canAffordMoveOrPivot;
+                     if (selectedVamp?.facing !== 'W' && btnMoveW) btnMoveW.disabled = !canControlSelected || !canAffordMoveOrPivot;
+                }
             }
         } else {
-            // Normal logic...
-            const canAffordMoveOrPivot = currentAP >= AP_COST.MOVE;
-            const movesTakenThisTurn = selectedVamp?.movesThisTurn || 0;
-            const canMoveForward = !isCursed || movesTakenThisTurn < 1;
-            if (btnMoveN) btnMoveN.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === "N" && !canMoveForward);
-            // etc. for E, S, W...
-            if (btnMoveE) btnMoveE.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === "E" && !canMoveForward);
-            if (btnMoveS) btnMoveS.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === "S" && !canMoveForward);
-            if (btnMoveW) btnMoveW.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === "W" && !canMoveForward);
-
-            if (!isVampSelected && movementBar && !movementBar.classList.contains("hidden")) {
-                movementBar.classList.add("hidden");
-            }
+            console.warn("Movement bar element not found.");
         }
         // --- End Movement Button Logic ---
+    
     } // End of updatePlayerInfoPanel
+
 
     /**
      * Main UI update function, called after actions or turn changes.
-     * Fetches current player data and calls the panel update function.
+     * Fetches current player data, updates status bar, and calls the panel update function.
      */
     function updateUI() {
-        // Basic check for essential game state components (Keep this)
+        // Basic check for essential game state components
         if (
             !currentGameState?.players?.length ||
             !currentGameState.playerResources?.length ||
@@ -1291,38 +1333,45 @@ document.addEventListener("DOMContentLoaded", () => {
             const statusBarElement = document.getElementById("status-bar");
             if (statusBarElement) {
                 statusBarElement.textContent = "Waiting for game...";
-                statusBarElement.className = "status-bar"; // Reset classes
-                statusBarElement.style.backgroundColor = "#eee"; // Reset style
-                statusBarElement.style.color = "#333";
+                statusBarElement.className = 'status-bar'; // Reset classes (assuming base class is just 'status-bar')
+                // Reset inline styles if needed, though class removal might suffice
+                statusBarElement.style.backgroundColor = "";
+                statusBarElement.style.color = "";
             }
-            // Clear other relevant UI elements too
+            // Clear other relevant UI elements too (e.g., AP display span)
+            const statusBarAPSpan = document.getElementById('status-ap-display'); // Use the ID from innerHTML
+             if(statusBarAPSpan) statusBarAPSpan.textContent = 'X';
+            // Consider resetting player info panel details too
             return;
         }
-
+    
         const idx = currentGameState.currentPlayerIndex; // Get current player index
-
-        // Validate the index (Keep this)
-        if (idx < 0 || idx >= currentGameState.players.length) {
+    
+        // Validate the index
+        if (idx < 0 || idx >= currentGameState.players.length || idx >= currentGameState.playerResources.length ) { // Added resource length check
             console.error("updateUI Error: Invalid currentPlayerIndex:", idx);
+            // Optionally update UI to show an error state here
             return;
         }
-
-        // Get the data for the current player (Keep this)
+    
+        // Get the data for the current player
         const player = currentGameState.players[idx];
-
-        // Check if player data was actually retrieved (Keep this)
-        if (!player) {
-            console.error("updateUI Error: Could not fetch player for index", idx);
+        const resources = currentGameState.playerResources[idx]; // Get resources here
+    
+        // Check if player/resource data was actually retrieved
+        if (!player || !resources) { // Combined check
+            console.error("updateUI Error: Could not fetch player or resources for index", idx);
+            // Optionally update UI to show an error state here
             return;
         }
-
+    
         // --- Find Status Bar Element ---
-        const statusBarElement = document.getElementById("status-bar"); // Moved reference inside for safety
-
+        const statusBarElement = document.getElementById("status-bar"); // Get reference
+    
         // --- Update Status Bar Color and Text ---
         if (statusBarElement) {
-            const player = currentGameState.players[idx]; // Get player object
-            const playerClass = player?.class; // e.g., "Sheriff"
+            // const player = currentGameState.players[idx]; // Already have player
+            const playerClass = player.class; // e.g., "Sheriff"
             const classLower = playerClass?.toLowerCase(); // e.g., "sheriff"
             const apValue = currentGameState.currentAP; // Get current AP
     
@@ -1333,55 +1382,58 @@ document.addEventListener("DOMContentLoaded", () => {
             if (classLower) {
                 statusBarElement.classList.add(`color-${classLower}`);
             } else {
-                 // Fallback if class is missing - apply default styles directly
-                 statusBarElement.style.backgroundColor = '#eee';
-                 statusBarElement.style.color = '#333';
+                 // Fallback if class is missing - remove classes, rely on base CSS
+                 // Base CSS should define default background/color
             }
     
             // Set the innerHTML to include Class Name and AP
             const turnText = playerClass ? `${playerClass}'s Turn` : "Unknown Player's Turn";
             // Use innerHTML to structure the content including the AP value
-            // IMPORTANT: Ensure the status-ap ID here matches the one your updatePlayerInfoPanel might also update,
-            // or decide if this single update is sufficient.
+            // Using 'status-ap-display' as the ID for the inner span
             statusBarElement.innerHTML = `${turnText} | AP: <span id="status-ap-display">${apValue}</span>`;
-            // Note: Changed the inner span ID slightly to status-ap-display to avoid potential conflicts
-            // if #status-ap is used elsewhere as a primary target. Adjust if needed.
     
         } else {
             console.warn("Status bar element (#status-bar) not found.");
         }
         // --- End Status Bar Update ---
-
-        // --- Call updatePlayerInfoPanel (which handles abilities, AP display, button states) ---
-        // This function now focuses on the detailed panel and action buttons
-        // We retrieve resources inside updateUI now to pass them along.
-        const resources = currentGameState.playerResources[idx];
-        if (player && resources) {
-            updatePlayerInfoPanel(player, currentGameState.turn, currentGameState.currentAP, resources);
-        } else {
-            console.error("updateUI Error: Could not fetch player or resources for index", idx);
-            // Handle UI error state if necessary
-        }
-
+    
+    
+        // --- Call updatePlayerInfoPanel (which handles abilities, button states, etc.) ---
+        // Pass the already retrieved player and resources
+        updatePlayerInfoPanel(
+            player,
+            currentGameState.turn,
+            currentGameState.currentAP, // Pass current AP
+            resources
+        );
+    
+    
         // --- Other UI Updates ---
+        // Render board AFTER potentially updating state in updatePlayerInfoPanel if needed,
+        // but usually better here unless panel update modifies board state directly.
         renderBoard(currentGameState); // Ensure board is up-to-date
-
-        // Update Undo Button State (Keep this or similar logic)
-        const btnUndo = document.getElementById("btn-undo");
+    
+        // Update Undo Button State
+        const btnUndo = document.getElementById('btn-undo'); // Get button ref
         if (btnUndo) btnUndo.disabled = gameHistory.length === 0;
-
-        // Update selected vampire visuals (Keep this or similar logic)
-        // (This might be better handled within renderBoard itself)
-        document.querySelectorAll(".grid-square .vampire.selected").forEach((el) => el.classList.remove("selected"));
+    
+    
+        // Update selected vampire visuals (Ensure renderBoard doesn't overwrite this if called after)
+        // Consider moving selection highlight logic into renderBoard for consistency
+        document.querySelectorAll('.grid-square .vampire.selected').forEach(el => el.classList.remove('selected'));
         if (currentGameState.selectedVampireId) {
+            // Use querySelector for attribute matching which might be more reliable
             const selectedElement = document.querySelector(`.vampire[data-id="${currentGameState.selectedVampireId}"]`);
             if (selectedElement) {
-                selectedElement.classList.add("selected");
+                selectedElement.classList.add('selected');
             }
         }
+    
+        // Movement bar visibility is handled within updatePlayerInfoPanel based on selection
+    
+    
+    } // End of updateUI (Single Instance)
 
-        // Ensure movement bar visibility is correct (based on selection, handled in updatePlayerInfoPanel)
-    } // End of updateUI
 
     // --- Game State & Undo Logic ---
     function saveStateToHistory() {
@@ -2960,10 +3012,6 @@ document.addEventListener("DOMContentLoaded", () => {
             currentPlayerIndex: 0,
             currentAP: 0,
             selectedVampireId: null,
-            actionState: {
-                pendingAction: null,
-                selectedHazardType: null,
-            },
             lockedInVampireIdThisTurn: null,
             lastActionVampId: null,
             actionState: { pendingAction: null, selectedHazardType: null },
