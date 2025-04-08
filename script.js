@@ -4056,7 +4056,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 	 * Initializes the game state, board, and UI for starting a new game.
 	 */
 	function initializeGame() {
-		alert("DEBUG: 1 - initializeGame Started"); // << ADDED ALERT
+        console.trace("initializeGame() called"); // <--- ADD THIS
 		console.log("Initializing game with player data:", JSON.stringify(playerData));
 		gameHistory = []; // Reset history
 
@@ -4114,7 +4114,6 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 			},
 			eliminatedVampires: []
 		};
-		alert("DEBUG: 2 - Game State Defined"); // << ADDED ALERT
 
 		// --- Set Initial AP ---
 		const pIdx = currentGameState.currentPlayerIndex;
@@ -4130,15 +4129,11 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 			currentGameState.currentAP = 5;
 		}
 		console.log(`Initial AP set to: ${currentGameState.currentAP} for Player ${pIdx+1}`);
-		alert("DEBUG: 3 - Initial AP Set"); // << ADDED ALERT
 
 		// --- Setup Board and UI ---
 		generateGrid();
-		alert("DEBUG: 4 - Grid Generated"); // << ADDED ALERT
 		renderBoard(currentGameState);
-		alert("DEBUG: 5 - Board Rendered"); // << ADDED ALERT
 		updateUI(); // Set status bar, info panel, buttons
-		alert("DEBUG: 6 - UI Updated"); // << ADDED ALERT
 
 		// --- Final Setup ---
 		// Ensure logList element exists before manipulating it
@@ -4151,7 +4146,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 		}
 
 		if (btnUndo) btnUndo.disabled = true;
-		if (movementBar) movementBar.classList.add("hidden");
+		if (movementBar) movementBar.classList.add("hidden"c);
 
 		// Re-attach main gameplay listeners (remove first to prevent duplicates)
 		// Ensure gameBoard exists before adding listeners
@@ -4171,10 +4166,8 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 			btnEndTurn.removeEventListener("click", nextTurn);
 			btnEndTurn.addEventListener("click", nextTurn);
 		}
-		alert("DEBUG: 7 - Listeners Attached"); // << ADDED ALERT
 
 		showScreen("gameplay");
-		alert("DEBUG: 8 - showScreen('gameplay') Called"); // << ADDED ALERT
 
 		const player = currentGameState.players[pIdx];
 		if (player) {
@@ -4184,7 +4177,6 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 			console.error(`Could not find player data for index ${pIdx} at the start of the game.`);
 			addToLog(`--- Turn ${currentGameState.turn} - Player ${pIdx + 1}'s turn. AP: ${currentGameState.currentAP} ---`);
 		}
-		alert("DEBUG: 9 - initializeGame Finished!"); // << ADDED ALERT
 	}
 
 
