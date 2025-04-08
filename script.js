@@ -2276,6 +2276,169 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     /**
+     * Executes the Sheriff's Swift Justice move.
+     * Moves the specified vampire 1 square in the chosen direction AND updates facing.
+     * Costs 0 AP. Checks for landing effects. Proceeds to next turn after completion.
+     * @param {string} direction - 'N', 'E', 'S', or 'W'.
+     */
+    function executeSwiftJusticeMove(direction) {
+        if (!isSwiftJusticeMovePending || !swiftJusticeVampId) {
+            console.error("executeSwiftJusticeMove called incorrectly - state not pending or vampId missing.");
+            isSwiftJusticeMovePending = false; // Reset flag to prevent getting stuck
+            proceedToNextPlayerTurn(); // Try to recover by just proceeding
+            return;
+        }
+
+        const vampire = findVampireById(swiftJusticeVampId);
+        if (!vampire) {
+            console.error("Swift Justice Error: Could not find vampire ID:", swiftJusticeVampId);
+            isSwiftJusticeMovePending = false;
+            proceedToNextPlayerTurn(); // Abort and go to next turn
+            return;
+        }
+        // Double check eligibility (not cursed) right before moving
+        if (vampire.cursed) {
+            addToLog(`Swift Justice cannot be performed by a cursed Sheriff (${vampire.id}). Aborting.`);
+            isSwiftJusticeMovePending = false;
+            swiftJusticePlayerIndex = -1;
+            swiftJusticeVampId = null;
+            proceedToNextPlayerTurn(); // Abort and go to next turn
+            return;
+        }
+
+
+        // 1. Calculate Target Coordinate
+        const targetCoord = getAdjacentCoord(vampire.coord, direction);
+
+        // 2. Validate Target
+        if (!isValidSwiftJusticeTarget(targetCoord, vampire.id)) {
+            addToLog(`Invalid Swift Justice move target: ${targetCoord || 'Off-board'}. Choose another direction.`);
+            return; // Keep waiting for valid input, DO NOT proceed to next turn yet.
+        }
+
+        // --- Move is Valid ---
+        console.log(`Executing Swift Justice move for ${vampire.id} to ${targetCoord} facing ${direction}`);
+        saveStateToHistory(); // Save state *before* the Swift Justice move
+
+        // Get reference to vampire in current state for modification
+        const vampInState = findVampireById(vampire.id);
+        if (!vampInState) {
+            console.error("Swift Justice Error: Failed to get vampire reference in state!");
+            isSwiftJusticeMovePending = false; // Abort cleanly
+            proceedToNextPlayerTurn();
+            return;
+        }
+
+        const originalCoord = vampInState.coord;
+        vampInState.coord = targetCoord; // Move the vampire
+        vampInState.facing = direction;  // Update facing to match move direction
+
+        addToLog(`Sheriff ${vampInState.id} executed Swift Justice: ${originalCoord} -> ${targetCoord}, facing ${direction}. (0 AP)`);
+
+        // 3. Check Post-Move Effects (like landing on Grave Dust or near Bloodwell)
+        checkSwiftJusticeMoveEndEffects(vampInState); // Check for curse/cure
+
+        // 4. Clean up Swift Justice state
+        isSwiftJusticeMovePending = false;
+        swiftJusticePlayerIndex = -1;
+        swiftJusticeVampId = null;
+
+        // 5. Update Display
+        renderBoard(currentGameState);
+        updateUI(); // Important to update button states etc.
+
+        // 6. Proceed to the actual next player's turn
+        proceedToNextPlayerTurn();
+    }
+
+    /**
+     * Checks if a target coordinate is valid for a Swift Justice move.
+     * Cannot be off-board, occupied by another vampire, or an obstacle like Black Widow.
+     * Allows moving onto hazards like Grave Dust or Dynamite (effects apply after).
+     * @param {string | null} targetCoord - The coordinate to check, or null if off-board.
+     * @param {string} movingVampId - The ID of the vampire attempting the move.
+     * @returns {boolean} True if the target is valid, false otherwise.
+     */
+    function isValidSwiftJusticeTarget(targetCoord, movingVampId) {
+        // Check if coordinate is on the board
+        if (!targetCoord) {
+            console.log("Swift Justice Validation Fail: Off board");
+            return false;
+        }
+
+        // Check for pieces/hazards at the target coordinate
+        const pieceAtTarget = findPieceAtCoord(targetCoord);
+
+        if (pieceAtTarget) {
+            // Cannot move onto a square occupied by another VAMPIRE
+            if (pieceAtTarget.type === 'vampire') { // No need to check ID, can't move onto ANY vamp square
+                console.log(`Swift Justice Validation Fail: Blocked by Vampire ${pieceAtTarget.piece.id}`);
+                return false;
+            }
+            // Cannot move onto a square occupied by a Black Widow
+            if (pieceAtTarget.type === 'hazard' && pieceAtTarget.piece.type === 'Black Widow') {
+                console.log("Swift Justice Validation Fail: Blocked by Black Widow");
+                return false;
+            }
+            // Cannot move onto a square occupied by own/enemy Bloodwell
+            if (pieceAtTarget.type === 'bloodwell') {
+                console.log("Swift Justice Validation Fail: Blocked by Bloodwell");
+                return false;
+            }
+            // Allows moving onto Tombstone, Grave Dust, Dynamite (effects apply later)
+        }
+
+        // If no blocking piece found, it's a valid target
+        return true;
+    }
+
+    /**
+     * Checks and applies effects after a Swift Justice move completes.
+     * Specifically checks for landing on Grave Dust or curing via Bloodbath.
+     * @param {object} vampInState - The vampire object from currentGameState that just moved.
+     */
+    function checkSwiftJusticeMoveEndEffects(vampInState) {
+        const hazardLandedOn = currentGameState.board.hazards.find(h => h.coord === vampInState.coord);
+
+        // Check for landing on Grave Dust (Curse)
+        if (hazardLandedOn?.type === 'Grave Dust' && !vampInState.cursed) {
+            console.log("Curse by GD land (Swift Justice).");
+            vampInState.cursed = true;
+            vampInState.movesThisTurn = 0; // Reset moves upon getting cursed by SJ move
+            addToLog(`${vampInState.id} CURSED by Grave Dust after Swift Justice!`);
+        }
+
+        // Check for Bloodbath cure (only if Cursed *before* this check)
+        // Need a helper to check adjacency to ANY bloodwell and if square is hazard-free
+        if (vampInState.cursed && !hazardLandedOn && isAdjacentToAnyBloodwell(vampInState.coord)) {
+            console.log("Bloodbath cure! (Swift Justice)");
+            vampInState.cursed = false;
+            vampInState.movesThisTurn = 0; // Reset moves upon getting cured by SJ move
+            addToLog(`${vampInState.id} CURED by Bloodbath after Swift Justice!`);
+        }
+        // Note: Does SJ cure reset moves? Assume yes for consistency with normal Bloodbath.
+    }
+
+    /**
+     * Helper function to check if a coordinate is adjacent (incl diagonals) or on the same square as ANY Bloodwell.
+     * @param {string} coord - The coordinate to check.
+     * @returns {boolean} True if near at least one Bloodwell, false otherwise.
+     */
+    function isAdjacentToAnyBloodwell(coord) {
+        const rc = getRowColFromCoord(coord);
+        if (!rc) return false;
+
+        for(let bw of currentGameState.board.bloodwells) {
+            const bw_rc = getRowColFromCoord(bw.coord);
+            if (bw_rc && Math.abs(rc.row - bw_rc.row) <= 1 && Math.abs(rc.col - bw_rc.col) <= 1) {
+                // Found a bloodwell within the 3x3 area centered on coord
+                return true;
+            }
+        }
+        return false; // No bloodwells found nearby
+    }
+
+    /**
      * Handles the logic to advance to the next player's turn after all end-of-turn effects/choices are done.
      * Finds next active player, resets AP/state, updates UI.
      */
