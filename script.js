@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () = >{
+document.addEventListener("DOMContentLoaded", () =>{
   // --- 1. Top-Level State Variables ---
   let numberOfPlayers = 0;
   let currentPlayerSetupIndex = 0;
@@ -2323,14 +2323,14 @@ document.addEventListener("DOMContentLoaded", () = >{
       }
 
       // Hide other main screens and show the target
-      Object.values(screens).forEach((screen) = >screen ? .classList.remove("active")); // Use optional chaining
+      Object.values(screens).forEach((screen) =>screen ? .classList.remove("active")); // Use optional chaining
       targetScreenElement.classList.add("active");
       console.log(`Showing screen: $ {
         screenId
       }`);
 
       // Ensure popups are hidden when switching main screens
-      Object.values(popups).forEach((popup) = >{
+      Object.values(popups).forEach((popup) =>{
         if (popup) popup.style.display = "none";
       });
     } else if (targetPopupElement) {
@@ -2750,124 +2750,115 @@ document.addEventListener("DOMContentLoaded", () = >{
     } // End of updatePlayerInfoPanel
 
     /**
-     * Main UI update function, called after actions or turn changes.
-     * Fetches current player data, updates status bar, and calls the panel update function.
-     */
+   * Main UI update function, called after actions or turn changes.
+   * Fetches current player data, updates status bar, and calls the panel update function.
+   */
     function updateUI() {
-        // Basic check for essential game state components
-        if (
-            !currentGameState?.players?.length ||
-            !currentGameState.playerResources?.length ||
-            currentGameState.currentPlayerIndex === null || // Added null check for index
-            typeof currentGameState.currentPlayerIndex === "undefined "
-        ) {
-            console.warn("updateUI called with invalid game state(players, resources, or index missing).");
-            // Optionally clear/reset UI elements to a default state here
-            const statusBarElement = document.getElementById("status - bar ");
-            if (statusBarElement) {
-                statusBarElement.textContent = "Waiting
+      // 1. --- Basic Check for Valid Game State ---
+      // Check if essential parts of the game state exist before proceeding
+      if (
+          !currentGameState?.players?.length ||
+          !currentGameState.playerResources?.length ||
+          currentGameState.currentPlayerIndex === null ||
+          typeof currentGameState.currentPlayerIndex === "undefined "
+      ) {
+          console.warn("updateUI called with invalid game state(players, resources, or index missing).");
+          // Reset UI elements to a default "waiting " state
+          const statusBarElement = document.getElementById("status - bar ");
+          if (statusBarElement) {
+              statusBarElement.textContent = "Waiting
     for game...";
-                statusBarElement.className = 'status-bar'; // Reset classes (assuming base class is just 'status-bar')
-                // Reset inline styles if needed, though class removal might suffice
-                statusBarElement.style.backgroundColor = "";
-                statusBarElement.style.color = "";
-            }
-            // Clear other relevant UI elements too (e.g., AP display span)
-            const statusBarAPSpan = document.getElementById('status-ap-display'); // Use the ID from innerHTML
-             if(statusBarAPSpan) statusBarAPSpan.textContent = 'X';
-            // Consider resetting player info panel details too
-            return;
-        }
-    
-        const idx = currentGameState.currentPlayerIndex; // Get current player index
-    
-        // Validate the index
-        if (idx < 0 || idx >= currentGameState.players.length || idx >= currentGameState.playerResources.length ) { // Added resource length check
-            console.error("updateUI Error: Invalid currentPlayerIndex: ", idx);
-            // Optionally update UI to show an error state here
-            return;
-        }
-    
-        // Get the data for the current player
-        const player = currentGameState.players[idx];
-        const resources = currentGameState.playerResources[idx]; // Get resources here
-    
-        // Check if player/resource data was actually retrieved
-        if (!player || !resources) { // Combined check
-            console.error("updateUI Error: Could not fetch player or resources
-    for index ", idx);
-            // Optionally update UI to show an error state here
-            return;
-        }
-    
-        // --- Find Status Bar Element ---
-        const statusBarElement = document.getElementById("status - bar "); // Get reference
-    
-        // --- Update Status Bar Color and Text ---
-        if (statusBarElement) {
-            // const player = currentGameState.players[idx]; // Already have player
-            const playerClass = player.class; // e.g., "Sheriff "
-            const classLower = playerClass?.toLowerCase(); // e.g., "sheriff "
-            const apValue = currentGameState.currentAP; // Get current AP
-    
-            // Remove existing color classes first
-            statusBarElement.classList.remove('color-sheriff', 'color-vigilante', 'color-outlaw', 'color-bounty-hunter');
-    
-            // Add the new class if playerClass exists
-            if (classLower) {
-                statusBarElement.classList.add(`color-${classLower}`);
-            } else {
-                 // Fallback if class is missing - remove classes, rely on base CSS
-                 // Base CSS should define default background/color
-            }
-    
-            // Set the innerHTML to include Class Name and AP
-            const turnText = playerClass ? `${playerClass}'s Turn` : "Unknown Player 's Turn";
-            // Use innerHTML to structure the content including the AP value
-            // Using 'status - ap - display ' as the ID for the inner span
-            statusBarElement.innerHTML = `${turnText} | AP: <span id="status-ap-display">${apValue}</span>`;
-    
-        } else {
-            console.warn("Status bar element (#status-bar) not found.");
-        }
-        // --- End Status Bar Update ---
-    
-    
-        // --- Call updatePlayerInfoPanel (which handles abilities, button states, etc.) ---
-        // Pass the already retrieved player and resources
-        updatePlayerInfoPanel(
-            player,
-            currentGameState.turn,
-            currentGameState.currentAP, // Pass current AP
-            resources
-        );
-    
-    
-        // --- Other UI Updates ---
-        // Render board AFTER potentially updating state in updatePlayerInfoPanel if needed,
-        // but usually better here unless panel update modifies board state directly.
-        renderBoard(currentGameState); // Ensure board is up-to-date
-    
-        // Update Undo Button State
-        const btnUndo = document.getElementById('btn - undo '); // Get button ref
-        if (btnUndo) btnUndo.disabled = gameHistory.length === 0;
-    
-    
-        // Update selected vampire visuals (Ensure renderBoard doesn't overwrite this
-    if called after)
-    // Consider moving selection highlight logic into renderBoard for consistency
-    document.querySelectorAll('.grid-square .vampire.selected').forEach(el = >el.classList.remove('selected'));
-    if (currentGameState.selectedVampireId) {
-      // Use querySelector for attribute matching which might be more reliable
-      const selectedElement = document.querySelector(`.vampire[data - id = "${currentGameState.selectedVampireId}"]`);
-      if (selectedElement) {
-        selectedElement.classList.add('selected');
+              // Reset classes and styles to default
+              statusBarElement.className = 'status-bar'; // Assuming base class is just 'status-bar'
+              statusBarElement.style.backgroundColor = "";
+              statusBarElement.style.color = "";
+          }
+          // Reset other relevant UI elements (e.g., AP display if separate)
+          // const spanAP = document.getElementById('status-ap-display');
+          // if (spanAP) spanAP.textContent = 'X';
+          return; // Stop execution if state is invalid
       }
-    }
+  
+      // 2. --- Get Current Player Data ---
+      const idx = currentGameState.currentPlayerIndex;
+  
+      // Validate the player index against available data
+      if (idx < 0 || idx >= currentGameState.players.length || idx >= currentGameState.playerResources.length ) {
+          console.error("updateUI Error: Invalid currentPlayerIndex: ", idx);
+          // Display error state in UI?
+          return;
+      }
+  
+      // Get the actual player and resource objects
+      const player = currentGameState.players[idx];
+      const resources = currentGameState.playerResources[idx];
+      const currentAP = currentGameState.currentAP; // Get current AP from state
+      const currentTurn = currentGameState.turn;   // Get current Turn from state
+  
+      // Check if player/resource objects were successfully retrieved
+      if (!player || !resources) {
+          console.error("updateUI Error: Could not fetch player or resources
+    for index ", idx);
+          // Display error state in UI?
+          return;
+      }
+  
+      // 3. --- Update Status Bar ---
+      const statusBarElement = document.getElementById("status - bar ");
+      if (statusBarElement) {
+          const playerClass = player.class;
+          const classLower = playerClass?.toLowerCase();
+  
+          // Update background/text color based on class
+          statusBarElement.classList.remove('color-sheriff', 'color-vigilante', 'color-outlaw', 'color-bounty-hunter'); // Clear previous
+          if (classLower) {
+              statusBarElement.classList.add(`color-${classLower}`); // Add current
+          }
+          // Note: Base CSS for #status-bar should define default background/color if classLower is null
+  
+          // Update text content to include Class Name and AP
+          const turnText = playerClass ? `${playerClass}'s Turn` : "Unknown Player 's Turn";
+          // Using 'status - ap - display ' as the ID for the inner span
+          statusBarElement.innerHTML = `${turnText} | AP: <span id="status-ap-display">${currentAP}</span>`;
+  
+      } else {
+          console.warn("Status bar element (#status-bar) not found.");
+      }
+  
+      // 4. --- Update Detailed Player Info Panel & Buttons ---
+      // Call the function that handles ability lists, button states, etc.
+      updatePlayerInfoPanel(
+          player,
+          currentTurn, // Pass turn number
+          currentAP,   // Pass current AP
+          resources
+      );
+  
+      // 5. --- Render the Game Board ---
+      // Reflects current piece positions, curses, etc.
+      renderBoard(currentGameState);
+  
+      // 6. --- Update Undo Button State ---
+      const btnUndo = document.getElementById('btn - undo ');
+      if (btnUndo) {
+          btnUndo.disabled = gameHistory.length === 0; // Enable only if history exists
+      }
+  
+      // 7. --- Update Selected Vampire Visual Highlight ---
+      // (This ensures the highlight matches the state after potential changes)
+      // Consider moving this into renderBoard if it redraws everything anyway
+      document.querySelectorAll('.grid - square.vampire.selected ').forEach(el => el.classList.remove('selected '));
+      if (currentGameState.selectedVampireId) {
+          const selectedElement = document.querySelector(`.vampire[data-id="${currentGameState.selectedVampireId}"]`);
+          if (selectedElement) {
+              selectedElement.classList.add('selected ');
+          }
+      }
+  
+      // Note: Movement bar visibility is controlled within updatePlayerInfoPanel based on selection
+  
+  } // --- End of corrected updateUI function ---
 
-    // Movement bar visibility is handled within updatePlayerInfoPanel based on selection
-
-  } // End of updateUI (Single Instance)
 
   // --- Game State & Undo Logic ---
   function saveStateToHistory() {
@@ -2902,21 +2893,21 @@ document.addEventListener("DOMContentLoaded", () = >{
 
   // --- Find Pieces ---
   function findVampireById(vampId) {
-    return currentGameState.board ? .vampires ? .find((v) = >v.id === vampId);
+    return currentGameState.board ? .vampires ? .find((v) =>v.id === vampId);
   }
   function findPieceAtCoord(coord) {
     if (!currentGameState ? .board) return null;
-    const vamp = currentGameState.board.vampires ? .find((v) = >v.coord === coord);
+    const vamp = currentGameState.board.vampires ? .find((v) =>v.coord === coord);
     if (vamp) return {
       type: "vampire",
       piece: vamp
     };
-    const bw = currentGameState.board.bloodwells ? .find((b) = >b.coord === coord);
+    const bw = currentGameState.board.bloodwells ? .find((b) =>b.coord === coord);
     if (bw) return {
       type: "bloodwell",
       piece: bw
     };
-    const hazard = currentGameState.board.hazards ? .find((h) = >h.coord === coord);
+    const hazard = currentGameState.board.hazards ? .find((h) =>h.coord === coord);
     if (hazard) return {
       type: "hazard",
       piece: hazard
@@ -2983,7 +2974,7 @@ document.addEventListener("DOMContentLoaded", () = >{
     AP)`);
     // Inside executeMove function...
     // ... (code to check movement validity, save state, move vampire, deduct AP) ...
-    const hazardLandedOn = currentGameState.board.hazards.find((h) = >h.coord === targetCoord);
+    const hazardLandedOn = currentGameState.board.hazards.find((h) =>h.coord === targetCoord);
     if (hazardLandedOn ? .type === "Grave Dust" && !vampire.cursed) {
       console.log("Curse by GD land.");
       const vampInState = findVampireById(vampire.id); // Get reference from state
@@ -3087,17 +3078,22 @@ document.addEventListener("DOMContentLoaded", () = >{
      *
      * @param {object} vampire - The vampire object performing the shot.
      * @param {boolean} [isSilverBullet=false] - Whether this is a Silver Bullet shot.
-     * @param {string | null} [overrideFacing=null] - Optional facing direction to use instead of vampire's current facing (for Rampage).
-     * @param {number | null} [apCostOverride=null] - Optional AP cost to use instead of standard cost (use 0 for Rampage shots).
-     * @returns {boolean} - True if the shot attempt was processed, false otherwise.
-     */
+     * @param {string | null} [overrideFacing=null] - Optional facing direction to use instead of vampire's current facing(
+    for Rampage). * @param {
+      number | null
+    } [apCostOverride = null] - Optional AP cost to use instead of standard cost(use 0
+    for Rampage shots). * @returns {
+      boolean
+    } - True
+    if the shot attempt was processed,
+    false otherwise. * /
   function executeShoot(vampire, isSilverBullet = false, overrideFacing = null, apCostOverride = null) {
     if (!vampire) {
       console.error("ExecuteShoot: No vampire provided.");
       return false;
     }
 
-    // --- Determine AP Cost ---
+    / / ---Determine AP Cost---
     // Use override if provided (e.g., 0 for Rampage), otherwise use standard cost based on Silver Bullet
     const cost = apCostOverride ? ?(isSilverBullet ? AP_COST.SILVER_BULLET: AP_COST.SHOOT);
     // ^ The '??' (Nullish Coalescing Operator) returns left side if it's NOT null/undefined, otherwise returns right side.
@@ -3251,7 +3247,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                   currentCoord
                 } ! `;
               }
-              currentGameState.board.hazards = currentGameState.board.hazards.filter((h) = >h.coord !== currentCoord);
+              currentGameState.board.hazards = currentGameState.board.hazards.filter((h) =>h.coord !== currentCoord);
               shotResolved = true;
               break; // Shot stops
             }
@@ -3276,7 +3272,7 @@ document.addEventListener("DOMContentLoaded", () = >{
             hitMessage = `Shot destroyed Black Widow at $ {
               currentCoord
             } ! `;
-            currentGameState.board.hazards = currentGameState.board.hazards.filter((h) = >h.coord !== currentCoord);
+            currentGameState.board.hazards = currentGameState.board.hazards.filter((h) =>h.coord !== currentCoord);
             shotResolved = true;
             break; // Stop shot path
           } else if (targetPiece.type === "Grave Dust") {
@@ -3301,7 +3297,7 @@ document.addEventListener("DOMContentLoaded", () = >{
             addToLog(hitMessage);
             const eliminatedVampData = findVampireById(eliminatedVampId);
             if (eliminatedVampData) currentGameState.eliminatedVampires.push(JSON.parse(JSON.stringify(eliminatedVampData)));
-            currentGameState.board.vampires = currentGameState.board.vampires.filter((v) = >v.id !== eliminatedVampId);
+            currentGameState.board.vampires = currentGameState.board.vampires.filter((v) =>v.id !== eliminatedVampId);
             // Defer render/UI until after loop break if part of Rampage? No, elimination needs immediate render.
             renderBoard(currentGameState); // Render needed immediately for elimination visual
             updateUI(); // Update UI needed immediately
@@ -3368,9 +3364,9 @@ document.addEventListener("DOMContentLoaded", () = >{
           let isProtectedBySheriff = false;
           if (!isSilverBullet) {
             // Check protection only for standard shots
-            const sheriffPlayerIndex = currentGameState.players.findIndex((p) = >p.class === "Sheriff" && !p.eliminated);
+            const sheriffPlayerIndex = currentGameState.players.findIndex((p) =>p.class === "Sheriff" && !p.eliminated);
             if (sheriffPlayerIndex !== -1 && targetBWPlayerIndex === sheriffPlayerIndex) {
-              const activeSheriffVamps = currentGameState.board.vampires.filter((v) = >v.player === sheriffPlayerIndex);
+              const activeSheriffVamps = currentGameState.board.vampires.filter((v) =>v.player === sheriffPlayerIndex);
               for (const sheriffVamp of activeSheriffVamps) {
                 const protectionZone = getCoordsInArea(sheriffVamp.coord, 1);
                 if (protectionZone.includes(targetBWCoord)) {
@@ -3546,7 +3542,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                   }
 
                   // 2. Find Grave Dust hazard specifically on the vampire's current square
-                  const hazardIndex = currentGameState.board.hazards.findIndex((h) = >h.coord === vampire.coord && h.type === "Grave Dust");
+                  const hazardIndex = currentGameState.board.hazards.findIndex((h) =>h.coord === vampire.coord && h.type === "Grave Dust");
 
                   // 3. Check if Grave Dust was actually found
                   if (hazardIndex === -1) {
@@ -3618,7 +3614,7 @@ document.addEventListener("DOMContentLoaded", () = >{
 
                   // (Assuming cursed players *can* Bite Fuse based on previous analysis)
                   // 2. Find Dynamite hazard specifically on the vampire's current square
-                  const hazardIndex = currentGameState.board.hazards.findIndex((h) = >h.coord === vampire.coord && h.type === "Dynamite");
+                  const hazardIndex = currentGameState.board.hazards.findIndex((h) =>h.coord === vampire.coord && h.type === "Dynamite");
 
                   // 3. Check if Dynamite was actually found
                   if (hazardIndex === -1) {
@@ -3969,7 +3965,7 @@ document.addEventListener("DOMContentLoaded", () = >{
      * @param {object} vampInState - The vampire object from currentGameState that just moved.
      */
                   function checkSwiftJusticeMoveEndEffects(vampInState) {
-                    const hazardLandedOn = currentGameState.board.hazards.find((h) = >h.coord === vampInState.coord);
+                    const hazardLandedOn = currentGameState.board.hazards.find((h) =>h.coord === vampInState.coord);
 
                     // Check for landing on Grave Dust (Curse)
                     if (hazardLandedOn ? .type === "Grave Dust" && !vampInState.cursed) {
@@ -4043,7 +4039,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                     }
 
                     // Error check
-                    const activePlayers = currentGameState.players.filter((p) = >!p.eliminated);
+                    const activePlayers = currentGameState.players.filter((p) =>!p.eliminated);
                     if (activePlayers.length > 0 && loopCheck >= numberOfPlayers) {
                       console.error("Error in proceedToNextPlayerTurn: Could not find next active player! State:", currentGameState);
                       addToLog("Error advancing turn!");
@@ -4091,7 +4087,7 @@ document.addEventListener("DOMContentLoaded", () = >{
 
                     // Reset movesThisTurn for ALL vampires
                     if (currentGameState.board ? .vampires) {
-                      currentGameState.board.vampires.forEach((v) = >(v.movesThisTurn = 0));
+                      currentGameState.board.vampires.forEach((v) =>(v.movesThisTurn = 0));
                     }
 
                     // Update UI for the new player
@@ -4205,7 +4201,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                 // Listener for the OK button on the elimination popup
                 const btnCloseElimination = document.getElementById("btn-close-elimination");
                 if (btnCloseElimination) {
-                  btnCloseElimination.addEventListener("click", () = >{
+                  btnCloseElimination.addEventListener("click", () =>{
                     popups.elimination.style.display = "none"; // Hide popup
                     // After closing elimination, check again if the game ended (in case that elimination ended the game)
                     checkGameEnd();
@@ -4217,7 +4213,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                 // Listener for the Restart button on the victory popup
                 const btnRestartVictory = document.getElementById("btn-restart-victory");
                 if (btnRestartVictory) {
-                  btnRestartVictory.addEventListener("click", () = >{
+                  btnRestartVictory.addEventListener("click", () =>{
                     popups.victory.style.display = "none"; // Hide popup
                     // Use the existing "Back to Setup" logic/button or create a full restart function
                     addToLog("Restarting game...");
@@ -4244,7 +4240,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                   const pool = currentGameState.hazardPool;
                   const ap = currentGameState.currentAP;
 
-                  const createBtn = (type, icon, cost) = >{
+                  const createBtn = (type, icon, cost) =>{
                     const btn = document.createElement("button");
                     btn.dataset.hazardType = type;
                     const count = pool[type] || 0;
@@ -4414,13 +4410,13 @@ document.addEventListener("DOMContentLoaded", () = >{
                     addToLog(`Chain reaction: Dynamite EXPLODES at $ {
                       coordToExplode
                     } ! `);
-                    currentGameState.board.hazards = currentGameState.board.hazards.filter((h) = >h.coord !== coordToExplode);
+                    currentGameState.board.hazards = currentGameState.board.hazards.filter((h) =>h.coord !== coordToExplode);
 
                     // 5. Get the 3x3 blast area
                     const explosionAreaCoords = getCoordsInArea(coordToExplode, 1);
 
                     // 6. Process effects within the blast area
-                    explosionAreaCoords.forEach((coordInBlast) = >{
+                    explosionAreaCoords.forEach((coordInBlast) =>{
                       // Optional Rule Check: Should the center square be affected?
                       // if (coordInBlast === coordToExplode) return; // Uncomment to skip the exact center
                       const pieceInBlast = findPieceAtCoord(coordInBlast);
@@ -4443,7 +4439,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                           at $ {
                             coordInBlast
                           } ! `);
-                          currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter((bw) = >bw.id !== affectedPiece.id);
+                          currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter((bw) =>bw.id !== affectedPiece.id);
                           needsEliminationCheck = true; // Mark that we need to check eliminations later
                         }
                         // Check if it's a hazard AND it's NOT a dynamite that's already exploded in this chain
@@ -4477,7 +4473,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                             }) at $ {
                               coordInBlast
                             } ! `);
-                            currentGameState.board.hazards = currentGameState.board.hazards.filter((h) = >h.coord !== affectedPiece.coord);
+                            currentGameState.board.hazards = currentGameState.board.hazards.filter((h) =>h.coord !== affectedPiece.coord);
                           }
                         } else if (affectedType === "vampire") {
                           // TODO: Determine explosion effect on Vampires based on game rules
@@ -4525,7 +4521,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                     const gameEnded = checkGameEnd(); // Shows victory popup if needed
                     // If the game DID NOT end, show popups for players eliminated in this chain
                     if (!gameEnded && newlyEliminatedIndexes.length > 0) {
-                      newlyEliminatedIndexes.forEach((eliminatedIndex) = >{
+                      newlyEliminatedIndexes.forEach((eliminatedIndex) =>{
                         showEliminationPopup(eliminatedIndex);
                         // Note: This could still show multiple popups if the chain eliminates multiple players simultaneously without ending the game (e.g., 4p -> 2p). This might be desired.
                       });
@@ -4543,8 +4539,8 @@ document.addEventListener("DOMContentLoaded", () = >{
                     return false; // Already eliminated or invalid index
                   }
 
-                  const remainingVamps = currentGameState.board.vampires.filter((v) = >v.player === playerIndex).length;
-                  const remainingBloodwells = currentGameState.board.bloodwells.filter((bw) = >bw.player === playerIndex).length;
+                  const remainingVamps = currentGameState.board.vampires.filter((v) =>v.player === playerIndex).length;
+                  const remainingBloodwells = currentGameState.board.bloodwells.filter((bw) =>bw.player === playerIndex).length;
 
                   console.log(`Checking P$ {
                     playerIndex
@@ -4611,8 +4607,8 @@ document.addEventListener("DOMContentLoaded", () = >{
                 for P$ {
                   playerIndex
                 }.`);
-                currentGameState.board.vampires = currentGameState.board.vampires.filter((v) = >v.player !== playerIndex);
-                currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter((bw) = >bw.player !== playerIndex);
+                currentGameState.board.vampires = currentGameState.board.vampires.filter((v) =>v.player !== playerIndex);
+                currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter((bw) =>bw.player !== playerIndex);
 
                 return true;
               }
@@ -4676,7 +4672,7 @@ document.addEventListener("DOMContentLoaded", () = >{
               function checkGameEnd() {
                 if (!currentGameState || !currentGameState.players) return false;
 
-                const activePlayers = currentGameState.players.filter((p) = >!p.eliminated);
+                const activePlayers = currentGameState.players.filter((p) =>!p.eliminated);
 
                 if (activePlayers.length === 1) {
                   // Game Over - We have a winner!
@@ -4755,13 +4751,13 @@ document.addEventListener("DOMContentLoaded", () = >{
                 }`);
 
                 currentGameState = {
-                  players: playerData.map((p) = >({
+                  players: playerData.map((p) =>({
                     name: p.name,
                     class: p.class,
                     eliminated: false,
                   })),
                   board: {
-                    vampires: JSON.parse(JSON.stringify(layout.vampires.map((v) = >({...v,
+                    vampires: JSON.parse(JSON.stringify(layout.vampires.map((v) =>({...v,
                       cursed: false,
                       movesThisTurn: 0,
                     })))),
@@ -4773,12 +4769,12 @@ document.addEventListener("DOMContentLoaded", () = >{
                   },
                   // << Comma IS needed here before hazardPool
                   hazardPool: {
-                    Tombstone: 5 - layout.hazards.filter((h) = >h.type === "Tombstone").length,
-                    "Black Widow": 5 - layout.hazards.filter((h) = >h.type === "Black Widow").length,
-                    "Grave Dust": 5 - layout.hazards.filter((h) = >h.type === "Grave Dust").length,
+                    Tombstone: 5 - layout.hazards.filter((h) =>h.type === "Tombstone").length,
+                    "Black Widow": 5 - layout.hazards.filter((h) =>h.type === "Black Widow").length,
+                    "Grave Dust": 5 - layout.hazards.filter((h) =>h.type === "Grave Dust").length,
                     Dynamite: 3,
                   },
-                  playerResources: playerData.map(() = >({
+                  playerResources: playerData.map(() =>({
                     silverBullet: 1,
                     abilitiesUsed: [],
                     wasShotSinceLastTurn: false,
@@ -4865,8 +4861,8 @@ document.addEventListener("DOMContentLoaded", () = >{
     }
     / / ---5.Attach Event Listeners(Executed ONCE on script load)--- // Note: Original numbering kept, this is Section 4 of pasting
                 // Setup Screens Listeners
-                playerCountButtons.forEach((button) = >{
-                  button.addEventListener("click", () = >{
+                playerCountButtons.forEach((button) =>{
+                  button.addEventListener("click", () =>{
                     numberOfPlayers = parseInt(button.dataset.count);
                     playerData = new Array(numberOfPlayers); // Create array for player data
                     selectedClasses = []; // Reset selections for new setup process
@@ -4878,7 +4874,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                 // Listener for the new "Back to Start" button
                 if (btnBackToStart) {
                   // Check if the button exists
-                  btnBackToStart.addEventListener("click", () = >{
+                  btnBackToStart.addEventListener("click", () =>{
                     if (confirm("Return to player count selection? All setup progress will be lost.")) {
                       // Reset setup state completely
                       numberOfPlayers = 0;
@@ -4894,7 +4890,7 @@ document.addEventListener("DOMContentLoaded", () = >{
 
                 // --- Event Listeners for Dispel and Bite Fuse ---
                 // Listener for the Dispel button
-                btnDispel ? .addEventListener("click", () = >{
+                btnDispel ? .addEventListener("click", () =>{
                   const selectedVampireObject = findVampireById(currentGameState ? .selectedVampireId); // Get the selected vamp object
                   if (selectedVampireObject) {
                     executeDispel(selectedVampireObject); // Call the function
@@ -4904,7 +4900,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                 });
 
                 // Listener for the Bite the Fuse button
-                btnBiteFuse ? .addEventListener("click", () = >{
+                btnBiteFuse ? .addEventListener("click", () =>{
                   const selectedVampireObject = findVampireById(currentGameState ? .selectedVampireId); // Get the selected vamp object
                   if (selectedVampireObject) {
                     executeBiteFuse(selectedVampireObject); // Call the function
@@ -4914,7 +4910,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                 });
 
                 // Listener for the Rampage button
-                btnRampage ? .addEventListener("click", () = >{
+                btnRampage ? .addEventListener("click", () =>{
                   const selectedVampireObject = findVampireById(currentGameState ? .selectedVampireId);
                   if (selectedVampireObject) {
                     // Make sure it's actually an Outlaw before executing
@@ -4930,7 +4926,7 @@ document.addEventListener("DOMContentLoaded", () = >{
 
                 // Help Button Listener
                 if (btnHelp) {
-                  btnHelp.addEventListener("click", () = >{
+                  btnHelp.addEventListener("click", () =>{
                     console.log("Help button clicked");
                     // Show the popup first
                     showScreen("howToPlay"); // Should use popups['howToPlay'].style.display = 'flex'; from revised showScreen
@@ -4947,7 +4943,7 @@ document.addEventListener("DOMContentLoaded", () = >{
 
                 // Back from How-to-Play Listener (Simpler - Just Hide Popup)
                 if (btnBackToGame) {
-                  btnBackToGame.addEventListener("click", () = >{
+                  btnBackToGame.addEventListener("click", () =>{
                     console.log("Back to Game button clicked, hiding HowToPlay popup.");
                     if (popups.howToPlay) {
                       popups.howToPlay.style.display = "none"; // Hide the popup
@@ -4957,7 +4953,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                 }
                 // Movement D-Pad Button Listeners (NEW)
                 // Helper function to handle clicks on any movement arrow
-                const handleMovementButtonClick = (direction) = >{
+                const handleMovementButtonClick = (direction) =>{
                   console.log(`Movement button clicked: $ {
                     direction
                   }`); // For debugging
@@ -4997,7 +4993,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                 };
 
                 // --- Example D-Pad Button Handler ---
-                const handleDirectionButtonClick = (direction) = >{
+                const handleDirectionButtonClick = (direction) =>{
                   // *** ADD THIS CHECK AT THE VERY BEGINNING ***
                   console.log(`D - Pad Click: $ {
                     direction
@@ -5043,13 +5039,13 @@ document.addEventListener("DOMContentLoaded", () = >{
                 // --- Ensure your listeners call this handler ---
                 // (If you don't have a shared handler, add the 'if (isSwiftJusticeMovePending)'
                 // block at the start of EACH button's individual listener function)
-                btnMoveN ? .addEventListener("click", () = >handleDirectionButtonClick("N"));
-                btnMoveE ? .addEventListener("click", () = >handleDirectionButtonClick("E"));
-                btnMoveS ? .addEventListener("click", () = >handleDirectionButtonClick("S"));
-                btnMoveW ? .addEventListener("click", () = >handleDirectionButtonClick("W"));
+                btnMoveN ? .addEventListener("click", () =>handleDirectionButtonClick("N"));
+                btnMoveE ? .addEventListener("click", () =>handleDirectionButtonClick("E"));
+                btnMoveS ? .addEventListener("click", () =>handleDirectionButtonClick("S"));
+                btnMoveW ? .addEventListener("click", () =>handleDirectionButtonClick("W"));
 
-                classButtons.forEach((button) = >{
-                  button.addEventListener("click", () = >{
+                classButtons.forEach((button) =>{
+                  button.addEventListener("click", () =>{
                     // This listener enables btnNext
                     if (button.disabled) return; // Ignore clicks if button already used by another player
                     let currentlySelected = classSelectionContainer.querySelector(".selected");
@@ -5066,7 +5062,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                   });
                 });
 
-                playerNameInput.addEventListener("input", () = >{
+                playerNameInput.addEventListener("input", () =>{
                   // Update player name in state as user types, use default if empty
                   if (playerData[currentPlayerSetupIndex]) {
                     playerData[currentPlayerSetupIndex].name = playerNameInput.value.trim() || `P$ {
@@ -5076,7 +5072,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                 });
 
                 // Back Button (Player Setup) Listener - REVISED LOGIC
-                btnBack.addEventListener("click", () = >{
+                btnBack.addEventListener("click", () =>{
                   console.log("Back button clicked");
 
                   if (currentPlayerSetupIndex > 0) {
@@ -5127,7 +5123,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                 });
 
                 // Next / Start Game Button Listener (Corrected - No Alert)
-                btnNext.addEventListener("click", () = >{
+                btnNext.addEventListener("click", () =>{
                   console.log("Next/Start Game button clicked");
                   const currentPlayerData = playerData[currentPlayerSetupIndex];
 
@@ -5161,7 +5157,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                 });
 
                 // Gameplay Screen Global Listeners (Available whenever gameplay screen is active)
-                btnToggleLog.addEventListener("click", () = >{
+                btnToggleLog.addEventListener("click", () =>{
                   gameLog.classList.toggle("log-hidden");
                   // Scroll to bottom when showing log if needed
                   if (!gameLog.classList.contains("log-hidden")) {
@@ -5169,7 +5165,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                   }
                 });
 
-                btnBackToSetup.addEventListener("click", () = >{
+                btnBackToSetup.addEventListener("click", () =>{
                   // Dev button to restart setup
                   if (confirm("Return to setup? Game progress will be lost.")) {
                     // Reset all state variables
@@ -5186,7 +5182,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                 });
 
                 // Action Buttons Listeners (Gameplay Screen)
-                btnShoot.addEventListener("click", () = >{
+                btnShoot.addEventListener("click", () =>{
                   const vamp = findVampireById(currentGameState ? .selectedVampireId); // Use optional chaining
                   if (vamp) {
                     executeShoot(vamp, false); // Execute normal shot
@@ -5195,7 +5191,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                   }
                 });
 
-                btnSilverBullet.addEventListener("click", () = >{
+                btnSilverBullet.addEventListener("click", () =>{
                   const vamp = findVampireById(currentGameState ? .selectedVampireId);
                   if (!currentGameState || !currentGameState.playerResources) return; // Safety check
                   const res = currentGameState.playerResources[currentGameState.currentPlayerIndex];
@@ -5211,7 +5207,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                   }
                 });
 
-                btnThrow.addEventListener("click", () = >{
+                btnThrow.addEventListener("click", () =>{
                   const vamp = findVampireById(currentGameState ? .selectedVampireId);
                   if (!vamp) {
                     addToLog("Select Vampire to Throw.");
@@ -5232,7 +5228,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                   if (currentGameState && currentGameState.actionState) currentGameState.actionState.pendingAction = "throw-select-hazard";
                   addToLog("Select hazard type to throw.");
                 });
-                btnCancelThrow.addEventListener("click", () = >{
+                btnCancelThrow.addEventListener("click", () =>{
                   // Logic for cancelling the throw action from the picker
                   popups.hazardPicker.style.display = "none"; // Hide the popup
                   if (currentGameState && currentGameState.actionState) {
@@ -5245,7 +5241,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                   addToLog("Throw action cancelled.");
                 });
 
-                hazardPickerOptions.addEventListener("click", (event) = >{
+                hazardPickerOptions.addEventListener("click", (event) =>{
                   // Handle clicks within the hazard picker using event delegation
                   const button = event.target.closest("button");
                   if (button && button.dataset.hazardType) {
@@ -5254,7 +5250,7 @@ document.addEventListener("DOMContentLoaded", () = >{
                 });
                 // Swift Justice Popup - YES Button Listener
                 if (btnSwiftJusticeYes) {
-                  btnSwiftJusticeYes.addEventListener('click', () = >{
+                  btnSwiftJusticeYes.addEventListener('click', () =>{
                     if (popups.swiftJustice) popups.swiftJustice.style.display = 'none'; // Hide popup
                     // Set flags to indicate SJ move is pending
                     isSwiftJusticeMovePending = true;
@@ -5284,7 +5280,7 @@ document.addEventListener("DOMContentLoaded", () = >{
 
                 // Swift Justice Popup - NO Button Listener
                 if (btnSwiftJusticeNo) {
-                  btnSwiftJusticeNo.addEventListener('click', () = >{
+                  btnSwiftJusticeNo.addEventListener('click', () =>{
                     if (popups.swiftJustice) popups.swiftJustice.style.display = 'none'; // Hide popup
                     // Player declined, proceed as if SJ wasn't triggered
                     addToLog("Sheriff declined Swift Justice.");
