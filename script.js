@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
         HAND_CANNON: 5,
         ORDER_RESTORED: 3,
         CONTRACT_PAYOFF: 3,
-        VENGEANCE_IS_MINE: 0 // Though cost is 0, still an action choice
+        VENGEANCE_IS_MINE: 0, // Though cost is 0, still an action choice
         // --- END ADD ---
     };
     const DIRECTIONS = ["N", "E", "S", "W"];
@@ -40,137 +40,109 @@ document.addEventListener("DOMContentLoaded", () => {
         // Narrative descriptions updated to ~150 chars for Setup Screen
         Sheriff: {
             color: "color-sheriff",
-            description:
-                "A faction of Vampires enforcing order in a chaotic frontier.",
+            description: "A faction of Vampires enforcing order in a chaotic frontier.",
             abilities: [
                 {
                     name: "Under My Protection",
                     type: "Passive",
                     apCost: 0,
-                    description:
-                        "The Sheriff's vigilance shields nearby Bloodwells, making them difficult targets for careless foes seeking an easy shot.",
-                    techDesc:
-                        "Bloodwells in 3x3 grid centered on Sheriff are immune to standard Shots (not Hand Cannon).",
+                    description: "The Sheriff's vigilance shields nearby Bloodwells, making them difficult targets for careless foes seeking an easy shot.",
+                    techDesc: "Bloodwells in 3x3 grid centered on Sheriff are immune to standard Shots (not Hand Cannon).",
                 },
                 {
                     name: "Swift Justice",
                     type: "Passive",
                     apCost: 0,
-                    description:
-                        "Fueled by unwavering purpose, one Sheriff presses forward relentlessly, taking a swift extra step after the turn's actions conclude.",
-                    techDesc:
-                        "End of Turn: May move one non-cursed Sheriff 1 square forward (0 AP).",
+                    description: "Fueled by unwavering purpose, one Sheriff presses forward relentlessly, taking a swift extra step after the turn's actions conclude.",
+                    techDesc: "End of Turn: May move one non-cursed Sheriff 1 square forward (0 AP).",
                 },
                 {
                     name: "Order Restored",
                     type: "Active",
                     apCost: 3,
-                    description:
-                        "Even true death cannot halt the Sheriff's decree! By dark ritual, call back a comrade destroyed in battle to rejoin the fight for order.",
-                    techDesc:
-                        "1/game: Revive one eliminated Sheriff adjacent to own Vamp/BW.",
+                    description: "Even true death cannot halt the Sheriff's decree! By dark ritual, call back a comrade destroyed in battle to rejoin the fight for order.",
+                    techDesc: "1/game: Revive one eliminated Sheriff adjacent to own Vamp/BW.",
                 },
             ],
         },
         Vigilante: {
             color: "color-vigilante",
-            description:
-                "A faction of Vampires seeking justice, using teamwork.",
+            description: "A faction of Vampires seeking justice, using teamwork.",
             abilities: [
                 {
                     name: "Side by Side",
                     type: "Passive",
                     apCost: 0,
-                    description:
-                        "Bound by blood and vengeance, this driven pair acts as one, drawing from a shared pool of unnatural energy for their actions.",
-                    techDesc:
-                        "Player's AP pool is shared between both Vampires.",
+                    description: "Bound by blood and vengeance, this driven pair acts as one, drawing from a shared pool of unnatural energy for their actions.",
+                    techDesc: "Player's AP pool is shared between both Vampires.",
                 },
                 {
                     name: "Blood Brothers",
                     type: "Passive",
                     apCost: 0,
-                    description:
-                        "Their shared purpose empowers their dark bond when near. Fighting side-by-side fills this ruthless kin with a surge of preternatural energy.",
-                    techDesc:
-                        "Start of Turn: +1 AP if Vamps are within 3x3 grid and both act this turn.",
+                    description: "Their shared purpose empowers their dark bond when near. Fighting side-by-side fills this ruthless kin with a surge of preternatural energy.",
+                    techDesc: "Start of Turn: +1 AP if Vamps are within 3x3 grid and both act this turn.",
                 },
                 {
                     name: "Vengeance is Mine",
                     type: "Active",
                     apCost: 0,
-                    description:
-                        "Harm my kin, feel my wrath tenfold! Wounds suffered only fuel their dark rage, promising overwhelming fury on their next turn.",
-                    techDesc:
-                        "1/game: After own piece is shot, gain 7 AP next turn.",
+                    description: "Harm my kin, feel my wrath tenfold! Wounds suffered only fuel their dark rage, promising overwhelming fury on their next turn.",
+                    techDesc: "1/game: After own piece is shot, gain 7 AP next turn.",
                 },
             ],
         },
         Outlaw: {
             color: "color-outlaw",
-            description:
-                "A faction of Vampires thriving on chaos, disrupting and escaping.",
+            description: "A faction of Vampires thriving on chaos, disrupting and escaping.",
             abilities: [
                 {
                     name: "Daring Escape",
                     type: "Passive",
                     apCost: 0,
-                    description:
-                        "Blast an enemy Bloodwell, then melt into the shadows, using the chaos for a swift, spectral getaway and repositioning.",
-                    techDesc:
-                        "1/turn: After shooting a Bloodwell, may Pivot free & Move up to 2 squares (0 AP).",
+                    description: "Blast an enemy Bloodwell, then melt into the shadows, using the chaos for a swift, spectral getaway and repositioning.",
+                    techDesc: "1/turn: After shooting a Bloodwell, may Pivot free & Move up to 2 squares (0 AP).",
                 },
                 {
                     name: "Hand Cannon",
                     type: "Active",
                     apCost: 5,
-                    description:
-                        "Unleash unholy hellfire from a modified Hand Cannon! This cursed shot tears through obstacles and stone alike in its destructive path.",
-                    techDesc:
-                        "1/game: Piercing shot (max 5 sq), ignores Hazards (unless Sheriff-prot.). Destroys BW/Hazards hit.",
+                    description: "Unleash unholy hellfire from a modified Hand Cannon! This cursed shot tears through obstacles and stone alike in its destructive path.",
+                    techDesc: "1/game: Piercing shot (max 5 sq), ignores Hazards (unless Sheriff-prot.). Destroys BW/Hazards hit.",
                 },
                 {
                     name: "Rampage",
                     type: "Active",
                     apCost: 2,
-                    description:
-                        "Embrace the chaos! The Outlaw spins wildly, unleashing a hail of lead left and right simultaneously to catch foes in a deadly crossfire.",
-                    techDesc:
-                        "1/game: Shoot simultaneously Left & Right (two standard shots).",
+                    description: "Embrace the chaos! The Outlaw spins wildly, unleashing a hail of lead left and right simultaneously to catch foes in a deadly crossfire.",
+                    techDesc: "1/game: Shoot simultaneously Left & Right (two standard shots).",
                 },
             ],
         },
         "Bounty Hunter": {
             color: "color-bounty-hunter",
-            description:
-                "A faction of Vampires hunting for profit, using precision.",
+            description: "A faction of Vampires hunting for profit, using precision.",
             abilities: [
                 {
                     name: "Sharpshooter",
                     type: "Passive",
                     apCost: 0,
-                    description:
-                        "Tombstones offer no refuge. This Hunter's unnervingly accurate shots find paths through solid stone, leaving no target truly safe.",
-                    techDesc:
-                        "Shots ignore Tombstones when determining hit/block.",
+                    description: "Tombstones offer no refuge. This Hunter's unnervingly accurate shots find paths through solid stone, leaving no target truly safe.",
+                    techDesc: "Shots ignore Tombstones when determining hit/block.",
                 },
                 {
                     name: "Marked Man",
                     type: "Passive",
                     apCost: 0,
-                    description:
-                        "Every bullet carries a debilitating hex. Vampires struck find their unnatural vitality failing, crippling their movement and attacks.",
-                    techDesc:
-                        "Standard shots hitting enemy Vamps apply Curse (Move 1/turn, No Shoot/Throw).",
+                    description: "Every bullet carries a debilitating hex. Vampires struck find their unnatural vitality failing, crippling their movement and attacks.",
+                    techDesc: "Standard shots hitting enemy Vamps apply Curse (Move 1/turn, No Shoot/Throw).",
                 },
                 {
                     name: "Contract Payoff",
                     type: "Active",
                     apCost: 3,
-                    description:
-                        "Destroying an enemy Bloodwell brings dark satisfaction and fuels the Hunter with bonus energy for the next strike.",
-                    techDesc:
-                        "1/game: If shot destroys any BW, gain +3 AP (2P) / +5 AP (3P/4P) next turn.",
+                    description: "Destroying an enemy Bloodwell brings dark satisfaction and fuels the Hunter with bonus energy for the next strike.",
+                    techDesc: "1/game: If shot destroys any BW, gain +3 AP (2P) / +5 AP (3P/4P) next turn.",
                 },
             ],
         },
@@ -735,27 +707,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnMoveS = document.getElementById("move-s");
 
     // Player Count Screen Elements
-    const playerCountButtons = screens.playerCount.querySelectorAll(
-        "button[data-count]"
-    );
+    const playerCountButtons = screens.playerCount.querySelectorAll("button[data-count]");
 
     // Player Setup Screen Elements
     const playerSetupTitle = document.getElementById("player-setup-title");
     const playerNameLabel = document.getElementById("player-name-label");
     const playerNameInput = document.getElementById("input-player-name");
-    const classSelectionContainer = document.getElementById(
-        "class-selection-buttons"
-    );
+    const classSelectionContainer = document.getElementById("class-selection-buttons");
     const classButtons = classSelectionContainer.querySelectorAll(".btn-class");
     const btnBackToStart = document.getElementById("btn-back-to-start");
     const classDetailsName = document.getElementById("class-name"); // Setup details
-    const classDetailsDescription = document.getElementById(
-        "class-description"
-    ); // Setup details
+    const classDetailsDescription = document.getElementById("class-description"); // Setup details
     const classDetailsAbilities = document.getElementById("class-abilities"); // Setup details
-    const classDetailsContainer = document.getElementById(
-        "class-details-container"
-    );
+    const classDetailsContainer = document.getElementById("class-details-container");
     const btnBack = document.getElementById("btn-back");
     const btnNext = document.getElementById("btn-next");
 
@@ -764,9 +728,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const actionBar = document.getElementById("action-bar");
     const gameBoard = document.getElementById("game-board");
     const playerInfoDisplay = document.getElementById("player-info");
-    const currentClassAbilitiesList = document.getElementById(
-        "info-class-abilities"
-    ); // Gameplay details
+    const currentClassAbilitiesList = document.getElementById("info-class-abilities"); // Gameplay details
     const infoSilverBullet = document.getElementById("info-silver-bullet");
     const statusBarPlayer = document.getElementById("status-player");
     const statusBarAP = document.getElementById("status-ap");
@@ -782,18 +744,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnShoot = document.getElementById("action-shoot");
     const btnThrow = document.getElementById("action-throw");
     const btnSilverBullet = document.getElementById("action-silver-bullet");
-    const btnDispel = document.getElementById('action-dispel');
-    const btnBiteFuse = document.getElementById('action-bite-fuse');
-    const btnRampage = document.getElementById('action-rampage');
-    const btnHandCannon = document.getElementById('action-hand-cannon');
-    const btnContractPayoff = document.getElementById('action-contract-payoff');
-    const btnOrderRestored = document.getElementById('action-order-restored');
-    const btnVengeance = document.getElementById('action-vengeance');
+    const btnDispel = document.getElementById("action-dispel");
+    const btnBiteFuse = document.getElementById("action-bite-fuse");
+    const btnRampage = document.getElementById("action-rampage");
+    const btnHandCannon = document.getElementById("action-hand-cannon");
+    const btnContractPayoff = document.getElementById("action-contract-payoff");
+    const btnOrderRestored = document.getElementById("action-order-restored");
+    const btnVengeance = document.getElementById("action-vengeance");
 
     // Hazard Picker Elements (Inside the popup)
-    const hazardPickerOptions = document.getElementById(
-        "hazard-picker-options"
-    );
+    const hazardPickerOptions = document.getElementById("hazard-picker-options");
     const btnCancelThrow = document.getElementById("btn-cancel-throw");
 
     // Inside the "DOMContentLoaded" listener, after DOM References section...
@@ -815,14 +775,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!coord || coord.length < 2) return null;
         const colLetter = coord.charAt(0).toUpperCase();
         const rowNum = parseInt(coord.substring(1));
-        if (
-            isNaN(rowNum) ||
-            colLetter < "A" ||
-            colLetter > "I" ||
-            rowNum < 1 ||
-            rowNum > 9
-        )
-            return null;
+        if (isNaN(rowNum) || colLetter < "A" || colLetter > "I" || rowNum < 1 || rowNum > 9) return null;
         return { row: rowNum, col: colLetter.charCodeAt(0) - 64 };
     }
     function getCoordFromRowCol(row, col) {
@@ -859,13 +812,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const currentIndex = DIRECTIONS.indexOf(currentFacing);
         if (currentIndex === -1) return currentFacing;
         let newIndex;
-        if (pivotType === "L")
-            newIndex =
-                (currentIndex - 1 + DIRECTIONS.length) % DIRECTIONS.length;
-        else if (pivotType === "R")
-            newIndex = (currentIndex + 1) % DIRECTIONS.length;
-        else if (pivotType === "180")
-            newIndex = (currentIndex + 2) % DIRECTIONS.length;
+        if (pivotType === "L") newIndex = (currentIndex - 1 + DIRECTIONS.length) % DIRECTIONS.length;
+        else if (pivotType === "R") newIndex = (currentIndex + 1) % DIRECTIONS.length;
+        else if (pivotType === "180") newIndex = (currentIndex + 2) % DIRECTIONS.length;
         else return currentFacing;
         return DIRECTIONS[newIndex];
     }
@@ -914,18 +863,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (targetScreenElement) {
             // --- Showing a Main Screen ---
             // Record the current active screen BEFORE switching (unless it's a popup)
-            const currentActiveScreen = document.querySelector(
-                ".screen.active:not(.popup)"
-            ); // Find active screen that isn't a popup
+            const currentActiveScreen = document.querySelector(".screen.active:not(.popup)"); // Find active screen that isn't a popup
             if (currentActiveScreen && currentActiveScreen.id !== screenId) {
                 lastActiveScreenId = currentActiveScreen.id;
                 console.log(`Stored last screen: ${lastActiveScreenId}`);
             }
 
             // Hide other main screens and show the target
-            Object.values(screens).forEach((screen) =>
-                screen?.classList.remove("active")
-            ); // Use optional chaining
+            Object.values(screens).forEach((screen) => screen?.classList.remove("active")); // Use optional chaining
             targetScreenElement.classList.add("active");
             console.log(`Showing screen: ${screenId}`);
 
@@ -936,20 +881,14 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (targetPopupElement) {
             // --- Showing a Popup ---
             // Record which main screen is active underneath
-            const currentActiveScreen = document.querySelector(
-                ".screen.active:not(.popup)"
-            );
+            const currentActiveScreen = document.querySelector(".screen.active:not(.popup)");
             if (currentActiveScreen) {
                 lastActiveScreenId = currentActiveScreen.id;
-                console.log(
-                    `Stored last screen before popup: ${lastActiveScreenId}`
-                );
+                console.log(`Stored last screen before popup: ${lastActiveScreenId}`);
             } else {
                 // Fallback if no main screen is active somehow? Should not happen in normal flow.
                 lastActiveScreenId = "gameplay"; // Default to gameplay?
-                console.warn(
-                    `No active main screen found when showing popup ${screenId}. Storing fallback: ${lastActiveScreenId}`
-                );
+                console.warn(`No active main screen found when showing popup ${screenId}. Storing fallback: ${lastActiveScreenId}`);
             }
 
             // Show the target popup using direct style (matching hazard picker)
@@ -997,18 +936,13 @@ document.addEventListener("DOMContentLoaded", () => {
             playerData[playerIndex].class = null; // Reset class selection when revisiting
         }
 
-        playerNameInput.value =
-            playerData[playerIndex].name !== `P${playerNum}`
-                ? playerData[playerIndex].name
-                : "";
+        playerNameInput.value = playerData[playerIndex].name !== `P${playerNum}` ? playerData[playerIndex].name : "";
         playerNameInput.placeholder = `P${playerNum} Name (Optional)`;
         playerSetupTitle.textContent = `Player ${playerNum} Setup`;
         playerNameLabel.textContent = `Player ${playerNum} Name:`; // Ensure label updates if needed
 
         // Reset and update class buttons status
-        let previouslySelectedButton = classSelectionContainer.querySelector(
-            ".selected"
-        );
+        let previouslySelectedButton = classSelectionContainer.querySelector(".selected");
         if (previouslySelectedButton) {
             previouslySelectedButton.classList.remove("selected");
         }
@@ -1023,26 +957,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Update navigation buttons visibility and text
         const isFirstPlayer = playerIndex === 0;
-        if (btnBack)
-            btnBack.style.display = isFirstPlayer ? "none" : "inline-block"; // Hide Back for P1
-        if (btnBackToStart)
-            btnBackToStart.style.display = isFirstPlayer
-                ? "none"
-                : "inline-block"; // Also hide Back to Start for P1
+        if (btnBack) btnBack.style.display = isFirstPlayer ? "none" : "inline-block"; // Hide Back for P1
+        if (btnBackToStart) btnBackToStart.style.display = isFirstPlayer ? "none" : "inline-block"; // Also hide Back to Start for P1
         if (btnNext) {
-            btnNext.textContent =
-                playerIndex === numberOfPlayers - 1 ? "Start Game" : "Next";
+            btnNext.textContent = playerIndex === numberOfPlayers - 1 ? "Start Game" : "Next";
             btnNext.disabled = true; // Start disabled until class selected
         }
     }
     function addToLog(message) {
         const li = document.createElement("li");
         li.textContent = message;
-        while (logList.children.length > 50)
-            logList.removeChild(logList.firstChild);
+        while (logList.children.length > 50) logList.removeChild(logList.firstChild);
         logList.appendChild(li);
-        if (gameLog && !gameLog.classList.contains("log-hidden"))
-            gameLog.scrollTop = gameLog.scrollHeight;
+        if (gameLog && !gameLog.classList.contains("log-hidden")) gameLog.scrollTop = gameLog.scrollHeight;
         console.log("Log:", message);
     }
     function generateGrid() {
@@ -1064,13 +991,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return player ? CLASS_DATA[player.class]?.color || "" : "";
     }
     function clearHighlights() {
-        document
-            .querySelectorAll(
-                ".grid-square.valid-target, .grid-square.invalid-target"
-            )
-            .forEach((el) =>
-                el.classList.remove("valid-target", "invalid-target")
-            );
+        document.querySelectorAll(".grid-square.valid-target, .grid-square.invalid-target").forEach((el) => el.classList.remove("valid-target", "invalid-target"));
     }
 
     // --- Board Rendering & Gameplay UI Update ---
@@ -1090,9 +1011,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Render Vampires
         gameState.board.vampires?.forEach((vamp) => {
-            const targetSquare = gameBoard.querySelector(
-                `[data-coord="${vamp.coord}"]`
-            );
+            const targetSquare = gameBoard.querySelector(`[data-coord="${vamp.coord}"]`);
             if (targetSquare) {
                 // CORRECT: Define and use vampElement *only* within this loop's scope
                 const vampElement = document.createElement("div");
@@ -1102,23 +1021,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 vampElement.dataset.id = vamp.id;
                 vampElement.dataset.player = vamp.player;
                 vampElement.dataset.facing = vamp.facing;
-                if (vamp.id === gameState.selectedVampireId)
-                    vampElement.classList.add("selected");
+                if (vamp.id === gameState.selectedVampireId) vampElement.classList.add("selected");
                 if (vamp.cursed) vampElement.classList.add("cursed");
                 vampElement.textContent = `P${vamp.player + 1}`;
                 targetSquare.appendChild(vampElement); // Use vampElement here
             } else {
-                console.warn(
-                    `Square not found for vampire ${vamp.id} at ${vamp.coord}`
-                );
+                console.warn(`Square not found for vampire ${vamp.id} at ${vamp.coord}`);
             }
         }); // End of Vampire loop scope for vampElement
 
         // Render Bloodwells
         gameState.board.bloodwells?.forEach((bw) => {
-            const targetSquare = gameBoard.querySelector(
-                `[data-coord="${bw.coord}"]`
-            );
+            const targetSquare = gameBoard.querySelector(`[data-coord="${bw.coord}"]`);
             if (targetSquare) {
                 // CORRECT: Define and use bwElement within this loop's scope
                 const bwElement = document.createElement("div");
@@ -1132,24 +1046,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 bwElement.textContent = "🩸"; // Blood drop icon
                 targetSquare.appendChild(bwElement); // Use bwElement here
             } else {
-                console.warn(
-                    `Square not found for bloodwell ${bw.id} at ${bw.coord}`
-                );
+                console.warn(`Square not found for bloodwell ${bw.id} at ${bw.coord}`);
             }
         }); // End of Bloodwell loop scope for bwElement
 
         // Render Hazards
         gameState.board.hazards?.forEach((hazard) => {
-            const targetSquare = gameBoard.querySelector(
-                `[data-coord="${hazard.coord}"]`
-            );
+            const targetSquare = gameBoard.querySelector(`[data-coord="${hazard.coord}"]`);
             if (targetSquare) {
                 // CORRECT: Define and use hazardElement within this loop's scope
                 const hazardElement = document.createElement("div");
                 hazardElement.classList.add("piece", "hazard");
-                const typeClass = `hazard-${hazard.type
-                    .toLowerCase()
-                    .replace(" ", "-")}`;
+                const typeClass = `hazard-${hazard.type.toLowerCase().replace(" ", "-")}`;
                 hazardElement.classList.add(typeClass);
                 let icon = "?";
                 if (hazard.type === "Tombstone") icon = "🪦";
@@ -1179,158 +1087,158 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!player || !resources || !currentClassAbilitiesList || !infoSilverBullet || !statusBarPlayer || !statusBarAP) {
             console.error("Info Panel Error: One or more required elements not found or invalid data provided.");
             // Set error state... (Ensure all button refs below exist or add checks)
-            if(statusBarPlayer) statusBarPlayer.textContent = 'Error';
-            if(statusBarAP) statusBarAP.textContent = '??';
+            if (statusBarPlayer) statusBarPlayer.textContent = "Error";
+            if (statusBarAP) statusBarAP.textContent = "??";
             return;
         }
-    
+
         // --- Update Status Bar ---
         statusBarPlayer.textContent = player.name;
         statusBarAP.textContent = currentAP;
-    
+
         // --- Update Class Details Panel (Abilities, Silver Bullet Status) ---
         // (Keep your existing logic for populating this section)
         // ... abbreviated ...
         infoSilverBullet.textContent = resources.silverBullet > 0 ? `Available (${resources.silverBullet})` : "Used";
         // ... abbreviated ...
-    
+
         // ---== Update Action & Movement Button States ==---
         const selectedVamp = findVampireById(currentGameState.selectedVampireId);
         const isVampSelected = !!selectedVamp;
         const isCursed = selectedVamp?.cursed;
         const currentPlayerClass = player.class;
         const lockedVampId = currentGameState.lockedInVampireIdThisTurn;
-        const canControlSelected = (currentPlayerClass === 'Vigilante' || !lockedVampId || !isVampSelected || selectedVamp?.id === lockedVampId);
-    
+        const canControlSelected = currentPlayerClass === "Vigilante" || !lockedVampId || !isVampSelected || selectedVamp?.id === lockedVampId;
+
         let hazardOnVampSquare = null;
         if (selectedVamp) {
-            hazardOnVampSquare = currentGameState.board.hazards.find(h => h.coord === selectedVamp.coord);
+            hazardOnVampSquare = currentGameState.board.hazards.find((h) => h.coord === selectedVamp.coord);
         }
-    
+
         // --- Visibility and Disable Logic for Each Button ---
-    
+
         // Shoot Button (Always Visible)
         if (btnShoot) {
-            btnShoot.style.display = 'inline-block';
+            btnShoot.style.display = "inline-block";
             btnShoot.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.SHOOT || isCursed;
         }
-    
+
         // Throw Button (Always Visible)
         if (btnThrow) {
-            btnThrow.style.display = 'inline-block';
+            btnThrow.style.display = "inline-block";
             btnThrow.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.THROW_HAZARD || isCursed;
         }
-    
+
         // Silver Bullet Button (Always Visible)
         if (btnSilverBullet) {
-            btnSilverBullet.style.display = 'inline-block';
+            btnSilverBullet.style.display = "inline-block";
             btnSilverBullet.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.SILVER_BULLET || resources.silverBullet <= 0 || isCursed;
-            btnSilverBullet.title = `Silver Bullet Shot (${AP_COST.SILVER_BULLET} AP)${resources.silverBullet <=0 ? ' - USED' : ''}`;
+            btnSilverBullet.title = `Silver Bullet Shot (${AP_COST.SILVER_BULLET} AP)${resources.silverBullet <= 0 ? " - USED" : ""}`;
         }
-    
+
         // Dispel Button (Always Visible - Core Action)
         const canAffordDispel = currentAP >= AP_COST.DISPEL;
-        const canDispel = isVampSelected && hazardOnVampSquare?.type === 'Grave Dust' && canAffordDispel;
+        const canDispel = isVampSelected && hazardOnVampSquare?.type === "Grave Dust" && canAffordDispel;
         if (btnDispel) {
-            btnDispel.style.display = 'inline-block';
+            btnDispel.style.display = "inline-block";
             btnDispel.disabled = !canDispel || !canControlSelected; // Assuming cursed can Dispel
         }
-    
+
         // Bite Fuse Button (Always Visible - Core Action)
         const canAffordBite = currentAP >= AP_COST.BITE_FUSE;
-        const canBite = isVampSelected && hazardOnVampSquare?.type === 'Dynamite' && canAffordBite;
+        const canBite = isVampSelected && hazardOnVampSquare?.type === "Dynamite" && canAffordBite;
         if (btnBiteFuse) {
-            btnBiteFuse.style.display = 'inline-block';
+            btnBiteFuse.style.display = "inline-block";
             btnBiteFuse.disabled = !canBite || !canControlSelected; // Assuming cursed can Bite Fuse
         }
-    
+
         // Rampage Button (Outlaw Only)
         if (btnRampage) {
-            const isOutlaw = player.class === 'Outlaw';
-            const rampageUsed = resources.abilitiesUsed.includes('Rampage');
+            const isOutlaw = player.class === "Outlaw";
+            const rampageUsed = resources.abilitiesUsed.includes("Rampage");
             const canAffordRampage = currentAP >= AP_COST.RAMPAGE;
             const isVisible = isOutlaw; // Visible only if Outlaw
             const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordRampage && !rampageUsed && !isCursed;
-    
-            btnRampage.style.display = isVisible ? 'inline-block' : 'none';
-            if (isVisible) { // Only set disabled if visible
-                 btnRampage.disabled = !isAvailable;
-                 btnRampage.title = `Rampage (${AP_COST.RAMPAGE} AP, 1/game)${rampageUsed ? ' - USED' : ''}`;
+
+            btnRampage.style.display = isVisible ? "inline-block" : "none";
+            if (isVisible) {
+                // Only set disabled if visible
+                btnRampage.disabled = !isAvailable;
+                btnRampage.title = `Rampage (${AP_COST.RAMPAGE} AP, 1/game)${rampageUsed ? " - USED" : ""}`;
             }
         }
-    
+
         // Hand Cannon Button (Outlaw Only)
         if (btnHandCannon) {
-            const isOutlaw = player.class === 'Outlaw';
-            const handCannonUsed = resources.abilitiesUsed.includes('Hand Cannon'); // Assuming we track by name
+            const isOutlaw = player.class === "Outlaw";
+            const handCannonUsed = resources.abilitiesUsed.includes("Hand Cannon"); // Assuming we track by name
             const canAffordHandCannon = currentAP >= AP_COST.HAND_CANNON;
             const isVisible = isOutlaw;
             const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordHandCannon && !handCannonUsed && !isCursed;
-    
-            btnHandCannon.style.display = isVisible ? 'inline-block' : 'none';
+
+            btnHandCannon.style.display = isVisible ? "inline-block" : "none";
             if (isVisible) {
-                 btnHandCannon.disabled = !isAvailable;
-                 btnHandCannon.title = `Hand Cannon (${AP_COST.HAND_CANNON} AP, 1/game)${handCannonUsed ? ' - USED' : ''}`;
+                btnHandCannon.disabled = !isAvailable;
+                btnHandCannon.title = `Hand Cannon (${AP_COST.HAND_CANNON} AP, 1/game)${handCannonUsed ? " - USED" : ""}`;
             }
         }
-    
+
         // Contract Payoff Button (Bounty Hunter Only)
-         if (btnContractPayoff) {
-             const isBH = player.class === 'Bounty Hunter';
-             const contractUsed = resources.abilitiesUsed.includes('Contract Payoff');
-             const canAffordContract = currentAP >= AP_COST.CONTRACT_PAYOFF;
-             const isVisible = isBH;
-             // Condition: Need selected vamp, can control, enough AP, not used, not cursed.
-             // Trigger condition (destroying BW) is checked *after* activation in executeShoot.
-             const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordContract && !contractUsed && !isCursed;
-    
-             btnContractPayoff.style.display = isVisible ? 'inline-block' : 'none';
-             if (isVisible) {
-                  btnContractPayoff.disabled = !isAvailable;
-                  btnContractPayoff.title = `Contract Payoff (${AP_COST.CONTRACT_PAYOFF} AP, 1/game)${contractUsed ? ' - USED' : ''}`;
-             }
-         }
-    
-         // Order Restored Button (Sheriff Only)
-         if (btnOrderRestored) {
-              const isSheriff = player.class === 'Sheriff';
-              const orderUsed = resources.abilitiesUsed.includes('Order Restored');
-              const canAffordOrder = currentAP >= AP_COST.ORDER_RESTORED;
-              // Check if there's actually an eliminated Sheriff vamp TO revive
-              const playerIndex = currentGameState.currentPlayerIndex; // Get index for checking
-              const hasEliminatedAlly = currentGameState.eliminatedVampires.some(v => v.player === playerIndex && CLASS_DATA[v.class]?.color === 'color-sheriff'); // Check by player index and ensure it's a Sheriff type
-    
-              const isVisible = isSheriff;
-              // Condition: Sheriff, selected, can control, afford, not used, not cursed, *and* has an ally to revive
-              const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordOrder && !orderUsed && !isCursed && hasEliminatedAlly;
-               // TODO: Also needs validation for adjacent placement square, but that happens on execution
-    
-              btnOrderRestored.style.display = isVisible ? 'inline-block' : 'none';
-              if (isVisible) {
-                   btnOrderRestored.disabled = !isAvailable;
-                   btnOrderRestored.title = `Order Restored (${AP_COST.ORDER_RESTORED} AP, 1/game)${orderUsed ? ' - USED' : ''}${!hasEliminatedAlly ? ' (No Ally Down)' : ''}`;
-              }
-         }
-    
+        if (btnContractPayoff) {
+            const isBH = player.class === "Bounty Hunter";
+            const contractUsed = resources.abilitiesUsed.includes("Contract Payoff");
+            const canAffordContract = currentAP >= AP_COST.CONTRACT_PAYOFF;
+            const isVisible = isBH;
+            // Condition: Need selected vamp, can control, enough AP, not used, not cursed.
+            // Trigger condition (destroying BW) is checked *after* activation in executeShoot.
+            const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordContract && !contractUsed && !isCursed;
+
+            btnContractPayoff.style.display = isVisible ? "inline-block" : "none";
+            if (isVisible) {
+                btnContractPayoff.disabled = !isAvailable;
+                btnContractPayoff.title = `Contract Payoff (${AP_COST.CONTRACT_PAYOFF} AP, 1/game)${contractUsed ? " - USED" : ""}`;
+            }
+        }
+
+        // Order Restored Button (Sheriff Only)
+        if (btnOrderRestored) {
+            const isSheriff = player.class === "Sheriff";
+            const orderUsed = resources.abilitiesUsed.includes("Order Restored");
+            const canAffordOrder = currentAP >= AP_COST.ORDER_RESTORED;
+            // Check if there's actually an eliminated Sheriff vamp TO revive
+            const playerIndex = currentGameState.currentPlayerIndex; // Get index for checking
+            const hasEliminatedAlly = currentGameState.eliminatedVampires.some((v) => v.player === playerIndex && CLASS_DATA[v.class]?.color === "color-sheriff"); // Check by player index and ensure it's a Sheriff type
+
+            const isVisible = isSheriff;
+            // Condition: Sheriff, selected, can control, afford, not used, not cursed, *and* has an ally to revive
+            const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordOrder && !orderUsed && !isCursed && hasEliminatedAlly;
+            // TODO: Also needs validation for adjacent placement square, but that happens on execution
+
+            btnOrderRestored.style.display = isVisible ? "inline-block" : "none";
+            if (isVisible) {
+                btnOrderRestored.disabled = !isAvailable;
+                btnOrderRestored.title = `Order Restored (${AP_COST.ORDER_RESTORED} AP, 1/game)${orderUsed ? " - USED" : ""}${!hasEliminatedAlly ? " (No Ally Down)" : ""}`;
+            }
+        }
+
         // Vengeance is Mine Button (Vigilante Only)
-         if (btnVengeance) {
-              const isVigilante = player.class === 'Vigilante';
-              const vengeanceUsed = resources.abilitiesUsed.includes('Vengeance is Mine');
-              const canAffordVengeance = currentAP >= AP_COST.VENGEANCE_IS_MINE; // Always true (cost 0)
-              const wasShot = resources.wasShotSinceLastTurn; // Check the trigger flag
-    
-              const isVisible = isVigilante;
-              // Condition: Vigilante, selected, can control, afford (always), not used, not cursed, *and* was shot since last turn
-              const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordVengeance && !vengeanceUsed && !isCursed && wasShot;
-    
-              btnVengeance.style.display = isVisible ? 'inline-block' : 'none';
-              if (isVisible) {
-                   btnVengeance.disabled = !isAvailable;
-                   btnVengeance.title = `Vengeance is Mine (${AP_COST.VENGEANCE_IS_MINE} AP, 1/game)${vengeanceUsed ? ' - USED' : ''}${!wasShot ? ' (Not Shot)' : ''}`;
-              }
-         }
-    
-    
+        if (btnVengeance) {
+            const isVigilante = player.class === "Vigilante";
+            const vengeanceUsed = resources.abilitiesUsed.includes("Vengeance is Mine");
+            const canAffordVengeance = currentAP >= AP_COST.VENGEANCE_IS_MINE; // Always true (cost 0)
+            const wasShot = resources.wasShotSinceLastTurn; // Check the trigger flag
+
+            const isVisible = isVigilante;
+            // Condition: Vigilante, selected, can control, afford (always), not used, not cursed, *and* was shot since last turn
+            const isAvailable = isVisible && isVampSelected && canControlSelected && canAffordVengeance && !vengeanceUsed && !isCursed && wasShot;
+
+            btnVengeance.style.display = isVisible ? "inline-block" : "none";
+            if (isVisible) {
+                btnVengeance.disabled = !isAvailable;
+                btnVengeance.title = `Vengeance is Mine (${AP_COST.VENGEANCE_IS_MINE} AP, 1/game)${vengeanceUsed ? " - USED" : ""}${!wasShot ? " (Not Shot)" : ""}`;
+            }
+        }
+
         // --- Movement Buttons ---
         // (Keep Swift Justice check and normal logic from previous step here)
         if (isSwiftJusticeMovePending) {
@@ -1340,84 +1248,126 @@ document.addEventListener("DOMContentLoaded", () => {
             if (btnMoveE) btnMoveE.disabled = false;
             if (btnMoveS) btnMoveS.disabled = false;
             if (btnMoveW) btnMoveW.disabled = false;
-            if (movementBar && movementBar.classList.contains('hidden')) {
-                 movementBar.classList.remove('hidden');
+            if (movementBar && movementBar.classList.contains("hidden")) {
+                movementBar.classList.remove("hidden");
             }
         } else {
             // Normal logic...
             const canAffordMoveOrPivot = currentAP >= AP_COST.MOVE;
             const movesTakenThisTurn = selectedVamp?.movesThisTurn || 0;
             const canMoveForward = !isCursed || movesTakenThisTurn < 1;
-            if (btnMoveN) btnMoveN.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'N' && !canMoveForward);
+            if (btnMoveN) btnMoveN.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === "N" && !canMoveForward);
             // etc. for E, S, W...
-            if (btnMoveE) btnMoveE.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'E' && !canMoveForward);
-            if (btnMoveS) btnMoveS.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'S' && !canMoveForward);
-            if (btnMoveW) btnMoveW.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'W' && !canMoveForward);
-    
-            if (!isVampSelected && movementBar && !movementBar.classList.contains('hidden')) {
-                movementBar.classList.add('hidden');
+            if (btnMoveE) btnMoveE.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === "E" && !canMoveForward);
+            if (btnMoveS) btnMoveS.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === "S" && !canMoveForward);
+            if (btnMoveW) btnMoveW.disabled = !isVampSelected || !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === "W" && !canMoveForward);
+
+            if (!isVampSelected && movementBar && !movementBar.classList.contains("hidden")) {
+                movementBar.classList.add("hidden");
             }
         }
         // --- End Movement Button Logic ---
-    
     } // End of updatePlayerInfoPanel
-
 
     /**
      * Main UI update function, called after actions or turn changes.
      * Fetches current player data and calls the panel update function.
      */
     function updateUI() {
-        // Basic check for essential game state components
+        // Basic check for essential game state components (Keep this)
         if (
             !currentGameState?.players?.length ||
-            !currentGameState.playerResources?.length
+            !currentGameState.playerResources?.length ||
+            currentGameState.currentPlayerIndex === null || // Added null check for index
+            typeof currentGameState.currentPlayerIndex === "undefined"
         ) {
-            console.warn(
-                "updateUI called with invalid game state (players or resources missing)."
-            );
-            return; // Don't proceed if state is fundamentally broken
+            console.warn("updateUI called with invalid game state (players, resources, or index missing).");
+            // Optionally clear/reset UI elements to a default state here
+            const statusBarElement = document.getElementById("status-bar");
+            if (statusBarElement) {
+                statusBarElement.textContent = "Waiting for game...";
+                statusBarElement.className = "status-bar"; // Reset classes
+                statusBarElement.style.backgroundColor = "#eee"; // Reset style
+                statusBarElement.style.color = "#333";
+            }
+            // Clear other relevant UI elements too
+            return;
         }
 
         const idx = currentGameState.currentPlayerIndex; // Get current player index
 
-        // Validate the index
-        if (
-            idx < 0 ||
-            idx >= currentGameState.players.length ||
-            idx >= currentGameState.playerResources.length
-        ) {
-            console.error(
-                "updateUI Error: Invalid currentPlayerIndex:",
-                idx,
-                "State:",
-                currentGameState
-            );
-            // Optionally update UI to show an error state here
+        // Validate the index (Keep this)
+        if (idx < 0 || idx >= currentGameState.players.length) {
+            console.error("updateUI Error: Invalid currentPlayerIndex:", idx);
             return;
         }
 
-        // Get the data for the current player
+        // Get the data for the current player (Keep this)
         const player = currentGameState.players[idx];
-        const resources = currentGameState.playerResources[idx];
 
-        // Check if player/resource data was actually retrieved
-        if (player && resources) {
-            // Call the function that actually updates the panel content and button states
-            updatePlayerInfoPanel(
-                player,
-                currentGameState.turn,
-                currentGameState.currentAP,
-                resources
-            );
-        } else {
-            console.error(
-                "updateUI Error: Could not fetch player or resources for index",
-                idx
-            );
-            // Optionally update UI to show an error state here
+        // Check if player data was actually retrieved (Keep this)
+        if (!player) {
+            console.error("updateUI Error: Could not fetch player for index", idx);
+            return;
         }
-    }
+
+        // --- Find Status Bar Element ---
+        const statusBarElement = document.getElementById("status-bar"); // Moved reference inside for safety
+
+        // --- Update Status Bar Color and Text ---
+        if (statusBarElement) {
+            const playerClass = player.class; // e.g., "Sheriff"
+            const classLower = playerClass?.toLowerCase(); // e.g., "sheriff", handle potential undefined
+
+            // Remove existing color classes first
+            statusBarElement.classList.remove("color-sheriff", "color-vigilante", "color-outlaw", "color-bounty-hunter");
+
+            // Add the new class if playerClass exists
+            if (classLower) {
+                statusBarElement.classList.add(`color-${classLower}`);
+            } else {
+                // Fallback if class is missing - apply default styles directly
+                statusBarElement.style.backgroundColor = "#eee";
+                statusBarElement.style.color = "#333";
+            }
+
+            // Set the main text content, replacing previous content
+            statusBarElement.textContent = playerClass ? `${playerClass}'s Turn` : "Unknown Player's Turn";
+        } else {
+            console.warn("Status bar element (#status-bar) not found.");
+        }
+        // --- End Status Bar Update ---
+
+        // --- Call updatePlayerInfoPanel (which handles abilities, AP display, button states) ---
+        // This function now focuses on the detailed panel and action buttons
+        // We retrieve resources inside updateUI now to pass them along.
+        const resources = currentGameState.playerResources[idx];
+        if (player && resources) {
+            updatePlayerInfoPanel(player, currentGameState.turn, currentGameState.currentAP, resources);
+        } else {
+            console.error("updateUI Error: Could not fetch player or resources for index", idx);
+            // Handle UI error state if necessary
+        }
+
+        // --- Other UI Updates ---
+        renderBoard(currentGameState); // Ensure board is up-to-date
+
+        // Update Undo Button State (Keep this or similar logic)
+        const btnUndo = document.getElementById("btn-undo");
+        if (btnUndo) btnUndo.disabled = gameHistory.length === 0;
+
+        // Update selected vampire visuals (Keep this or similar logic)
+        // (This might be better handled within renderBoard itself)
+        document.querySelectorAll(".grid-square .vampire.selected").forEach((el) => el.classList.remove("selected"));
+        if (currentGameState.selectedVampireId) {
+            const selectedElement = document.querySelector(`.vampire[data-id="${currentGameState.selectedVampireId}"]`);
+            if (selectedElement) {
+                selectedElement.classList.add("selected");
+            }
+        }
+
+        // Ensure movement bar visibility is correct (based on selection, handled in updatePlayerInfoPanel)
+    } // End of updateUI
 
     // --- Game State & Undo Logic ---
     function saveStateToHistory() {
@@ -1456,17 +1406,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     function findPieceAtCoord(coord) {
         if (!currentGameState?.board) return null;
-        const vamp = currentGameState.board.vampires?.find(
-            (v) => v.coord === coord
-        );
+        const vamp = currentGameState.board.vampires?.find((v) => v.coord === coord);
         if (vamp) return { type: "vampire", piece: vamp };
-        const bw = currentGameState.board.bloodwells?.find(
-            (b) => b.coord === coord
-        );
+        const bw = currentGameState.board.bloodwells?.find((b) => b.coord === coord);
         if (bw) return { type: "bloodwell", piece: bw };
-        const hazard = currentGameState.board.hazards?.find(
-            (h) => h.coord === coord
-        );
+        const hazard = currentGameState.board.hazards?.find((h) => h.coord === coord);
         if (hazard) return { type: "hazard", piece: hazard };
         return null;
     }
@@ -1480,16 +1424,10 @@ document.addEventListener("DOMContentLoaded", () => {
             return false;
         }
         // --- Add Lock-in Check Block Here ---
-        const currentPlayerClass =
-            currentGameState.players[currentGameState.currentPlayerIndex].class;
-        if (
-            currentPlayerClass !== "Vigilante" &&
-            !currentGameState.lockedInVampireIdThisTurn
-        ) {
+        const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
+        if (currentPlayerClass !== "Vigilante" && !currentGameState.lockedInVampireIdThisTurn) {
             currentGameState.lockedInVampireIdThisTurn = vampire.id;
-            addToLog(
-                `Locked into controlling ${vampire.id} for the rest of the turn.`
-            );
+            addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
             console.log(`Non-Vigilante Lock-in: Set to ${vampire.id}`);
         }
         currentGameState.lastActionVampId = vampire.id; // Track last action vamp
@@ -1504,15 +1442,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return false;
         }
         const pieceAtTarget = findPieceAtCoord(targetCoord);
-        if (
-            pieceAtTarget &&
-            (pieceAtTarget.type === "vampire" ||
-                pieceAtTarget.type === "bloodwell" ||
-                pieceAtTarget.piece.type === "Black Widow")
-        ) {
-            addToLog(
-                `Blocked by ${pieceAtTarget.piece?.type || pieceAtTarget.type}.`
-            );
+        if (pieceAtTarget && (pieceAtTarget.type === "vampire" || pieceAtTarget.type === "bloodwell" || pieceAtTarget.piece.type === "Black Widow")) {
+            addToLog(`Blocked by ${pieceAtTarget.piece?.type || pieceAtTarget.type}.`);
             return false;
         }
         saveStateToHistory();
@@ -1520,14 +1451,10 @@ document.addEventListener("DOMContentLoaded", () => {
         vampire.coord = targetCoord;
         currentGameState.currentAP -= cost;
         vampire.movesThisTurn = (vampire.movesThisTurn || 0) + 1;
-        addToLog(
-            `${vampire.id} moved ${oldCoord} -> ${targetCoord}. (${currentGameState.currentAP} AP)`
-        );
+        addToLog(`${vampire.id} moved ${oldCoord} -> ${targetCoord}. (${currentGameState.currentAP} AP)`);
         // Inside executeMove function...
         // ... (code to check movement validity, save state, move vampire, deduct AP) ...
-        const hazardLandedOn = currentGameState.board.hazards.find(
-            (h) => h.coord === targetCoord
-        );
+        const hazardLandedOn = currentGameState.board.hazards.find((h) => h.coord === targetCoord);
         if (hazardLandedOn?.type === "Grave Dust" && !vampire.cursed) {
             console.log("Curse by GD land.");
             const vampInState = findVampireById(vampire.id); // Get reference from state
@@ -1538,12 +1465,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 // --- END ADD ---
                 addToLog(`${vampInState.id} CURSED by Grave Dust!`);
             } else {
-                console.error(
-                    "executeMove: Could not find vampire in state to apply curse!"
-                );
-                addToLog(
-                    `ERROR: Failed to apply Curse from Grave Dust to ${vampire.id}`
-                );
+                console.error("executeMove: Could not find vampire in state to apply curse!");
+                addToLog(`ERROR: Failed to apply Curse from Grave Dust to ${vampire.id}`);
             }
         }
         // ... (Bloodbath cure check logic remains the same) ...
@@ -1555,10 +1478,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 let adjacentBWCoord = null;
                 for (const adjCoord of adjacentCoords) {
                     const pieceAtAdj = findPieceAtCoord(adjCoord);
-                    if (
-                        pieceAtAdj?.type === "bloodwell" &&
-                        pieceAtAdj.piece.player === vampire.player
-                    ) {
+                    if (pieceAtAdj?.type === "bloodwell" && pieceAtAdj.piece.player === vampire.player) {
                         foundAdjacentBW = true;
                         adjacentBWCoord = adjCoord;
                         break;
@@ -1568,15 +1488,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     console.log("Bloodbath cure!");
                     vampire.cursed = false;
                     vampire.movesThisTurn = 0;
-                    addToLog(
-                        `${vampire.id} CURED by Bloodbath near ${adjacentBWCoord}!`
-                    );
+                    addToLog(`${vampire.id} CURED by Bloodbath near ${adjacentBWCoord}!`);
                 }
             }
         }
-        console.log(
-            `Move End: ${vampire.id}, Cursed: ${vampire.cursed}, Moves: ${vampire.movesThisTurn}`
-        );
+        console.log(`Move End: ${vampire.id}, Cursed: ${vampire.cursed}, Moves: ${vampire.movesThisTurn}`);
         renderBoard(currentGameState);
         updateUI();
         return true;
@@ -1588,16 +1504,10 @@ document.addEventListener("DOMContentLoaded", () => {
             return false;
         }
         // --- Add Lock-in Check Block Here ---
-        const currentPlayerClass =
-            currentGameState.players[currentGameState.currentPlayerIndex].class;
-        if (
-            currentPlayerClass !== "Vigilante" &&
-            !currentGameState.lockedInVampireIdThisTurn
-        ) {
+        const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
+        if (currentPlayerClass !== "Vigilante" && !currentGameState.lockedInVampireIdThisTurn) {
             currentGameState.lockedInVampireIdThisTurn = vampire.id;
-            addToLog(
-                `Locked into controlling ${vampire.id} for the rest of the turn.`
-            );
+            addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
             console.log(`Non-Vigilante Lock-in: Set to ${vampire.id}`);
         }
         currentGameState.lastActionVampId = vampire.id; // Track last action vamp
@@ -1606,9 +1516,7 @@ document.addEventListener("DOMContentLoaded", () => {
         saveStateToHistory();
         vampire.facing = newFacing;
         currentGameState.currentAP -= AP_COST.PIVOT;
-        addToLog(
-            `${vampire.id} pivoted ${newFacing}. (${currentGameState.currentAP} AP)`
-        );
+        addToLog(`${vampire.id} pivoted ${newFacing}. (${currentGameState.currentAP} AP)`);
         renderBoard(currentGameState);
         updateUI();
         return true;
@@ -1653,7 +1561,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return false;
         }
         const playerResources = currentGameState.playerResources[vampire.player];
-        if (isSilverBullet && (playerResources.silverBullet <= 0)) { // Check includes null/undefined check implicitly
+        if (isSilverBullet && playerResources.silverBullet <= 0) {
+            // Check includes null/undefined check implicitly
             addToLog("No Silver Bullet left.");
             return false;
         }
@@ -1661,7 +1570,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // --- Lock-in & Last Action Tracking ---
         const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
         // Set lock-in only if it's a standard player action (not an override like Rampage)
-        if (apCostOverride === null && currentPlayerClass !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
+        if (apCostOverride === null && currentPlayerClass !== "Vigilante" && !currentGameState.lockedInVampireIdThisTurn) {
             currentGameState.lockedInVampireIdThisTurn = vampire.id;
             addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
             console.log(`Non-Vigilante Lock-in: Set to ${vampire.id} by Shoot`);
@@ -1694,7 +1603,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let hitMessage = `Shot from ${vampire.coord} facing ${facingToUse} travelled off board.`;
         let shotResolved = false;
 
-        addToLog(`${vampire.id} shoots facing ${facingToUse}... ${isSilverBullet ? '(Silver Bullet)' : ''} ${apCostOverride !== null ? '(Part of Ability)' : ''}`);
+        addToLog(`${vampire.id} shoots facing ${facingToUse}... ${isSilverBullet ? "(Silver Bullet)" : ""} ${apCostOverride !== null ? "(Part of Ability)" : ""}`);
 
         // --- Trace Path ---
         for (let i = 0; i < 9 && !shotResolved; i++) {
@@ -1718,15 +1627,17 @@ document.addEventListener("DOMContentLoaded", () => {
                             addToLog(`Shot passes through Tombstone at ${currentCoord} (Sharpshooter).`);
                             console.log(`BH Sharpshooter ignores Tombstone at ${currentCoord}. Shot continues.`);
                             continue; // Skip rest of loop iteration, shot continues
-                        } else { // Non-BH hits Tombstone
+                        } else {
+                            // Non-BH hits Tombstone
                             const vampBehind = findVampireById(targetPiece.coord) && targetPiece.player !== shooterPlayerIndex; // Simpler check
-                            if (isSilverBullet && vampBehind) { // Check vampBehind FIRST
-                                hitMessage = `Silver Bullet shattered Tombstone at ${currentCoord}, but ${findVampireById(targetPiece.coord)?.id || 'vampire'} was protected! (SB Wasted)`;
+                            if (isSilverBullet && vampBehind) {
+                                // Check vampBehind FIRST
+                                hitMessage = `Silver Bullet shattered Tombstone at ${currentCoord}, but ${findVampireById(targetPiece.coord)?.id || "vampire"} was protected! (SB Wasted)`;
                                 addToLog("Tombstone destroyed by blocked Silver Bullet.");
                             } else {
                                 hitMessage = `Shot DESTROYED Tombstone at ${currentCoord}!`;
                             }
-                            currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
+                            currentGameState.board.hazards = currentGameState.board.hazards.filter((h) => h.coord !== currentCoord);
                             shotResolved = true;
                             break; // Shot stops
                         }
@@ -1742,7 +1653,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         break; // Shot stops
                     } else if (targetPiece.type === "Black Widow") {
                         hitMessage = `Shot destroyed Black Widow at ${currentCoord}!`;
-                        currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
+                        currentGameState.board.hazards = currentGameState.board.hazards.filter((h) => h.coord !== currentCoord);
                         shotResolved = true;
                         break; // Stop shot path
                     } else if (targetPiece.type === "Grave Dust") {
@@ -1751,7 +1662,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
                 // --- Piece Interactions ---
-                else if (targetType === 'vampire') {
+                else if (targetType === "vampire") {
                     // Case 1: Silver Bullet Hit Enemy
                     if (isSilverBullet && targetPiece.player !== shooterPlayerIndex) {
                         const eliminatedVampId = targetPiece.id;
@@ -1760,19 +1671,23 @@ document.addEventListener("DOMContentLoaded", () => {
                         addToLog(hitMessage);
                         const eliminatedVampData = findVampireById(eliminatedVampId);
                         if (eliminatedVampData) currentGameState.eliminatedVampires.push(JSON.parse(JSON.stringify(eliminatedVampData)));
-                        currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.id !== eliminatedVampId);
+                        currentGameState.board.vampires = currentGameState.board.vampires.filter((v) => v.id !== eliminatedVampId);
                         // Defer render/UI until after loop break if part of Rampage? No, elimination needs immediate render.
                         renderBoard(currentGameState); // Render needed immediately for elimination visual
-                        updateUI();                 // Update UI needed immediately
+                        updateUI(); // Update UI needed immediately
                         let wasEliminated = false;
                         if (checkPlayerElimination(eliminatedVampPlayerIndex)) {
-                            if(updateEliminationState(eliminatedVampPlayerIndex)) { wasEliminated = true; }
+                            if (updateEliminationState(eliminatedVampPlayerIndex)) {
+                                wasEliminated = true;
+                            }
                         }
                         const gameEnded = checkGameEnd();
-                        if (!gameEnded && wasEliminated) { showEliminationPopup(eliminatedVampPlayerIndex); }
+                        if (!gameEnded && wasEliminated) {
+                            showEliminationPopup(eliminatedVampPlayerIndex);
+                        }
                     }
                     // Case 2: Bounty Hunter Marked Man (Standard shot hitting Enemy)
-                    else if (!isSilverBullet && shooterClass === 'Bounty Hunter' && targetPiece.player !== shooterPlayerIndex) {
+                    else if (!isSilverBullet && shooterClass === "Bounty Hunter" && targetPiece.player !== shooterPlayerIndex) {
                         const targetVampInState = findVampireById(targetPiece.id);
                         if (targetVampInState && !targetVampInState.cursed) {
                             targetVampInState.cursed = true;
@@ -1780,11 +1695,13 @@ document.addEventListener("DOMContentLoaded", () => {
                             hitMessage = `Shot HIT enemy ${targetPiece.id} at ${currentCoord}. Target is CURSED (Marked Man)!`;
                             addToLog(`Marked Man: ${targetPiece.id} is now CURSED!`);
                             renderBoard(currentGameState); // Render needed for curse visual
-                            updateUI();                 // Update UI needed
+                            updateUI(); // Update UI needed
                         } else if (targetVampInState && targetVampInState.cursed) {
                             hitMessage = `Shot hit already cursed enemy ${targetPiece.id} at ${currentCoord}.`;
                             addToLog(hitMessage);
-                        } else { /* Error handling */ }
+                        } else {
+                            /* Error handling */
+                        }
                     }
                     // Case 3: Any Other Vampire Hit
                     else {
@@ -1795,16 +1712,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     break;
                 }
                 // Case: Hit Bloodwell
-                else if (targetType === 'bloodwell') {
+                else if (targetType === "bloodwell") {
                     const targetBW = targetPiece;
                     const targetBWCoord = targetBW.coord;
                     const targetBWPlayerIndex = targetBW.player;
                     const targetBWId = targetBW.id;
                     let isProtectedBySheriff = false;
-                    if (!isSilverBullet) { // Check protection only for standard shots
-                        const sheriffPlayerIndex = currentGameState.players.findIndex(p => p.class === 'Sheriff' && !p.eliminated);
+                    if (!isSilverBullet) {
+                        // Check protection only for standard shots
+                        const sheriffPlayerIndex = currentGameState.players.findIndex((p) => p.class === "Sheriff" && !p.eliminated);
                         if (sheriffPlayerIndex !== -1 && targetBWPlayerIndex === sheriffPlayerIndex) {
-                            const activeSheriffVamps = currentGameState.board.vampires.filter(v => v.player === sheriffPlayerIndex);
+                            const activeSheriffVamps = currentGameState.board.vampires.filter((v) => v.player === sheriffPlayerIndex);
                             for (const sheriffVamp of activeSheriffVamps) {
                                 const protectionZone = getCoordsInArea(sheriffVamp.coord, 1);
                                 if (protectionZone.includes(targetBWCoord)) {
@@ -1820,35 +1738,43 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (isProtectedBySheriff) {
                         shotResolved = true; // Stop shot
                         break;
-                    } else { // Not protected -> Destroy
+                    } else {
+                        // Not protected -> Destroy
                         hitMessage = `Shot DESTROYED Bloodwell ${targetBWId} at ${targetBWCoord}!`;
                         addToLog(hitMessage);
-                        currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== targetBWId);
+                        currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter((bw) => bw.id !== targetBWId);
                         // Defer render/UI if part of Rampage? No, BW destruction needs immediate render/checks
                         renderBoard(currentGameState);
                         updateUI();
                         let wasEliminated = false;
                         if (checkPlayerElimination(targetBWPlayerIndex)) {
-                            if(updateEliminationState(targetBWPlayerIndex)) { wasEliminated = true; }
+                            if (updateEliminationState(targetBWPlayerIndex)) {
+                                wasEliminated = true;
+                            }
                         }
                         const gameEnded = checkGameEnd();
-                        if (!gameEnded && wasEliminated) { showEliminationPopup(targetBWPlayerIndex); }
+                        if (!gameEnded && wasEliminated) {
+                            showEliminationPopup(targetBWPlayerIndex);
+                        }
 
                         // *** Add Contract Payoff Trigger Check ***
-                        if(shooterClass === 'Bounty Hunter' && apCostOverride === null) { // Check if BH made the shot via normal action
-                                const bhResources = currentGameState.playerResources[shooterPlayerIndex];
-                                if(bhResources.abilitiesUsed.includes('Contract Payoff Triggered')) { // Check if ability active
-                                    let bonus = (numberOfPlayers === 2) ? 3 : 5;
-                                    bhResources.contractPayoffNextTurnBonus = bonus; // Set bonus for next turn
-                                    addToLog(`Contract Payoff: Gaining +${bonus} AP next turn!`);
-                                    // Remove trigger? Or is the ability itself marked used? Assume mark used in execute func
-                                    // bhResources.abilitiesUsed = bhResources.abilitiesUsed.filter(a => a !== 'Contract Payoff Triggered');
-                                }
+                        if (shooterClass === "Bounty Hunter" && apCostOverride === null) {
+                            // Check if BH made the shot via normal action
+                            const bhResources = currentGameState.playerResources[shooterPlayerIndex];
+                            if (bhResources.abilitiesUsed.includes("Contract Payoff Triggered")) {
+                                // Check if ability active
+                                let bonus = numberOfPlayers === 2 ? 3 : 5;
+                                bhResources.contractPayoffNextTurnBonus = bonus; // Set bonus for next turn
+                                addToLog(`Contract Payoff: Gaining +${bonus} AP next turn!`);
+                                // Remove trigger? Or is the ability itself marked used? Assume mark used in execute func
+                                // bhResources.abilitiesUsed = bhResources.abilitiesUsed.filter(a => a !== 'Contract Payoff Triggered');
+                            }
                         }
                         // *** End Contract Payoff Check ***
 
                         // *** Add Outlaw Daring Escape Trigger Check ***
-                        if(shooterClass === 'Outlaw' && apCostOverride === null){ // Check if Outlaw made shot via normal action
+                        if (shooterClass === "Outlaw" && apCostOverride === null) {
+                            // Check if Outlaw made shot via normal action
                             // TODO: Implement Daring Escape logic - needs state tracking (1/turn) and UI prompt/action later
                             addToLog("Outlaw Daring Escape may trigger (TBD).");
                         }
@@ -1863,9 +1789,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // --- Final Logging & UI Update ---
         // Final log message built from hitMessage within the loop
-        const finalLogAPMsg = (apCostOverride === null) ? ` (${currentGameState.currentAP} AP left)` : ' (Rampage Shot)';
+        const finalLogAPMsg = apCostOverride === null ? ` (${currentGameState.currentAP} AP left)` : " (Rampage Shot)";
         // Avoid double logging hit message if already logged (e.g. for protection)
-        if (!hitMessage.startsWith('Shot blocked!')) {
+        if (!hitMessage.startsWith("Shot blocked!")) {
             addToLog(hitMessage + finalLogAPMsg);
         }
         if (isSilverBullet && !shotResolved && hitMessage.includes("off board")) {
@@ -1883,25 +1809,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function executeThrow(vampire, hazardType, targetCoord) {
         if (!vampire) return false;
-        const cost =
-            hazardType === "Dynamite"
-                ? AP_COST.THROW_DYNAMITE
-                : AP_COST.THROW_HAZARD;
+        const cost = hazardType === "Dynamite" ? AP_COST.THROW_DYNAMITE : AP_COST.THROW_HAZARD;
         if (currentGameState.currentAP < cost) {
             addToLog(`No AP.`);
             return false;
         }
         // --- Add Lock-in Check Block Here ---
-        const currentPlayerClass =
-            currentGameState.players[currentGameState.currentPlayerIndex].class;
-        if (
-            currentPlayerClass !== "Vigilante" &&
-            !currentGameState.lockedInVampireIdThisTurn
-        ) {
+        const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
+        if (currentPlayerClass !== "Vigilante" && !currentGameState.lockedInVampireIdThisTurn) {
             currentGameState.lockedInVampireIdThisTurn = vampire.id;
-            addToLog(
-                `Locked into controlling ${vampire.id} for the rest of the turn.`
-            );
+            addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
             console.log(`Non-Vigilante Lock-in: Set to ${vampire.id}`);
         }
         currentGameState.lastActionVampId = vampire.id; // Track last action vamp
@@ -1911,10 +1828,7 @@ document.addEventListener("DOMContentLoaded", () => {
             addToLog("Cursed cannot throw.");
             return false;
         }
-        if (
-            !currentGameState.hazardPool ||
-            (currentGameState.hazardPool[hazardType] || 0) <= 0
-        ) {
+        if (!currentGameState.hazardPool || (currentGameState.hazardPool[hazardType] || 0) <= 0) {
             addToLog(`No ${hazardType}.`);
             return false;
         }
@@ -1924,10 +1838,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return false;
         }
         const targetPiece = findPieceAtCoord(targetCoord);
-        if (
-            targetPiece &&
-            !(hazardType === "Grave Dust" && targetPiece.type === "vampire")
-        ) {
+        if (targetPiece && !(hazardType === "Grave Dust" && targetPiece.type === "vampire")) {
             addToLog(`Target blocked.`);
             return false;
         }
@@ -1938,9 +1849,7 @@ document.addEventListener("DOMContentLoaded", () => {
             coord: targetCoord,
         });
         currentGameState.currentAP -= cost;
-        addToLog(
-            `${vampire.id} threw ${hazardType} to ${targetCoord}. (${currentGameState.currentAP} AP)`
-        );
+        addToLog(`${vampire.id} threw ${hazardType} to ${targetCoord}. (${currentGameState.currentAP} AP)`);
         if (hazardType === "Grave Dust" && targetPiece?.type === "vampire") {
             const targetV = findVampireById(targetPiece.piece.id);
             if (targetV && !targetV.cursed) {
@@ -1966,16 +1875,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const cost = AP_COST.DISPEL;
 
         // --- Add Lock-in Check Block Here ---
-        const currentPlayerClass =
-            currentGameState.players[currentGameState.currentPlayerIndex].class;
-        if (
-            currentPlayerClass !== "Vigilante" &&
-            !currentGameState.lockedInVampireIdThisTurn
-        ) {
+        const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
+        if (currentPlayerClass !== "Vigilante" && !currentGameState.lockedInVampireIdThisTurn) {
             currentGameState.lockedInVampireIdThisTurn = vampire.id;
-            addToLog(
-                `Locked into controlling ${vampire.id} for the rest of the turn.`
-            );
+            addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
             console.log(`Non-Vigilante Lock-in: Set to ${vampire.id}`);
         }
         currentGameState.lastActionVampId = vampire.id; // Track last action vamp
@@ -1988,9 +1891,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // 2. Find Grave Dust hazard specifically on the vampire's current square
-        const hazardIndex = currentGameState.board.hazards.findIndex(
-            (h) => h.coord === vampire.coord && h.type === "Grave Dust"
-        );
+        const hazardIndex = currentGameState.board.hazards.findIndex((h) => h.coord === vampire.coord && h.type === "Grave Dust");
 
         // 3. Check if Grave Dust was actually found
         if (hazardIndex === -1) {
@@ -2003,10 +1904,7 @@ document.addEventListener("DOMContentLoaded", () => {
         saveStateToHistory(); // Save state before modifying
 
         // 4. Remove the Grave Dust from the board state hazards array
-        const removedHazard = currentGameState.board.hazards.splice(
-            hazardIndex,
-            1
-        )[0];
+        const removedHazard = currentGameState.board.hazards.splice(hazardIndex, 1)[0];
         console.log("Dispelled hazard:", removedHazard);
 
         // 5. Deduct AP cost
@@ -2033,16 +1931,10 @@ document.addEventListener("DOMContentLoaded", () => {
             return false;
         }
         // --- Add Lock-in Check Block Here ---
-        const currentPlayerClass =
-            currentGameState.players[currentGameState.currentPlayerIndex].class;
-        if (
-            currentPlayerClass !== "Vigilante" &&
-            !currentGameState.lockedInVampireIdThisTurn
-        ) {
+        const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
+        if (currentPlayerClass !== "Vigilante" && !currentGameState.lockedInVampireIdThisTurn) {
             currentGameState.lockedInVampireIdThisTurn = vampire.id;
-            addToLog(
-                `Locked into controlling ${vampire.id} for the rest of the turn.`
-            );
+            addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
             console.log(`Non-Vigilante Lock-in: Set to ${vampire.id}`);
         }
         currentGameState.lastActionVampId = vampire.id; // Track last action vamp
@@ -2059,29 +1951,20 @@ document.addEventListener("DOMContentLoaded", () => {
         // (Assuming cursed players *can* Bite Fuse based on previous analysis)
 
         // 2. Find Dynamite hazard specifically on the vampire's current square
-        const hazardIndex = currentGameState.board.hazards.findIndex(
-            (h) => h.coord === vampire.coord && h.type === "Dynamite"
-        );
+        const hazardIndex = currentGameState.board.hazards.findIndex((h) => h.coord === vampire.coord && h.type === "Dynamite");
 
         // 3. Check if Dynamite was actually found
         if (hazardIndex === -1) {
-            addToLog(
-                `Cannot Bite the Fuse: No Dynamite found at ${vampire.coord}.`
-            );
+            addToLog(`Cannot Bite the Fuse: No Dynamite found at ${vampire.coord}.`);
             return false; // Action fails, no AP cost
         }
 
         // --- Action is Valid: Proceed ---
-        console.log(
-            `Executing Bite Fuse for ${vampire.id} at ${vampire.coord}`
-        );
+        console.log(`Executing Bite Fuse for ${vampire.id} at ${vampire.coord}`);
         saveStateToHistory(); // Save state before modifying
 
         // 4. Remove the Dynamite from the board state hazards array
-        const removedHazard = currentGameState.board.hazards.splice(
-            hazardIndex,
-            1
-        )[0];
+        const removedHazard = currentGameState.board.hazards.splice(hazardIndex, 1)[0];
         console.log("Removed hazard by biting fuse:", removedHazard);
 
         // 5. Deduct AP cost
@@ -2096,12 +1979,8 @@ document.addEventListener("DOMContentLoaded", () => {
             // --- END ADD ---
             addToLog(`${vampInState.id} Bit the Fuse at <span class="math-inline">\{vampInState\.coord\}, removing Dynamite and becoming CURSED\! \(</span>{currentGameState.currentAP} AP left)`);
         } else {
-            console.error(
-                "executeBiteFuse Error: Could not find vampire in state array to apply curse!"
-            );
-            addToLog(
-                `ERROR: Failed to apply Curse effect after Bite Fuse by ${vampire.id}`
-            );
+            console.error("executeBiteFuse Error: Could not find vampire in state array to apply curse!");
+            addToLog(`ERROR: Failed to apply Curse effect after Bite Fuse by ${vampire.id}`);
         }
 
         // 7. Update the display
@@ -2136,32 +2015,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 3. Check if Swift Justice *can* be triggered
         // Conditions: Player is Sheriff, not eliminated, took an action with one of their vamps, that vamp isn't cursed.
-        if (
-            endingPlayer?.class === "Sheriff" &&
-            !endingPlayer.eliminated &&
-            potentialSwiftJusticeVampId
-        ) {
+        if (endingPlayer?.class === "Sheriff" && !endingPlayer.eliminated && potentialSwiftJusticeVampId) {
             const lastVamp = findVampireById(potentialSwiftJusticeVampId);
             // Ensure the last acted vampire exists, belongs to the Sheriff, and is not cursed
-            if (
-                lastVamp &&
-                lastVamp.player === endingPlayerIndex &&
-                !lastVamp.cursed
-            ) {
+            if (lastVamp && lastVamp.player === endingPlayerIndex && !lastVamp.cursed) {
                 // 4. Prompt the player
-                if (
-                    confirm(
-                        `Execute Swift Justice for ${lastVamp.id}? (Move 1 square free)`
-                    )
-                ) {
+                if (confirm(`Execute Swift Justice for ${lastVamp.id}? (Move 1 square free)`)) {
                     // --- Player chose YES ---
                     isSwiftJusticeMovePending = true; // Set the global flag
                     swiftJusticePlayerIndex = endingPlayerIndex; // Store who is doing it
                     swiftJusticeVampId = potentialSwiftJusticeVampId; // Store which vamp is doing it
 
-                    addToLog(
-                        `Sheriff ${lastVamp.id} prepares Swift Justice. Select move direction (N, E, S, W).`
-                    );
+                    addToLog(`Sheriff ${lastVamp.id} prepares Swift Justice. Select move direction (N, E, S, W).`);
                     updateUI(); // Update UI (might highlight D-pad or show status)
 
                     // IMPORTANT: Pause here! Do not proceed to next player yet.
@@ -2174,18 +2039,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             } else {
                 // Log why SJ wasn't offered (e.g., last vamp cursed, or ID mismatch)
-                if (!lastVamp)
-                    console.warn(
-                        "Swift Justice check failed: Last acted vamp not found?"
-                    );
-                else if (lastVamp.player !== endingPlayerIndex)
-                    console.warn(
-                        "Swift Justice check failed: Last acted vamp belongs to wrong player?"
-                    );
-                else if (lastVamp.cursed)
-                    addToLog(
-                        "Swift Justice cannot be performed by a cursed Sheriff."
-                    );
+                if (!lastVamp) console.warn("Swift Justice check failed: Last acted vamp not found?");
+                else if (lastVamp.player !== endingPlayerIndex) console.warn("Swift Justice check failed: Last acted vamp belongs to wrong player?");
+                else if (lastVamp.cursed) addToLog("Swift Justice cannot be performed by a cursed Sheriff.");
                 // Proceed normally below.
             }
         } // else: Not a Sheriff or other conditions failed, proceed normally below.
@@ -2232,13 +2088,12 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-
         // 1. Calculate Target Coordinate
         const targetCoord = getAdjacentCoord(vampire.coord, direction);
 
         // 2. Validate Target
         if (!isValidSwiftJusticeTarget(targetCoord, vampire.id)) {
-            addToLog(`Invalid Swift Justice move target: ${targetCoord || 'Off-board'}. Choose another direction.`);
+            addToLog(`Invalid Swift Justice move target: ${targetCoord || "Off-board"}. Choose another direction.`);
             return; // Keep waiting for valid input, DO NOT proceed to next turn yet.
         }
 
@@ -2257,7 +2112,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const originalCoord = vampInState.coord;
         vampInState.coord = targetCoord; // Move the vampire
-        vampInState.facing = direction;  // Update facing to match move direction
+        vampInState.facing = direction; // Update facing to match move direction
 
         addToLog(`Sheriff ${vampInState.id} executed Swift Justice: ${originalCoord} -> ${targetCoord}, facing ${direction}. (0 AP)`);
 
@@ -2285,7 +2140,7 @@ document.addEventListener("DOMContentLoaded", () => {
      * @returns {boolean} - True if action successful, false otherwise.
      */
     function executeRampage(vampire) {
-        if (!vampire || currentGameState.players[vampire.player]?.class !== 'Outlaw') {
+        if (!vampire || currentGameState.players[vampire.player]?.class !== "Outlaw") {
             console.error("executeRampage called incorrectly (not Outlaw or no vampire).");
             return false;
         }
@@ -2320,7 +2175,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 5. Set Lock-in and Last Action Vamp (if not already locked)
         const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class; // Should be Outlaw here
-        if (currentPlayerClass !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
+        if (currentPlayerClass !== "Vigilante" && !currentGameState.lockedInVampireIdThisTurn) {
             currentGameState.lockedInVampireIdThisTurn = vampire.id;
             addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
             console.log(`Non-Vigilante Lock-in: Set to ${vampire.id} by Rampage`);
@@ -2329,8 +2184,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 6. Calculate Left/Right Facings relative to current facing
         const currentFacing = vampire.facing;
-        const leftFacing = getNewFacing(currentFacing, 'L');
-        const rightFacing = getNewFacing(currentFacing, 'R');
+        const leftFacing = getNewFacing(currentFacing, "L");
+        const rightFacing = getNewFacing(currentFacing, "R");
 
         // 7. Execute the two shots (pass overrideFacing and 0 cost override)
         // The executeShoot function will handle logging the path/hits of each shot.
@@ -2369,17 +2224,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (pieceAtTarget) {
             // Cannot move onto a square occupied by another VAMPIRE
-            if (pieceAtTarget.type === 'vampire') { // No need to check ID, can't move onto ANY vamp square
+            if (pieceAtTarget.type === "vampire") {
+                // No need to check ID, can't move onto ANY vamp square
                 console.log(`Swift Justice Validation Fail: Blocked by Vampire ${pieceAtTarget.piece.id}`);
                 return false;
             }
             // Cannot move onto a square occupied by a Black Widow
-            if (pieceAtTarget.type === 'hazard' && pieceAtTarget.piece.type === 'Black Widow') {
+            if (pieceAtTarget.type === "hazard" && pieceAtTarget.piece.type === "Black Widow") {
                 console.log("Swift Justice Validation Fail: Blocked by Black Widow");
                 return false;
             }
             // Cannot move onto a square occupied by own/enemy Bloodwell
-            if (pieceAtTarget.type === 'bloodwell') {
+            if (pieceAtTarget.type === "bloodwell") {
                 console.log("Swift Justice Validation Fail: Blocked by Bloodwell");
                 return false;
             }
@@ -2396,10 +2252,10 @@ document.addEventListener("DOMContentLoaded", () => {
      * @param {object} vampInState - The vampire object from currentGameState that just moved.
      */
     function checkSwiftJusticeMoveEndEffects(vampInState) {
-        const hazardLandedOn = currentGameState.board.hazards.find(h => h.coord === vampInState.coord);
+        const hazardLandedOn = currentGameState.board.hazards.find((h) => h.coord === vampInState.coord);
 
         // Check for landing on Grave Dust (Curse)
-        if (hazardLandedOn?.type === 'Grave Dust' && !vampInState.cursed) {
+        if (hazardLandedOn?.type === "Grave Dust" && !vampInState.cursed) {
             console.log("Curse by GD land (Swift Justice).");
             vampInState.cursed = true;
             vampInState.movesThisTurn = 0; // Reset moves upon getting cursed by SJ move
@@ -2426,7 +2282,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const rc = getRowColFromCoord(coord);
         if (!rc) return false;
 
-        for(let bw of currentGameState.board.bloodwells) {
+        for (let bw of currentGameState.board.bloodwells) {
             const bw_rc = getRowColFromCoord(bw.coord);
             if (bw_rc && Math.abs(rc.row - bw_rc.row) <= 1 && Math.abs(rc.col - bw_rc.col) <= 1) {
                 // Found a bloodwell within the 3x3 area centered on coord
@@ -2450,54 +2306,32 @@ document.addEventListener("DOMContentLoaded", () => {
         // --- End Resets ---
 
         // --- Advance Player Index ---
-        let nextPlayerIndex =
-            (currentGameState.currentPlayerIndex + 1) % numberOfPlayers;
+        let nextPlayerIndex = (currentGameState.currentPlayerIndex + 1) % numberOfPlayers;
         let loopCheck = 0;
 
-        while (
-            currentGameState.players[nextPlayerIndex]?.eliminated &&
-            loopCheck < numberOfPlayers
-        ) {
-            console.log(
-                `nextTurn/proceed: Skipping P${nextPlayerIndex} because eliminated status is: ${currentGameState.players[nextPlayerIndex]?.eliminated}`
-            );
+        while (currentGameState.players[nextPlayerIndex]?.eliminated && loopCheck < numberOfPlayers) {
+            console.log(`nextTurn/proceed: Skipping P${nextPlayerIndex} because eliminated status is: ${currentGameState.players[nextPlayerIndex]?.eliminated}`);
             nextPlayerIndex = (nextPlayerIndex + 1) % numberOfPlayers;
             loopCheck++;
         }
 
         // Error check
-        const activePlayers = currentGameState.players.filter(
-            (p) => !p.eliminated
-        );
+        const activePlayers = currentGameState.players.filter((p) => !p.eliminated);
         if (activePlayers.length > 0 && loopCheck >= numberOfPlayers) {
-            console.error(
-                "Error in proceedToNextPlayerTurn: Could not find next active player! State:",
-                currentGameState
-            );
+            console.error("Error in proceedToNextPlayerTurn: Could not find next active player! State:", currentGameState);
             addToLog("Error advancing turn!");
             return;
         } else if (activePlayers.length === 0 && currentGameState.turn > 0) {
-            console.log(
-                "proceedToNextPlayerTurn found no active players left. Game should have ended."
-            );
+            console.log("proceedToNextPlayerTurn found no active players left. Game should have ended.");
             return;
         }
 
         // --- Set New Turn State ---
-        const previousPlayerIndexForTurnIncrement =
-            currentGameState.currentPlayerIndex;
+        const previousPlayerIndexForTurnIncrement = currentGameState.currentPlayerIndex;
         currentGameState.currentPlayerIndex = nextPlayerIndex;
 
         // Increment turn number if wrapped around
-        if (
-            currentGameState.currentPlayerIndex <=
-                previousPlayerIndexForTurnIncrement &&
-            !(
-                numberOfPlayers === 1 &&
-                currentGameState.currentPlayerIndex ===
-                    previousPlayerIndexForTurnIncrement
-            )
-        ) {
+        if (currentGameState.currentPlayerIndex <= previousPlayerIndexForTurnIncrement && !(numberOfPlayers === 1 && currentGameState.currentPlayerIndex === previousPlayerIndexForTurnIncrement)) {
             if (currentGameState.turn > 0 || numberOfPlayers > 1) {
                 currentGameState.turn++;
                 console.log(`Advanced to Turn ${currentGameState.turn}`);
@@ -2507,8 +2341,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Set AP for the new player
         const playerIndex = currentGameState.currentPlayerIndex;
         if (currentGameState.turn === 1) {
-            if (numberOfPlayers === 4)
-                currentGameState.currentAP = [4, 5, 6, 8][playerIndex];
+            if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][playerIndex];
             else if (numberOfPlayers === 3) currentGameState.currentAP = 6;
             else if (numberOfPlayers === 2) currentGameState.currentAP = 5;
             else currentGameState.currentAP = 5;
@@ -2530,9 +2363,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Reset movesThisTurn for ALL vampires
         if (currentGameState.board?.vampires) {
-            currentGameState.board.vampires.forEach(
-                (v) => (v.movesThisTurn = 0)
-            );
+            currentGameState.board.vampires.forEach((v) => (v.movesThisTurn = 0));
         }
 
         // Update UI for the new player
@@ -2540,21 +2371,12 @@ document.addEventListener("DOMContentLoaded", () => {
         updateUI(); // CRITICAL: Call updateUI *after* all state is set for the new turn
 
         // Log start of new turn
-        const currentPlayer =
-            currentGameState.players[currentGameState.currentPlayerIndex];
+        const currentPlayer = currentGameState.players[currentGameState.currentPlayerIndex];
         if (currentPlayer && !currentPlayer.eliminated) {
-            addToLog(
-                `--- Turn ${currentGameState.turn} - ${currentPlayer.name}'s turn (${currentPlayer.class}). AP: ${currentGameState.currentAP} ---`
-            );
+            addToLog(`--- Turn ${currentGameState.turn} - ${currentPlayer.name}'s turn (${currentPlayer.class}). AP: ${currentGameState.currentAP} ---`);
         } else {
-            if (!currentPlayer)
-                console.error(
-                    "Could not find current player object for logging turn start."
-                );
-            else if (currentPlayer.eliminated)
-                console.error(
-                    `ERROR: Started turn for already eliminated player: P${currentGameState.currentPlayerIndex} (${currentPlayer.name})`
-                );
+            if (!currentPlayer) console.error("Could not find current player object for logging turn start.");
+            else if (currentPlayer.eliminated) console.error(`ERROR: Started turn for already eliminated player: P${currentGameState.currentPlayerIndex} (${currentPlayer.name})`);
         }
     }
 
@@ -2568,8 +2390,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (pending === "throw-select-target") {
             const type = currentGameState.actionState.selectedHazardType;
             const vamp = findVampireById(currentGameState.selectedVampireId);
-            if (squareEl.classList.contains("valid-target"))
-                executeThrow(vamp, type, coord);
+            if (squareEl.classList.contains("valid-target")) executeThrow(vamp, type, coord);
             else addToLog("Invalid target. Throw cancelled.");
             currentGameState.actionState = {
                 pendingAction: null,
@@ -2578,8 +2399,7 @@ document.addEventListener("DOMContentLoaded", () => {
             clearHighlights();
         } else if (pending === "move-select-target") {
             const vamp = findVampireById(currentGameState.selectedVampireId);
-            if (vamp && squareEl.classList.contains("valid-target"))
-                executeMove(vamp, coord);
+            if (vamp && squareEl.classList.contains("valid-target")) executeMove(vamp, coord);
             else addToLog("Invalid target. Move cancelled.");
             currentGameState.actionState = { pendingAction: null };
             clearHighlights();
@@ -2610,21 +2430,12 @@ document.addEventListener("DOMContentLoaded", () => {
             // Check if it belongs to the current player
             if (ownerIndex === currentGameState.currentPlayerIndex) {
                 // --- Lock-in Check for Non-Vigilantes ---
-                const currentPlayerClass =
-                    currentGameState.players[
-                        currentGameState.currentPlayerIndex
-                    ].class;
+                const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
                 const lockedVampId = currentGameState.lockedInVampireIdThisTurn;
 
                 // If NOT Vigilante, AND a lock is set, AND trying to select the OTHER vamp
-                if (
-                    currentPlayerClass !== "Vigilante" &&
-                    lockedVampId &&
-                    vampireId !== lockedVampId
-                ) {
-                    addToLog(
-                        `Locked into controlling ${lockedVampId}. Cannot switch vampires this turn.`
-                    );
+                if (currentPlayerClass !== "Vigilante" && lockedVampId && vampireId !== lockedVampId) {
+                    addToLog(`Locked into controlling ${lockedVampId}. Cannot switch vampires this turn.`);
                     return; // PREVENT the selection change by exiting the function
                 }
                 // --- End Lock-in Check ---
@@ -2649,10 +2460,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         } else if (event.target.closest(".grid-square")) {
             // Clicked on an empty square (or hazard/BW) - deselect current vampire
-            if (
-                !currentGameState.actionState?.pendingAction &&
-                currentGameState.selectedVampireId
-            ) {
+            if (!currentGameState.actionState?.pendingAction && currentGameState.selectedVampireId) {
                 console.log("Deselecting vampire by clicking elsewhere.");
                 currentGameState.selectedVampireId = null;
                 if (movementBar) movementBar.classList.add("hidden");
@@ -2664,9 +2472,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Listener for the OK button on the elimination popup
-    const btnCloseElimination = document.getElementById(
-        "btn-close-elimination"
-    );
+    const btnCloseElimination = document.getElementById("btn-close-elimination");
     if (btnCloseElimination) {
         btnCloseElimination.addEventListener("click", () => {
             popups.elimination.style.display = "none"; // Hide popup
@@ -2698,10 +2504,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- Functions for Throw Action ---
     function populateHazardPicker() {
         hazardPickerOptions.innerHTML = "";
-        if (
-            !currentGameState?.hazardPool ||
-            typeof currentGameState.currentAP === "undefined"
-        ) {
+        if (!currentGameState?.hazardPool || typeof currentGameState.currentAP === "undefined") {
             console.error("Cannot populate picker: Invalid state.");
             addToLog("Error prepping throw.");
             return;
@@ -2728,10 +2531,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function handleHazardSelection(hazardType) {
         console.log("Selected hazard:", hazardType);
-        const cost =
-            hazardType === "Dynamite"
-                ? AP_COST.THROW_DYNAMITE
-                : AP_COST.THROW_HAZARD;
+        const cost = hazardType === "Dynamite" ? AP_COST.THROW_DYNAMITE : AP_COST.THROW_HAZARD;
 
         if (!currentGameState?.hazardPool || !currentGameState.actionState) {
             return;
@@ -2749,26 +2549,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         currentGameState.actionState.pendingAction = "throw-select-target";
         currentGameState.actionState.selectedHazardType = hazardType;
-        popups.hazardPicker.style.display =
-            "none"; /* Use reference from popups object */
+        popups.hazardPicker.style.display = "none"; /* Use reference from popups object */
         highlightThrowTargets();
         addToLog(`Throwing ${hazardType}. Select target.`);
     }
     // Calculates and highlights valid squares for the selected throw action
     function highlightThrowTargets() {
         clearHighlights(); // Clear previous highlights first
-        const selectedVamp = findVampireById(
-            currentGameState?.selectedVampireId
-        );
+        const selectedVamp = findVampireById(currentGameState?.selectedVampireId);
 
         // Ensure required state is available
-        if (
-            !selectedVamp ||
-            !currentGameState?.actionState?.selectedHazardType
-        ) {
-            console.error(
-                "Cannot highlight throw targets: Missing selected vampire or hazard type."
-            );
+        if (!selectedVamp || !currentGameState?.actionState?.selectedHazardType) {
+            console.error("Cannot highlight throw targets: Missing selected vampire or hazard type.");
             return;
         }
 
@@ -2792,9 +2584,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // If the path was already blocked by a piece on a previous iteration, stop.
             if (!pathClear) {
-                console.log(
-                    `Path already blocked before reaching distance ${dist}`
-                );
+                console.log(`Path already blocked before reaching distance ${dist}`);
                 break;
             }
 
@@ -2805,44 +2595,26 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!pieceAtTarget) {
                 // Empty is always a valid landing spot
                 isValidLandingSpot = true;
-            } else if (
-                hazardType === "Grave Dust" &&
-                pieceAtTarget.type === "vampire"
-            ) {
+            } else if (hazardType === "Grave Dust" && pieceAtTarget.type === "vampire") {
                 // GD onto Vamp is valid
                 isValidLandingSpot = true;
             } // All other occupied squares are invalid landing spots
 
             // Add highlight if it's a valid landing spot AND path was clear *up to this point*
             if (isValidLandingSpot) {
-                const targetSquareElement = gameBoard.querySelector(
-                    `[data-coord="${targetCoord}"]`
-                );
+                const targetSquareElement = gameBoard.querySelector(`[data-coord="${targetCoord}"]`);
                 if (targetSquareElement) {
                     targetSquareElement.classList.add("valid-target");
                     // console.log(`Highlighting ${targetCoord} as valid target.`); // Optional debug
                 }
             } else {
-                console.log(
-                    `Square ${targetCoord} is not a valid landing spot for ${hazardType}.`
-                );
+                console.log(`Square ${targetCoord} is not a valid landing spot for ${hazardType}.`);
             }
 
             // Now check if the piece AT the target square blocks the path for *subsequent* squares
             // Updated Rule: Vampires, Bloodwells, Tombstones, Dynamite block the path.
-            if (
-                pieceAtTarget &&
-                (pieceAtTarget.type === "vampire" ||
-                    pieceAtTarget.type === "bloodwell" ||
-                    (pieceAtTarget.type === "hazard" &&
-                        (pieceAtTarget.piece.type === "Tombstone" ||
-                            pieceAtTarget.piece.type === "Dynamite")))
-            ) {
-                console.log(
-                    `Path blocked at ${targetCoord} by ${
-                        pieceAtTarget.piece?.type || pieceAtTarget.type
-                    }. Stopping check beyond here.`
-                );
+            if (pieceAtTarget && (pieceAtTarget.type === "vampire" || pieceAtTarget.type === "bloodwell" || (pieceAtTarget.type === "hazard" && (pieceAtTarget.piece.type === "Tombstone" || pieceAtTarget.piece.type === "Dynamite")))) {
+                console.log(`Path blocked at ${targetCoord} by ${pieceAtTarget.piece?.type || pieceAtTarget.type}. Stopping check beyond here.`);
                 pathClear = false; // Path is blocked *beyond* this square
                 // NOTE: We don't 'break' here immediately. We finish processing *this* square
                 // (e.g., highlighting it if it was GD->Vamp), but the flag prevents
@@ -2868,9 +2640,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // 1. Skip if this coordinate has already exploded in this chain reaction
             if (processedExplosions.has(coordToExplode)) {
-                console.log(
-                    `Skipping already processed explosion at ${coordToExplode}`
-                );
+                console.log(`Skipping already processed explosion at ${coordToExplode}`);
                 continue;
             }
 
@@ -2879,23 +2649,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // 3. Verify Dynamite still exists (might have been destroyed by a previous blast in the chain)
             const dynamitePieceInfo = findPieceAtCoord(coordToExplode);
-            if (
-                !dynamitePieceInfo ||
-                dynamitePieceInfo.type !== "hazard" ||
-                dynamitePieceInfo.piece.type !== "Dynamite"
-            ) {
-                console.log(
-                    `No Dynamite found at ${coordToExplode} (already destroyed?), skipping explosion.`
-                );
+            if (!dynamitePieceInfo || dynamitePieceInfo.type !== "hazard" || dynamitePieceInfo.piece.type !== "Dynamite") {
+                console.log(`No Dynamite found at ${coordToExplode} (already destroyed?), skipping explosion.`);
                 continue; // Skip if no dynamite is actually here anymore
             }
 
             // 4. It exists! Log and Remove the Dynamite
             console.log(`Exploding Dynamite at ${coordToExplode}`);
             addToLog(`Chain reaction: Dynamite EXPLODES at ${coordToExplode}!`);
-            currentGameState.board.hazards = currentGameState.board.hazards.filter(
-                (h) => h.coord !== coordToExplode
-            );
+            currentGameState.board.hazards = currentGameState.board.hazards.filter((h) => h.coord !== coordToExplode);
 
             // 5. Get the 3x3 blast area
             const explosionAreaCoords = getCoordsInArea(coordToExplode, 1);
@@ -2913,15 +2675,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     // Apply Effects based on what was hit in the blast
                     if (affectedType === "bloodwell") {
-                        console.log(
-                            `Explosion destroyed Bloodwell ${affectedPiece.id} at ${coordInBlast}`
-                        );
-                        addToLog(
-                            `Explosion destroyed Bloodwell ${affectedPiece.id} at ${coordInBlast}!`
-                        );
-                        currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(
-                            (bw) => bw.id !== affectedPiece.id
-                        );
+                        console.log(`Explosion destroyed Bloodwell ${affectedPiece.id} at ${coordInBlast}`);
+                        addToLog(`Explosion destroyed Bloodwell ${affectedPiece.id} at ${coordInBlast}!`);
+                        currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter((bw) => bw.id !== affectedPiece.id);
                         needsEliminationCheck = true; // Mark that we need to check eliminations later
                     }
                     // Check if it's a hazard AND it's NOT a dynamite that's already exploded in this chain
@@ -2932,41 +2688,23 @@ document.addEventListener("DOMContentLoaded", () => {
                                 // Only add if it hasn't already exploded its own radius
                                 // Verification that it *still* exists isn't strictly needed here,
                                 // the check at the start of the while loop handles that.
-                                console.log(
-                                    `Explosion triggers another Dynamite at ${affectedPiece.coord}. Adding to queue.`
-                                );
-                                addToLog(
-                                    `Explosion triggers nearby Dynamite at ${affectedPiece.coord}!`
-                                );
-                                if (
-                                    !explosionQueue.includes(
-                                        affectedPiece.coord
-                                    )
-                                ) {
+                                console.log(`Explosion triggers another Dynamite at ${affectedPiece.coord}. Adding to queue.`);
+                                addToLog(`Explosion triggers nearby Dynamite at ${affectedPiece.coord}!`);
+                                if (!explosionQueue.includes(affectedPiece.coord)) {
                                     // Avoid adding duplicates to queue
                                     explosionQueue.push(affectedPiece.coord);
                                 }
                             }
                         } else {
                             // It's a different type of hazard (Tombstone, BW, GD)
-                            console.log(
-                                `Explosion destroyed Hazard (${affectedPiece.type}) at ${coordInBlast}`
-                            );
-                            addToLog(
-                                `Explosion destroyed Hazard (${affectedPiece.type}) at ${coordInBlast}!`
-                            );
-                            currentGameState.board.hazards = currentGameState.board.hazards.filter(
-                                (h) => h.coord !== affectedPiece.coord
-                            );
+                            console.log(`Explosion destroyed Hazard (${affectedPiece.type}) at ${coordInBlast}`);
+                            addToLog(`Explosion destroyed Hazard (${affectedPiece.type}) at ${coordInBlast}!`);
+                            currentGameState.board.hazards = currentGameState.board.hazards.filter((h) => h.coord !== affectedPiece.coord);
                         }
                     } else if (affectedType === "vampire") {
                         // TODO: Determine explosion effect on Vampires based on game rules
-                        console.log(
-                            `Explosion hit Vampire ${affectedPiece.id} at ${coordInBlast}. (Effect TBD)`
-                        );
-                        addToLog(
-                            `Explosion hit Vampire ${affectedPiece.id} at ${coordInBlast}. (Effect TBD)`
-                        );
+                        console.log(`Explosion hit Vampire ${affectedPiece.id} at ${coordInBlast}. (Effect TBD)`);
+                        addToLog(`Explosion hit Vampire ${affectedPiece.id} at ${coordInBlast}. (Effect TBD)`);
                     }
                 } // end if(pieceInBlast)
             }); // end forEach coordInBlast
@@ -2980,9 +2718,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Check eliminations caused by the chain reaction
         if (needsEliminationCheck) {
-            console.log(
-                "Checking elimination status for all players after chain reaction."
-            );
+            console.log("Checking elimination status for all players after chain reaction.");
             addToLog("Checking player elimination status...");
             const newlyEliminatedIndexes = []; // Store players eliminated in this chain
 
@@ -3018,31 +2754,19 @@ document.addEventListener("DOMContentLoaded", () => {
      * @returns {boolean} - True if the player is eliminated, false otherwise.
      */
     function checkPlayerElimination(playerIndex) {
-        if (
-            !currentGameState ||
-            !currentGameState.players[playerIndex] ||
-            currentGameState.players[playerIndex].eliminated
-        ) {
+        if (!currentGameState || !currentGameState.players[playerIndex] || currentGameState.players[playerIndex].eliminated) {
             return false; // Already eliminated or invalid index
         }
 
-        const remainingVamps = currentGameState.board.vampires.filter(
-            (v) => v.player === playerIndex
-        ).length;
-        const remainingBloodwells = currentGameState.board.bloodwells.filter(
-            (bw) => bw.player === playerIndex
-        ).length;
+        const remainingVamps = currentGameState.board.vampires.filter((v) => v.player === playerIndex).length;
+        const remainingBloodwells = currentGameState.board.bloodwells.filter((bw) => bw.player === playerIndex).length;
 
-        console.log(
-            `Checking P${playerIndex} (<span class="math-inline">\{currentGameState\.players\[playerIndex\]?\.name\}\)\: Vamps\=</span>{remainingVamps}, BWs=${remainingBloodwells}`
-        );
+        console.log(`Checking P${playerIndex} (<span class="math-inline">\{currentGameState\.players\[playerIndex\]?\.name\}\)\: Vamps\=</span>{remainingVamps}, BWs=${remainingBloodwells}`);
 
         const isEliminated = remainingVamps === 0 || remainingBloodwells === 0;
 
         if (isEliminated) {
-            console.log(
-                `Player <span class="math-inline">\{playerIndex\} \(</span>{currentGameState.players[playerIndex].name}) elimination condition met.`
-            );
+            console.log(`Player <span class="math-inline">\{playerIndex\} \(</span>{currentGameState.players[playerIndex].name}) elimination condition met.`);
         }
 
         return isEliminated;
@@ -3055,48 +2779,31 @@ document.addEventListener("DOMContentLoaded", () => {
      * @returns {boolean} - True if the state was updated, false otherwise (e.g., already eliminated).
      */
     function updateEliminationState(playerIndex) {
-        if (
-            !currentGameState ||
-            !currentGameState.players[playerIndex] ||
-            currentGameState.players[playerIndex].eliminated
-        ) {
+        if (!currentGameState || !currentGameState.players[playerIndex] || currentGameState.players[playerIndex].eliminated) {
             return false;
         }
         // Get the player object *within this function*
         const player = currentGameState.players[playerIndex];
         if (!player) {
             // Check if player exists at that index
-            console.error(
-                `updateEliminationState: Invalid playerIndex ${playerIndex}, cannot find player.`
-            );
+            console.error(`updateEliminationState: Invalid playerIndex ${playerIndex}, cannot find player.`);
             return false;
         }
         const playerName = player.name; // Get name from the fetched object
 
         // CORRECTED CONSOLE LOG: Uses the correct playerName variable
-        console.log(
-            `Updating elimination state for P${playerIndex} (${playerName}). Setting eliminated = true.`
-        );
+        console.log(`Updating elimination state for P${playerIndex} (${playerName}). Setting eliminated = true.`);
 
         currentGameState.players[playerIndex].eliminated = true;
-        console.log(
-            `P${playerIndex} (${playerName}) eliminated flag is now: ${currentGameState.players[playerIndex].eliminated}`
-        );
-        console.log(
-            "Player state object after setting flag:",
-            JSON.stringify(currentGameState.players[playerIndex])
-        );
+        console.log(`P${playerIndex} (${playerName}) eliminated flag is now: ${currentGameState.players[playerIndex].eliminated}`);
+        console.log("Player state object after setting flag:", JSON.stringify(currentGameState.players[playerIndex]));
 
         addToLog(`--- PLAYER ELIMINATED: ${playerName} ---`);
 
         // CORRECTED CONSOLE LOG: Uses the correct playerIndex for the message
         console.log(`Removing remaining pieces for P${playerIndex}.`);
-        currentGameState.board.vampires = currentGameState.board.vampires.filter(
-            (v) => v.player !== playerIndex
-        );
-        currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(
-            (bw) => bw.player !== playerIndex
-        );
+        currentGameState.board.vampires = currentGameState.board.vampires.filter((v) => v.player !== playerIndex);
+        currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter((bw) => bw.player !== playerIndex);
 
         return true;
     }
@@ -3113,24 +2820,18 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("Fetched player object:", JSON.stringify(player));
 
         if (!player) {
-            console.error(
-                `Cannot show elimination popup: Invalid playerIndex ${playerIndex} or player data missing.`
-            );
+            console.error(`Cannot show elimination popup: Invalid playerIndex ${playerIndex} or player data missing.`);
             return;
         }
 
         const playerName = player.name;
         const playerClass = player.class;
-        console.log(
-            `Extracted Name: ${playerName}, Extracted Class: ${playerClass}`
-        );
+        console.log(`Extracted Name: ${playerName}, Extracted Class: ${playerClass}`);
 
         const elimPopup = popups.elimination;
         const elimMsg = document.getElementById("elimination-message");
         if (elimPopup && elimMsg) {
-            console.log(
-                `Attempting to set popup text for P${playerIndex} with Name='${playerName}' and Class='${playerClass}'`
-            );
+            console.log(`Attempting to set popup text for P${playerIndex} with Name='${playerName}' and Class='${playerClass}'`);
 
             // --- Use Template Literal (Backticks ``) ---
             // Make sure to use the backtick character (`), NOT a single quote (')
@@ -3139,9 +2840,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             elimPopup.style.display = "flex"; // Show the popup
         } else {
-            console.error(
-                "Elimination popup elements ('popup-elimination' or 'elimination-message') not found!"
-            );
+            console.error("Elimination popup elements ('popup-elimination' or 'elimination-message') not found!");
         }
         console.log("--- showEliminationPopup END ---");
     }
@@ -3153,17 +2852,13 @@ document.addEventListener("DOMContentLoaded", () => {
     function checkGameEnd() {
         if (!currentGameState || !currentGameState.players) return false;
 
-        const activePlayers = currentGameState.players.filter(
-            (p) => !p.eliminated
-        );
+        const activePlayers = currentGameState.players.filter((p) => !p.eliminated);
 
         if (activePlayers.length === 1) {
             // Game Over - We have a winner!
             const winner = activePlayers[0];
             console.log(`Game Over! Winner: ${winner.name}`); // Check console log too
-            addToLog(
-                `*** GAME OVER! ${winner.name} (${winner.class}) WINS! ***`
-            );
+            addToLog(`*** GAME OVER! ${winner.name} (${winner.class}) WINS! ***`);
 
             // Display victory popup
             const victoryPopup = popups.victory;
@@ -3198,10 +2893,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- Initialization ---
     function initializeGame() {
-        console.log(
-            "Entering initializeGame. playerData:",
-            JSON.stringify(playerData)
-        ); // <-- ADD THIS
+        console.log("Entering initializeGame. playerData:", JSON.stringify(playerData)); // <-- ADD THIS
         console.log("Initializing game...");
         // ... rest of function
         gameHistory = [];
@@ -3238,17 +2930,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 hazards: JSON.parse(JSON.stringify(layout.hazards)), // << NO comma needed here
             }, // << Comma IS needed here before hazardPool
             hazardPool: {
-                Tombstone:
-                    5 -
-                    layout.hazards.filter((h) => h.type === "Tombstone").length,
-                "Black Widow":
-                    5 -
-                    layout.hazards.filter((h) => h.type === "Black Widow")
-                        .length,
-                "Grave Dust":
-                    5 -
-                    layout.hazards.filter((h) => h.type === "Grave Dust")
-                        .length,
+                Tombstone: 5 - layout.hazards.filter((h) => h.type === "Tombstone").length,
+                "Black Widow": 5 - layout.hazards.filter((h) => h.type === "Black Widow").length,
+                "Grave Dust": 5 - layout.hazards.filter((h) => h.type === "Grave Dust").length,
                 Dynamite: 3,
             },
             playerResources: playerData.map(() => ({
@@ -3256,7 +2940,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 abilitiesUsed: [],
                 wasShotSinceLastTurn: false, // For Vigilante Vengeance trigger
                 contractPayoffNextTurnBonus: 0, // AP bonus for BH next turn
-                vengeanceNextTurnBonus: 0 // AP bonus for Vigilante next turn
+                vengeanceNextTurnBonus: 0, // AP bonus for Vigilante next turn
             })),
             turn: 1,
             currentPlayerIndex: 0,
@@ -3269,21 +2953,18 @@ document.addEventListener("DOMContentLoaded", () => {
             lockedInVampireIdThisTurn: null,
             lastActionVampId: null,
             actionState: { pendingAction: null, selectedHazardType: null },
-            eliminatedVampires: [] // Global list to track for Sheriff revive
+            eliminatedVampires: [], // Global list to track for Sheriff revive
         };
 
         const pIdx = currentGameState.currentPlayerIndex;
         if (currentGameState.turn === 1) {
-            if (numberOfPlayers === 4)
-                currentGameState.currentAP = [4, 5, 6, 8][pIdx];
+            if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][pIdx];
             else if (numberOfPlayers === 3) currentGameState.currentAP = 6;
             else if (numberOfPlayers === 2) currentGameState.currentAP = 5;
             else currentGameState.currentAP = 5;
         }
 
-        console.log(
-            `*** Calculated Initial AP: ${currentGameState.currentAP} (for player index ${pIdx}, num players ${numberOfPlayers}) ***`
-        );
+        console.log(`*** Calculated Initial AP: ${currentGameState.currentAP} (for player index ${pIdx}, num players ${numberOfPlayers}) ***`);
 
         generateGrid();
         renderBoard(currentGameState);
@@ -3310,12 +2991,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         // --- END LOG ---
 
-        updatePlayerInfoPanel(
-            player,
-            currentGameState.turn,
-            currentGameState.currentAP,
-            resources
-        );
+        updatePlayerInfoPanel(player, currentGameState.turn, currentGameState.currentAP, resources);
         // ... rest of function
 
         logList.innerHTML = `<li>Game Started: ${layoutName}</li>`;
@@ -3332,9 +3008,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btnEndTurn.addEventListener("click", nextTurn);
 
         showScreen("gameplay");
-        addToLog(
-            `--- Turn ${currentGameState.turn} - ${player.name}'s turn (${player.class}). AP: ${currentGameState.currentAP} ---`
-        );
+        addToLog(`--- Turn ${currentGameState.turn} - ${player.name}'s turn (${player.class}). AP: ${currentGameState.currentAP} ---`);
     }
     // --- 5. Attach Event Listeners (Executed ONCE on script load) --- // Note: Original numbering kept, this is Section 4 of pasting
 
@@ -3353,11 +3027,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnBackToStart) {
         // Check if the button exists
         btnBackToStart.addEventListener("click", () => {
-            if (
-                confirm(
-                    "Return to player count selection? All setup progress will be lost."
-                )
-            ) {
+            if (confirm("Return to player count selection? All setup progress will be lost.")) {
                 // Reset setup state completely
                 numberOfPlayers = 0;
                 currentPlayerSetupIndex = 0;
@@ -3365,9 +3035,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 selectedClasses = [];
                 // Hide player setup and show player count screen
                 showScreen("playerCount");
-                console.log(
-                    "Returned to player count screen. Setup state reset."
-                );
+                console.log("Returned to player count screen. Setup state reset.");
             }
         });
     }
@@ -3376,9 +3044,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Listener for the Dispel button
     btnDispel?.addEventListener("click", () => {
-        const selectedVampireObject = findVampireById(
-            currentGameState?.selectedVampireId
-        ); // Get the selected vamp object
+        const selectedVampireObject = findVampireById(currentGameState?.selectedVampireId); // Get the selected vamp object
         if (selectedVampireObject) {
             executeDispel(selectedVampireObject); // Call the function
         } else {
@@ -3388,9 +3054,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Listener for the Bite the Fuse button
     btnBiteFuse?.addEventListener("click", () => {
-        const selectedVampireObject = findVampireById(
-            currentGameState?.selectedVampireId
-        ); // Get the selected vamp object
+        const selectedVampireObject = findVampireById(currentGameState?.selectedVampireId); // Get the selected vamp object
         if (selectedVampireObject) {
             executeBiteFuse(selectedVampireObject); // Call the function
         } else {
@@ -3399,11 +3063,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Listener for the Rampage button
-    btnRampage?.addEventListener('click', () => {
+    btnRampage?.addEventListener("click", () => {
         const selectedVampireObject = findVampireById(currentGameState?.selectedVampireId);
         if (selectedVampireObject) {
             // Make sure it's actually an Outlaw before executing
-            if (currentGameState.players[selectedVampireObject.player]?.class === 'Outlaw') {
+            if (currentGameState.players[selectedVampireObject.player]?.class === "Outlaw") {
                 executeRampage(selectedVampireObject);
             } else {
                 addToLog("Only Outlaws can Rampage.");
@@ -3421,9 +3085,7 @@ document.addEventListener("DOMContentLoaded", () => {
             showScreen("howToPlay"); // Should use popups['howToPlay'].style.display = 'flex'; from revised showScreen
 
             // Find the scrollable content area inside the popup
-            const howToPlayContent = popups.howToPlay?.querySelector(
-                ".how-to-play-content"
-            );
+            const howToPlayContent = popups.howToPlay?.querySelector(".how-to-play-content");
 
             // Reset its scroll position to the top
             if (howToPlayContent) {
@@ -3448,18 +3110,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const handleMovementButtonClick = (direction) => {
         console.log(`Movement button clicked: ${direction}`); // For debugging
         // Ensure game state is ready
-        if (
-            !currentGameState ||
-            !currentGameState.board ||
-            !currentGameState.players
-        ) {
+        if (!currentGameState || !currentGameState.board || !currentGameState.players) {
             console.error("Movement click failed: Game state not ready.");
             return;
         }
         // Find the selected vampire
-        const selectedVamp = findVampireById(
-            currentGameState.selectedVampireId
-        );
+        const selectedVamp = findVampireById(currentGameState.selectedVampireId);
         if (!selectedVamp) {
             addToLog("Select a Vampire first.");
             return;
@@ -3469,10 +3125,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (direction === selectedVamp.facing) {
             // --- Attempt MOVE action ---
             addToLog(`Attempting Move ${direction}...`);
-            const targetCoord = getAdjacentCoord(
-                selectedVamp.coord,
-                selectedVamp.facing
-            );
+            const targetCoord = getAdjacentCoord(selectedVamp.coord, selectedVamp.facing);
             if (targetCoord) {
                 // executeMove function handles AP checks, validation, state change, rendering, UI update
                 executeMove(selectedVamp, targetCoord);
@@ -3491,9 +3144,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const handleDirectionButtonClick = (direction) => {
         // *** ADD THIS CHECK AT THE VERY BEGINNING ***
-        console.log(
-            `D-Pad Click: ${direction}. Swift Justice Pending? ${isSwiftJusticeMovePending}`
-        ); // Debug log
+        console.log(`D-Pad Click: ${direction}. Swift Justice Pending? ${isSwiftJusticeMovePending}`); // Debug log
         if (isSwiftJusticeMovePending) {
             console.log("Calling executeSwiftJusticeMove...");
             executeSwiftJusticeMove(direction); // Call the special function
@@ -3502,9 +3153,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // *** END SWIFT JUSTICE CHECK ***
 
         // --- If NOT Swift Justice, proceed with NORMAL move/pivot logic ---
-        const selectedVamp = findVampireById(
-            currentGameState.selectedVampireId
-        );
+        const selectedVamp = findVampireById(currentGameState.selectedVampireId);
         if (!selectedVamp) {
             addToLog("Select a Vampire first.");
             return;
@@ -3542,9 +3191,7 @@ document.addEventListener("DOMContentLoaded", () => {
         button.addEventListener("click", () => {
             // This listener enables btnNext
             if (button.disabled) return; // Ignore clicks if button already used by another player
-            let currentlySelected = classSelectionContainer.querySelector(
-                ".selected"
-            );
+            let currentlySelected = classSelectionContainer.querySelector(".selected");
             if (currentlySelected) {
                 currentlySelected.classList.remove("selected"); // Deselect previous
             }
@@ -3561,9 +3208,7 @@ document.addEventListener("DOMContentLoaded", () => {
     playerNameInput.addEventListener("input", () => {
         // Update player name in state as user types, use default if empty
         if (playerData[currentPlayerSetupIndex]) {
-            playerData[currentPlayerSetupIndex].name =
-                playerNameInput.value.trim() ||
-                `P${currentPlayerSetupIndex + 1}`;
+            playerData[currentPlayerSetupIndex].name = playerNameInput.value.trim() || `P${currentPlayerSetupIndex + 1}`;
         }
     });
 
@@ -3633,11 +3278,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Add selected class to the list to disable it for subsequent players
         if (!selectedClasses.includes(currentPlayerData.class)) {
             selectedClasses.push(currentPlayerData.class);
-            console.log(
-                "Added class to selected list:",
-                currentPlayerData.class,
-                selectedClasses
-            );
+            console.log("Added class to selected list:", currentPlayerData.class, selectedClasses);
         }
 
         // Proceed
@@ -3686,10 +3327,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btnSilverBullet.addEventListener("click", () => {
         const vamp = findVampireById(currentGameState?.selectedVampireId);
         if (!currentGameState || !currentGameState.playerResources) return; // Safety check
-        const res =
-            currentGameState.playerResources[
-                currentGameState.currentPlayerIndex
-            ];
+        const res = currentGameState.playerResources[currentGameState.currentPlayerIndex];
         if (vamp && res.silverBullet > 0) {
             if (confirm("Use your only Silver Bullet?")) {
                 // Confirmation
@@ -3713,19 +3351,14 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
         // Check base AP cost (>=1) - specific cost checked in picker handler
-        if (
-            !currentGameState ||
-            typeof currentGameState.currentAP === "undefined" ||
-            currentGameState.currentAP < AP_COST.THROW_HAZARD
-        ) {
+        if (!currentGameState || typeof currentGameState.currentAP === "undefined" || currentGameState.currentAP < AP_COST.THROW_HAZARD) {
             addToLog("Not enough AP to initiate Throw.");
             return;
         }
         // Open the hazard picker
         populateHazardPicker(); // Fill picker with current options/counts
         popups.hazardPicker.style.display = "flex"; // Show the popup
-        if (currentGameState && currentGameState.actionState)
-            currentGameState.actionState.pendingAction = "throw-select-hazard";
+        if (currentGameState && currentGameState.actionState) currentGameState.actionState.pendingAction = "throw-select-hazard";
         addToLog("Select hazard type to throw.");
     });
 
