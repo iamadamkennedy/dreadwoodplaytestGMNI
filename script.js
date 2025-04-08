@@ -4056,6 +4056,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 	 * Initializes the game state, board, and UI for starting a new game.
 	 */
 	function initializeGame() {
+    	alert("DEBUG: 1 - initializeGame Started"); // << ADD ALERT
 		console.log("Initializing game with player data:", JSON.stringify(playerData));
 		gameHistory = []; // Reset history
 
@@ -4113,6 +4114,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 			},
 			eliminatedVampires: []
 		};
+		alert("DEBUG: 2 - Game State Defined"); // << ADD ALERT
 
 		// --- Set Initial AP ---
 		const pIdx = currentGameState.currentPlayerIndex;
@@ -4125,11 +4127,15 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 			currentGameState.currentAP = 5; // Should not happen on init, but fallback
 		}
 		console.log(`Initial AP set to: ${currentGameState.currentAP} for Player ${pIdx+1}`);
+		alert("DEBUG: 3 - Initial AP Set"); // << ADD ALERT
 
 		// --- Setup Board and UI ---
 		generateGrid();
+		alert("DEBUG: 4 - Grid Generated"); // << ADD ALERT
 		renderBoard(currentGameState);
+		alert("DEBUG: 5 - Board Rendered"); // << ADD ALERT
 		updateUI(); // Set status bar, info panel, buttons
+		alert("DEBUG: 6 - UI Updated"); // << ADD ALERT
 
 		// --- Final Setup ---
 		logList.innerHTML = `<li>Game Started: ${layoutName}</li>`;
@@ -4144,12 +4150,15 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 		if (btnUndo) btnUndo.addEventListener("click", undoLastAction);
 		if (btnEndTurn) btnEndTurn.removeEventListener("click", nextTurn);
 		if (btnEndTurn) btnEndTurn.addEventListener("click", nextTurn);
+		alert("DEBUG: 7 - Listeners Attached"); // << ADD ALERT
 
 		showScreen("gameplay");
+		alert("DEBUG: 8 - showScreen('gameplay') Called"); // << ADD ALERT
 		const player = currentGameState.players[pIdx];
 		if (player) {
 			addToLog(`--- Turn ${currentGameState.turn} - ${player.name}'s turn (${player.class}). AP: ${currentGameState.currentAP} ---`);
 		}
+		alert("DEBUG: 9 - initializeGame Finished!"); // << ADD ALERT
 	}
 
 	// --- 5. Attach Event Listeners (Executed ONCE on script load) ---
