@@ -1,9 +1,3 @@
-* Top-Level State Variables
- * Constants (AP_COST, DIRECTIONS, CLASS_DATA)
- * DOM Element References (Corrected and including new Swift Justice popup refs)
- * Coordinate Helper Functions
- * UI Helper Functions (Up to clearHighlights)
-Please review this first batch carefully. Once you confirm it looks correct, I will proceed with the next batch (which will contain the large LAYOUT_DATA constant).
 document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow function syntax
     // --- 1. Top-Level State Variables ---
     let numberOfPlayers = 0;
