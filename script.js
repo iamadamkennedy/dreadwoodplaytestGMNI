@@ -2031,16 +2031,16 @@ function executeBiteFuse(vampire) {
 
     // 6. Apply Curse to the vampire (Modify the object within currentGameState)
     const vampInState = findVampireById(vampire.id);
-    if (vampInState) {
-        vampInState.cursed = true; // Apply the curse
-        // --- ADD THIS LINE ---
-        vampInState.movesThisTurn = 0; // Reset move counter upon becoming cursed
-        // --- END ADD ---
-        addToLog(`${vampInState.id} Bit the Fuse at <span class="math-inline">\{vampInState\.coord\}, removing Dynamite and becoming CURSED\! \(</span>{currentGameState.currentAP} AP left)`);
-    } else {
-        console.error("executeBiteFuse Error: Could not find vampire in state array to apply curse!");
-        addToLog(`ERROR: Failed to apply Curse effect after Bite Fuse by ${vampire.id}`);
-    }
+     if (vampInState) {
+         vampInState.cursed = true; // Apply the curse
+         // --- ADD THIS LINE ---
+         vampInState.movesThisTurn = 0; // Reset move counter upon becoming cursed
+         // --- END ADD ---
+         addToLog(`${vampInState.id} Bit the Fuse at <span class="math-inline">\{vampInState\.coord\}, removing Dynamite and becoming CURSED\! \(</span>{currentGameState.currentAP} AP left)`);
+     } else {
+         console.error("executeBiteFuse Error: Could not find vampire in state array to apply curse!");
+         addToLog(`ERROR: Failed to apply Curse effect after Bite Fuse by ${vampire.id}`);
+     }
 
     // 7. Update the display
     renderBoard(currentGameState); // Show curse border, remove hazard
