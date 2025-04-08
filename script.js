@@ -2042,168 +2042,70 @@ function executeBiteFuse(vampire) {
     return true; // Action successful
 }
 
-    /**
-     * Advances the game to the next active player's turn.
-     * Handles AP reset, turn counter, UI updates, and skipping eliminated players.
-     */
-    /**
- * Advances the game to the next active player's turn.
- * Handles AP reset, turn counter, UI updates, and skipping eliminated players.
+/**
+ * Called when the current player clicks "End Turn".
+ * Checks for end-of-turn abilities like Swift Justice before proceeding to the next player.
  */
- function nextTurn() {
-    // Check if any actions are pending (like selecting throw target)
+function nextTurn() {
+    // 1. Check for pending actions (like throw target selection)
     if (currentGameState.actionState?.pendingAction) {
-        addToLog(
-            "Cannot end turn while an action is pending. Cancel or complete the action."
-        );
-        return;
+        addToLog("Cannot end turn: Action pending. Cancel or complete.");
+        return; // Stop if an action hasn't fully resolved
     }
 
-    // --- Swift Justice Check (placeholder for later implementation) ---
+    // 2. Identify the player whose turn is ending
     const endingPlayerIndex = currentGameState.currentPlayerIndex;
     const endingPlayer = currentGameState.players[endingPlayerIndex];
-    if (endingPlayer?.class === 'Sheriff' /* && check conditions for Swift Justice */) {
-        // Later, we will insert logic here to potentially pause the turn
-        // For now, just log the possibility and continue
-        addToLog(
-             "Sheriff's Swift Justice may apply (Manual Check / UI TBD)."
-         );
+    // Get the ID of the last vampire that performed an AP-costing action this turn
+    const potentialSwiftJusticeVampId = currentGameState.lastActionVampId;
+
+    let swiftJusticeTriggered = false; // Flag to check if we paused for SJ input
+
+    // 3. Check if Swift Justice *can* be triggered
+    // Conditions: Player is Sheriff, not eliminated, took an action with one of their vamps, that vamp isn't cursed.
+    if (endingPlayer?.class === 'Sheriff' && !endingPlayer.eliminated && potentialSwiftJusticeVampId) {
+        const lastVamp = findVampireById(potentialSwiftJusticeVampId);
+        // Ensure the last acted vampire exists, belongs to the Sheriff, and is not cursed
+        if (lastVamp && lastVamp.player === endingPlayerIndex && !lastVamp.cursed) {
+
+            // 4. Prompt the player
+            if (confirm(`Execute Swift Justice for ${lastVamp.id}? (Move 1 square free)`)) {
+                // --- Player chose YES ---
+                isSwiftJusticeMovePending = true;     // Set the global flag
+                swiftJusticePlayerIndex = endingPlayerIndex;  // Store who is doing it
+                swiftJusticeVampId = potentialSwiftJusticeVampId; // Store which vamp is doing it
+
+                addToLog(`Sheriff ${lastVamp.id} prepares Swift Justice. Select move direction (N, E, S, W).`);
+                updateUI(); // Update UI (might highlight D-pad or show status)
+
+                // IMPORTANT: Pause here! Do not proceed to next player yet.
+                // Execution will continue when a direction button is clicked (via executeSwiftJusticeMove).
+                swiftJusticeTriggered = true; // Mark that we paused
+
+            } else {
+                // --- Player chose NO ---
+                addToLog("Sheriff declined Swift Justice.");
+                // Don't set the flag, just proceed normally below.
+            }
+        } else {
+             // Log why SJ wasn't offered (e.g., last vamp cursed, or ID mismatch)
+             if (!lastVamp) console.warn("Swift Justice check failed: Last acted vamp not found?");
+             else if (lastVamp.player !== endingPlayerIndex) console.warn("Swift Justice check failed: Last acted vamp belongs to wrong player?");
+             else if (lastVamp.cursed) addToLog("Swift Justice cannot be performed by a cursed Sheriff.");
+             // Proceed normally below.
+        }
+    } // else: Not a Sheriff or other conditions failed, proceed normally below.
+
+
+    // 5. Proceed to next player IF Swift Justice wasn't triggered/paused
+    if (!swiftJusticeTriggered) {
+        // Save the final state of the ended turn *before* transitioning
+        saveStateToHistory();
+        // Transition to the next player's turn (this function handles resets etc.)
+        proceedToNextPlayerTurn();
     }
-    // --- End Swift Justice Check ---
-
-
-    // Save state before fully ending turn (allows undoing the 'end turn' itself)
-    saveStateToHistory();
-
-
-    // --- Apply other end-of-turn effects ---
-    // TODO: Add other end-of-turn effects here
-
-    // --- Advance Player Index (Looping and skipping eliminated) ---
-    let nextPlayerIndex = (currentGameState.currentPlayerIndex + 1) % numberOfPlayers; // Use numberOfPlayers global
-    let loopCheck = 0; // Safety counter to prevent infinite loops
-
-    while (
-        currentGameState.players[nextPlayerIndex]?.eliminated &&
-        loopCheck < numberOfPlayers
-    ) {
-        // Log which player is being skipped and why
-        console.log(
-            `nextTurn: Skipping P${nextPlayerIndex} because eliminated status is: ${currentGameState.players[nextPlayerIndex]?.eliminated}`
-        );
-        // Move to the next player index
-        nextPlayerIndex = (nextPlayerIndex + 1) % numberOfPlayers;
-        loopCheck++;
-    }
-
-    // Check if we couldn't find an active player (should only happen if game end check failed)
-    const activePlayers = currentGameState.players.filter(
-        (p) => !p.eliminated
-    );
-    if (activePlayers.length > 0 && loopCheck >= numberOfPlayers) {
-        // Check if we looped without finding the active player
-        console.error(
-            "Error: Could not find next active player even though active players exist! State:",
-            currentGameState
-        );
-        addToLog("Error advancing turn!");
-        // Consider NOT undoing here, as the state might be valid but finding the next player failed.
-        // undoLastAction(); // Revert the end turn attempt - maybe problematic
-        return;
-    } else if (activePlayers.length === 0 && currentGameState.turn > 0) { // Added turn > 0 check to avoid false trigger before game starts
-        console.log(
-            "nextTurn found no active players left. Game should have ended."
-        );
-        // Don't proceed with turn logic if no one is left
-        return;
-    }
-
-
-    // --- Debugging log added before setting the index ---
-    console.log(
-        `nextTurn: Final determined next player index: ${nextPlayerIndex}. Eliminated status: ${currentGameState.players[nextPlayerIndex]?.eliminated}`
-    );
-    const previousPlayerIndexForTurnIncrement = currentGameState.currentPlayerIndex; // Store before changing
-    // Set the current player for the new turn
-    currentGameState.currentPlayerIndex = nextPlayerIndex;
-    // --- End Debugging log ---
-
-
-    // Increment turn number if we wrapped around to player 0 (or first active player)
-    // Use the stored previous index for comparison
-    if (
-        currentGameState.currentPlayerIndex <= previousPlayerIndexForTurnIncrement &&
-        !(numberOfPlayers === 1 && currentGameState.currentPlayerIndex === previousPlayerIndexForTurnIncrement)
-    ) {
-        // Check if the new index is less than or equal to previous, indicating a wrap-around (unless it's a 1P game)
-         if(currentGameState.turn > 0 || numberOfPlayers > 1) { // Avoid incrementing on initial setup if P0 starts
-             currentGameState.turn++;
-             console.log(`Advanced to Turn ${currentGameState.turn}`);
-         }
-    }
-
-    // --- Set AP for the new player ---
-    const playerIndex = currentGameState.currentPlayerIndex; // Use the updated index
-    // Reset AP based on rules
-    if (currentGameState.turn === 1) {
-        // Only check turn 1 for scaling
-        if (numberOfPlayers === 4)
-            currentGameState.currentAP = [4, 5, 6, 8][playerIndex];
-        else if (numberOfPlayers === 3) currentGameState.currentAP = 6;
-        else if (numberOfPlayers === 2) currentGameState.currentAP = 5;
-        else currentGameState.currentAP = 5; // Fallback for 1 player?
-    } else {
-        currentGameState.currentAP = 5; // Standard AP for all turns after 1
-    }
-    // TODO: Add Vigilante Blood Brothers check here & potentially add +1 AP
-
-    // --- Reset turn-specific state ---
-    currentGameState.selectedVampireId = null;
-    currentGameState.actionState = { // Reset action state completely
-        pendingAction: null,
-        selectedHazardType: null,
-    };
-    // --- ADD THESE RESETS ---
-    currentGameState.lockedInVampireIdThisTurn = null; // Reset non-Vigilante lock
-    currentGameState.lastActionVampId = null; // Reset last acted vampire tracker
-    // --- END ADD ---
-
-    clearHighlights();
-    if (movementBar) movementBar.classList.add("hidden"); // Hide D-Pad
-    btnUndo.disabled = true; // Disable Undo at start of new turn
-    // Reset movesThisTurn for ALL vampires
-    if (currentGameState.board?.vampires) {
-        currentGameState.board.vampires.forEach(
-            (v) => (v.movesThisTurn = 0) // This resets the move counter for curse logic too
-        );
-    }
-
-    // Update UI for new player
-    renderBoard(currentGameState); // Rerender to remove selection highlights etc.
-    updateUI(); // Update panels and button states for the new player/AP
-    const currentPlayer =
-        currentGameState.players[currentGameState.currentPlayerIndex];
-    if (currentPlayer && !currentPlayer.eliminated) { // Also check if the current player is somehow eliminated
-        // Check if currentPlayer exists before logging
-        addToLog(
-            `--- Turn ${currentGameState.turn} - ${currentPlayer.name}'s turn (${currentPlayer.class}). AP: ${currentGameState.currentAP} ---`
-        );
-    } else {
-         if (!currentPlayer) {
-            console.error(
-                 "Could not find current player object for logging turn start."
-             );
-         }
-         // If player IS defined but eliminated, the loop should have skipped them.
-         // Log if we somehow landed on an eliminated player's turn start.
-         else if (currentPlayer.eliminated) {
-             console.error(`Error: Started turn for already eliminated player: P${currentGameState.currentPlayerIndex} (${currentPlayer.name})`);
-             addToLog(`ERROR: Tried to start turn for eliminated player ${currentPlayer.name}.`);
-             // Maybe try advancing again? Or just let it sit in a potentially broken state.
-             // For now, just log the error.
-         }
-    }
-    // NOTE: Victory check is primarily done after eliminations occur.
+    // If swiftJusticeTriggered is true, this function effectively ends here,
+    // waiting for the player's directional input.
 }
 
     // --- Event Listener Handlers ---
