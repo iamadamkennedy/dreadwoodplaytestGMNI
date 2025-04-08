@@ -4048,6 +4048,131 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 		return false; // Game continues
 	}
 
+    /**
+     * Handles clicks on the game board grid squares. Manages piece selection
+     * and targeting for pending actions.
+     * @param {Event} event - The click event object.
+     */
+    function handleBoardClick(event) {
+        const clickedElement = event.target;
+        // Find the grid square element, even if the click was on a piece inside it
+        const targetSquare = clickedElement.closest(".grid-square");
+
+        if (!targetSquare) {
+            // Clicked somewhere on the board container but not on a specific square
+            console.log("Clicked outside grid squares.");
+            return;
+        }
+
+        const targetCoord = targetSquare.dataset.coord;
+        if (!targetCoord) {
+            console.error("Clicked square missing coordinate data:", targetSquare);
+            return;
+        }
+
+        // --- Get current state info ---
+        const pieceInfo = findPieceAtCoord(targetCoord);
+        const currentPlayerIndex = currentGameState.currentPlayerIndex;
+        const currentPlayer = currentGameState.players[currentPlayerIndex];
+        const currentPlayerClass = currentPlayer?.class;
+        const selectedVampId = currentGameState.selectedVampireId;
+        const lockedVampId = currentGameState.lockedInVampireIdThisTurn;
+        const pendingAction = currentGameState.actionState?.pendingAction;
+
+        console.log(`Board Clicked: Coord=${targetCoord}, Piece=${pieceInfo?.type || 'None'}, PendingAction=${pendingAction}`);
+
+        // --- 1. Handle Clicks Based on Pending Action State ---
+        if (pendingAction === "throw-select-target") {
+            if (targetSquare.classList.contains("valid-target")) {
+                const hazardType = currentGameState.actionState.selectedHazardType;
+                const throwingVamp = findVampireById(selectedVampId); // Use the currently selected vampire
+
+                if (throwingVamp && hazardType) {
+                    // Attempt the throw - executeThrow handles AP, history, etc.
+                    const success = executeThrow(throwingVamp, hazardType, targetCoord);
+                    if (success) {
+                         // Reset action state ONLY on successful execution
+                        currentGameState.actionState.pendingAction = null;
+                        currentGameState.actionState.selectedHazardType = null;
+                        clearHighlights(); // Clear target highlights
+                        // updateUI is called within executeThrow if successful
+                    } else {
+                         // executeThrow failed (e.g. AP check failed somehow, shouldn't happen here?)
+                         // Keep state as is, user might need to cancel or try again.
+                         addToLog("Throw failed. Check AP or cancel action.");
+                    }
+                } else {
+                    console.error("Throw state error: Missing throwing vamp or hazard type during target click.");
+                    // Reset state defensively
+                    currentGameState.actionState.pendingAction = null;
+                    currentGameState.actionState.selectedHazardType = null;
+                    clearHighlights();
+                    updateUI(); // Update UI to reflect reset state
+                }
+            } else {
+                // Clicked an invalid square while throw target selection was pending
+                addToLog("Invalid target for throw. Click a highlighted square or cancel throw.");
+                // Do not clear highlights here, let the user see valid options or cancel
+            }
+            return; // Stop further processing, click was for targeting
+        }
+        // --- Add 'else if' blocks here for other pending actions (Hand Cannon, Order Restored) ---
+        // else if (pendingAction === "hand-cannon-target") { ... }
+
+
+        // --- 2. Handle Clicks for Selection/Deselection (No relevant pending action) ---
+
+        // Always clear highlights if we reach this point (not targeting)
+        clearHighlights();
+
+        // Ignore board clicks if waiting for Swift Justice D-Pad input
+        if (isSwiftJusticeMovePending) {
+            addToLog("Use the Directional buttons to perform the Swift Justice move.");
+            return;
+        }
+
+        // --- Determine what was clicked ---
+        if (pieceInfo?.type === "vampire") {
+            const clickedVamp = pieceInfo.piece;
+
+            // a) Clicked a friendly vampire?
+            if (clickedVamp.player === currentPlayerIndex) {
+                // Check lock-in rules (Vigilante ignores lock-in for selection)
+                const canSelectThisVamp = (currentPlayerClass === 'Vigilante' || !lockedVampId || clickedVamp.id === lockedVampId);
+
+                if (canSelectThisVamp) {
+                    if (selectedVampId === clickedVamp.id) {
+                        // Clicked the *already selected* vampire: Deselect
+                        currentGameState.selectedVampireId = null;
+                        addToLog(`Deselected ${clickedVamp.id}.`);
+                    } else {
+                        // Clicked a *different*, selectable friendly vampire: Select it
+                        currentGameState.selectedVampireId = clickedVamp.id;
+                        addToLog(`Selected ${clickedVamp.id}.`);
+                    }
+                    updateUI(); // Update UI for selection change
+                } else {
+                    // Cannot select this friendly vampire due to being locked into another
+                    addToLog(`Cannot select ${clickedVamp.id}. Locked into ${lockedVampId} this turn.`);
+                    // Do not change selection or update UI here
+                }
+            }
+            // b) Clicked an enemy vampire?
+            else {
+                if(selectedVampId) addToLog(`Clicked enemy ${clickedVamp.id}. Deselected ${selectedVampId}.`);
+                currentGameState.selectedVampireId = null; // Deselect current piece
+                // Future: Maybe show info about the enemy piece here?
+                updateUI(); // Update UI to show deselection
+            }
+        }
+        // c) Clicked an empty square, hazard, or bloodwell?
+        else {
+             if(selectedVampId) addToLog(`Clicked ${targetCoord} (${pieceInfo?.type || 'empty'}). Deselected ${selectedVampId}.`);
+             currentGameState.selectedVampireId = null; // Deselect current piece
+             updateUI(); // Update UI to show deselection
+        }
+    } // --- End handleBoardClick ---
+
 	// --- Batch 5 Ends Here ---
 	// Next batch will start with Initialization (initializeGame).
 
