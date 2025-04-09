@@ -3337,6 +3337,123 @@ function executeShoot(vampire, isSilverBullet = false, overrideFacing = null, ap
 	}
 
 	/**
+     * Executes a Move action (one square forward) for the selected vampire.
+     * Handles validation (AP, Cursed, Blocking), state updates, and post-move effects.
+     * @param {object} vampire - The vampire object attempting the move.
+     * @param {string} targetCoord - The coordinate the vampire is attempting to move to (should be the one directly in front).
+     * @returns {boolean} - True if the move was successful, false otherwise.
+     */
+    function executeMove(vampire, targetCoord) {
+        // --- Validation: Basic Inputs ---
+        if (!vampire) {
+            console.error("executeMove: Missing vampire object.");
+            return false;
+        }
+        if (!targetCoord) {
+            console.error("executeMove: Missing targetCoord.");
+            addToLog("Invalid move target specified.");
+            return false;
+        }
+
+        // --- Validation: Action Cost ---
+        const cost = AP_COST.MOVE;
+        if (currentGameState.currentAP < cost) {
+            addToLog("Not enough AP to Move.");
+            return false;
+        }
+
+        // --- Validation: Target Coordinate Validity ---
+        // Check if move target is actually the square in front of the vampire
+        const expectedTarget = getAdjacentCoord(vampire.coord, vampire.facing);
+        if (targetCoord !== expectedTarget) {
+            // This usually indicates an issue in the calling code (handleDirectionButtonClick)
+            console.warn(`executeMove: Target coord mismatch. Expected ${expectedTarget}, got ${targetCoord}. Move cancelled.`);
+            addToLog(`Invalid move direction or target.`);
+            return false;
+        }
+
+        // --- Validation: Cursed Status Move Limit ---
+        // A cursed vampire can only perform one 'Move' action per turn.
+        if (vampire.cursed && (vampire.movesThisTurn || 0) >= 1) {
+            addToLog(`Cursed ${vampire.id} cannot move again this turn (already moved ${vampire.movesThisTurn || 0} time(s)).`);
+            return false;
+        }
+
+        // --- Validation: Blocking Pieces ---
+        // Check for pieces that block movement onto their square.
+        const pieceAtTarget = findPieceAtCoord(targetCoord);
+        if (pieceAtTarget &&
+            (pieceAtTarget.type === "vampire" || // Cannot move onto other vampires
+             pieceAtTarget.type === "bloodwell" || // Cannot move onto bloodwells
+             (pieceAtTarget.type === "hazard" && pieceAtTarget.piece.type === "Black Widow"))) { // BW blocks movement
+            addToLog(`Move blocked by ${pieceAtTarget.piece?.type || pieceAtTarget.type} at ${targetCoord}.`);
+            return false;
+        }
+        // Note: Allows moving onto Tombstones, Grave Dust, Dynamite
+
+        // --- Lock-in & Last Action Tracking ---
+        const currentPlayerIndex = currentGameState.currentPlayerIndex; // Get current player index
+        const currentPlayerClass = currentGameState.players[currentPlayerIndex]?.class; // Safely get class
+        if (currentPlayerClass !== "Vigilante" && !currentGameState.lockedInVampireIdThisTurn) {
+            currentGameState.lockedInVampireIdThisTurn = vampire.id;
+            addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
+        }
+        currentGameState.lastActionVampId = vampire.id; // Update last action regardless of lock-in
+        // --- End Lock-in ---
+
+
+        // --- Action is Valid - Proceed to Execute ---
+        saveStateToHistory(); // Save state before making changes for Undo
+
+        // Find the specific vampire object *within the current game state* to modify
+        const vampInState = findVampireById(vampire.id);
+        if (!vampInState) {
+            // This indicates a potentially serious state inconsistency
+            console.error(`executeMove Error: Could not find vampire ${vampire.id} in current game state! State might be corrupted.`);
+            undoLastAction(); // Attempt to revert the history save
+            addToLog("Error: Could not perform move due to inconsistent state.");
+            return false;
+        }
+
+        const oldCoord = vampInState.coord; // Store original coordinate for logging purposes
+
+        // --- Update Game State ---
+        vampInState.coord = targetCoord;          // Update position
+        currentGameState.currentAP -= cost;       // Deduct AP cost
+        vampInState.movesThisTurn = (vampInState.movesThisTurn || 0) + 1; // Increment move counter for this turn
+
+        addToLog(`${vampInState.id} moved ${oldCoord} -> ${targetCoord}. (${currentGameState.currentAP} AP left)`);
+
+        // --- Check Post-Move Effects ---
+        // Check *after* moving, based on the new square (targetCoord)
+        const hazardLandedOn = currentGameState.board.hazards.find((h) => h.coord === targetCoord);
+
+        // 1. Curse Check (Landing on Grave Dust)
+        if (hazardLandedOn?.type === "Grave Dust") {
+             // applyCurse helper function handles the check for !vampInState.cursed and logging
+             applyCurse(vampInState);
+             // Note: applyCurse should also reset movesThisTurn to 0 if curse is applied
+        }
+        // 2. Bloodbath Check (Landing near Bloodwell WHILE Cursed, but NOT on a hazard)
+        // Check curse status *after* potential Grave Dust application above
+        if (vampInState.cursed && !hazardLandedOn) { // Only check if still cursed and didn't land on GD/etc.
+            // isAdjacentToAnyBloodwell helper function checks the 3x3 area
+            if (isAdjacentToAnyBloodwell(targetCoord)) {
+                console.log("Bloodbath cure triggered by landing near Bloodwell!");
+                vampInState.cursed = false;         // Remove curse
+                vampInState.movesThisTurn = 0;    // Reset move counter upon being cured
+                addToLog(`${vampInState.id} CURED by Bloodbath near ${targetCoord}!`);
+            }
+        }
+
+        // --- Update Display ---
+        renderBoard(currentGameState); // Re-render the board showing the piece in the new location
+        updateUI(); // Update AP display, button states (e.g., disable move if cursed limit reached)
+
+        return true; // Move successful
+    }
+
+	/**
      * Executes a Throw Hazard action after validation.
      * Assumes targetCoord is valid based on prior highlighting.
      * Updates game state (pool, board, AP) and UI.
