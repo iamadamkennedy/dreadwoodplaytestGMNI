@@ -229,7 +229,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 	const btnSwiftJusticeNo = document.getElementById('btn-swift-justice-no');
 
 	// --- Corrected: Add reference needed for showNextTurnBonusPopup ---
-	const ntbMessageElement = document.getElementById('ntb-message');
+	//const ntbMessageElement = document.getElementById('ntb-message');
 	// --- End Correction ---
 
 	// --- 4. Function Definitions ---
