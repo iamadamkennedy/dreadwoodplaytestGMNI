@@ -229,7 +229,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 	const btnSwiftJusticeNo = document.getElementById('btn-swift-justice-no');
 
 	// --- Corrected: Add reference needed for showNextTurnBonusPopup ---
-	//const ntbMessageElement = document.getElementById('ntb-message');
+	const ntbMessageElement = document.getElementById('ntb-message');
 	// --- End Correction ---
 
 	// --- 4. Function Definitions ---
@@ -5265,7 +5265,6 @@ function proceedToNextPlayerTurn() {
 
 	// Get references to the new popup buttons
 	const btnCpChoiceYes = document.getElementById('btn-cp-choice-yes');
-	const ntbMessageElement = document.getElementById('ntb-message');
 	const btnCpChoiceNo = document.getElementById('btn-cp-choice-no');
 	const btnCpAutoOk = document.getElementById('btn-cp-auto-ok');
 	const btnNtbOk = document.getElementById('btn-ntb-ok');
