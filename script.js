@@ -2854,7 +2854,8 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 		updatePlayerInfoPanel(player, currentTurn, currentAP, resources);
 
 		// 5. --- Render the Game Board ---
-		renderBoard(currentGameState);
+		console.log("Board state BEFORE renderBoard:", JSON.stringify(currentGameState.board)); // ADD THIS LINE
+		renderBoard(currentGameState); // Existing line
 
 		// 6. --- Update Undo Button State ---
 		const btnUndo = document.getElementById('btn-undo');
