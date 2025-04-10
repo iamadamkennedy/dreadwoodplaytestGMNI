@@ -146,7 +146,6 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 		playerCount: document.getElementById("screen-player-count"),
 		playerSetup: document.getElementById("screen-player-setup"),
 		gameplay: document.getElementById("screen-gameplay"),
-		// How-to-play screen is also a popup
 	};
 
 	// Popups (Dialogs)
@@ -154,19 +153,21 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 		elimination: document.getElementById("popup-elimination"),
 		victory: document.getElementById("popup-victory"),
 		hazardPicker: document.getElementById("hazard-picker"),
-		howToPlay: document.getElementById("screen-how-to-play"), // Can be treated as a popup
-		swiftJustice: document.getElementById('popup-swift-justice'), // ADDED Ref
+		howToPlay: document.getElementById("screen-how-to-play"),
+		swiftJustice: document.getElementById('popup-swift-justice'),
+		// --- Corrected: Ensure these are defined ---
 		contractPayoffChoice: document.getElementById('popup-contract-payoff-choice'),
 		contractPayoffAuto: document.getElementById('popup-contract-payoff-auto'),
 		nextTurnBonus: document.getElementById('popup-next-turn-bonus'),
+		// --- End Correction ---
 	};
 
 	// Buttons - General UI / Navigation
 	const btnHelp = document.getElementById("btn-help");
-	const btnBackToGame = document.getElementById("btn-back-to-game"); // Back from How-to-Play
-	const btnBack = document.getElementById("btn-back"); // Back in Player Setup
-	const btnNext = document.getElementById("btn-next"); // Next/Start Game in Player Setup
-	const btnBackToStart = document.getElementById("btn-back-to-start"); // Back to Player Count screen from Setup
+	const btnBackToGame = document.getElementById("btn-back-to-game");
+	const btnBack = document.getElementById("btn-back");
+	const btnNext = document.getElementById("btn-next");
+	const btnBackToStart = document.getElementById("btn-back-to-start");
 
 	// Buttons - Player Count Screen
 	const playerCountButtons = screens.playerCount.querySelectorAll("button[data-count]");
@@ -185,20 +186,18 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 	// Elements - Gameplay Screen
 	const gameplayScreen = screens.gameplay;
 	const actionBar = document.getElementById("action-bar");
+	// --- Corrected: Use 'let' for gameBoard because we reassign it after cloning ---
 	let gameBoard = document.getElementById("game-board");
-	const playerInfoDisplay = document.getElementById("player-info"); // Container for status/info/controls below board
+	// --- End Correction ---
+	const playerInfoDisplay = document.getElementById("player-info");
 	const currentClassAbilitiesList = document.getElementById("info-class-abilities");
 	const infoSilverBullet = document.getElementById("info-silver-bullet");
-	// Note: statusBarPlayer/AP/Turn might be inside #status-bar, updated via innerHTML in updateUI now
-	// const statusBarPlayer = document.getElementById("status-player");
-	// const statusBarAP = document.getElementById("status-ap");
-	// const statusBarTurn = document.getElementById("status-turn");
 	const btnUndo = document.getElementById("btn-undo");
 	const btnEndTurn = document.getElementById("btn-end-turn");
 	const btnToggleLog = document.getElementById("btn-toggle-log");
 	const gameLog = document.getElementById("game-log");
 	const logList = document.getElementById("log-list");
-	const btnBackToSetup = document.getElementById("btn-back-to-setup"); // Dev button
+	const btnBackToSetup = document.getElementById("btn-back-to-setup");
 
 	// Buttons - Core Actions (Gameplay)
 	const btnShoot = document.getElementById("action-shoot");
@@ -210,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 	// Buttons - Class Abilities (Gameplay)
 	const btnRampage = document.getElementById("action-rampage");
 	const btnHandCannon = document.getElementById("action-hand-cannon");
-	const btnContractPayoff = document.getElementById("action-contract-payoff");
+	// const btnContractPayoff = document.getElementById("action-contract-payoff"); // This button is no longer used
 	const btnOrderRestored = document.getElementById("action-order-restored");
 	const btnVengeance = document.getElementById("action-vengeance");
 
@@ -226,8 +225,12 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 	const btnCancelThrow = document.getElementById("btn-cancel-throw");
 
 	// Buttons - Swift Justice Popup
-	const btnSwiftJusticeYes = document.getElementById('btn-swift-justice-yes'); // ADDED Ref
-	const btnSwiftJusticeNo = document.getElementById('btn-swift-justice-no'); // ADDED Ref
+	const btnSwiftJusticeYes = document.getElementById('btn-swift-justice-yes');
+	const btnSwiftJusticeNo = document.getElementById('btn-swift-justice-no');
+
+	// --- Corrected: Add reference needed for showNextTurnBonusPopup ---
+	const ntbMessageElement = document.getElementById('ntb-message');
+	// --- End Correction ---
 
 	// --- 4. Function Definitions ---
 
@@ -2598,15 +2601,15 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 				const li = document.createElement('li');
 				const isUsed = resources.abilitiesUsed.includes(ability.name);
 				const apCostText = (ability.type !== 'Passive' && ability.apCost >= 0) ? ` (${ability.apCost} AP)` : '';
-				// Determine if it's a 1/game Active ability based on description/techDesc
 				const isOneTimeActive = ability.type === 'Active' &&
 									(ability.description?.includes('1/game') || ability.techDesc?.includes('1/game') ||
-									ability.name === 'Order Restored' || ability.name === 'Vengeance is Mine' || // Explicitly add known 1/game actives
+									ability.name === 'Order Restored' || ability.name === 'Vengeance is Mine' ||
 									ability.name === 'Hand Cannon' || ability.name === 'Rampage' );
-				// Add USED status only if it's a 1/game active ability that has been used
 				const usedText = (isOneTimeActive && isUsed) ? ' - <strong style="color: red;">USED</strong>' : '';
-				const displayDesc = ability.techDesc || ability.description; // Prefer techDesc
-				li.innerHTML = `<strong><span class="math-inline">\{ability\.name\} \(</span>{ability.type})<span class="math-inline">\{apCostText\}</span>{usedText}:</strong> ${displayDesc}`;
+				const displayDesc = ability.techDesc || ability.description;
+				// --- Corrected Syntax: Use Backticks for Template Literal ---
+				li.innerHTML = `<strong>${ability.name} (${ability.type})${apCostText}${usedText}:</strong> ${displayDesc}`;
+				// --- End Correction ---
 				currentClassAbilitiesList.appendChild(li);
 			});
 		} else if (currentClassAbilitiesList) {
@@ -2643,7 +2646,9 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 		if (btnSilverBullet) {
 			btnSilverBullet.style.display = "inline-block";
 			btnSilverBullet.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.SILVER_BULLET || resources.silverBullet <= 0 || !!isCursed;
-			btnSilverBullet.title = `Silver Bullet Shot (<span class="math-inline">\{AP\_COST\.SILVER\_BULLET\} AP\)</span>{resources.silverBullet <= 0 ? " - USED" : ""}`;
+			// --- Corrected Syntax: Use Backticks ---
+			btnSilverBullet.title = `Silver Bullet Shot (${AP_COST.SILVER_BULLET} AP)${resources.silverBullet <= 0 ? " - USED" : ""}`;
+			// --- End Correction ---
 		}
 		const canAffordDispel = currentAP >= AP_COST.DISPEL;
 		const canDispel = isVampSelected && hazardOnVampSquare?.type === "Grave Dust";
@@ -2674,7 +2679,9 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 				const isUsed = resources.abilitiesUsed.includes(abilityName);
 				const canAfford = currentAP >= AP_COST.RAMPAGE;
 				btnRampage.disabled = !canControlSelected || !canAfford || isUsed || !!isCursed;
-				btnRampage.title = `<span class="math-inline">\{abilityName\} \(</span>{AP_COST.RAMPAGE} AP, 1/game)${isUsed ? ' - USED' : ''}`;
+				// --- Corrected Syntax: Use Backticks ---
+				btnRampage.title = `${abilityName} (${AP_COST.RAMPAGE} AP, 1/game)${isUsed ? ' - USED' : ''}`;
+				// --- End Correction ---
 			}
 		}
 		// Hand Cannon (Outlaw)
@@ -2686,33 +2693,34 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 				const isUsed = resources.abilitiesUsed.includes(abilityName);
 				const canAfford = currentAP >= AP_COST.HAND_CANNON;
 				btnHandCannon.disabled = !canControlSelected || !canAfford || isUsed || !!isCursed;
-				btnHandCannon.title = `<span class="math-inline">\{abilityName\} \(</span>{AP_COST.HAND_CANNON} AP, 1/game)${isUsed ? ' - USED' : ''}`;
+				// --- Corrected Syntax: Use Backticks ---
+				btnHandCannon.title = `${abilityName} (${AP_COST.HAND_CANNON} AP, 1/game)${isUsed ? ' - USED' : ''}`;
+				// --- End Correction ---
 			}
 		}
 
 		// --- REMOVED Contract Payoff Button Logic ---
-		// The entire block handling btnContractPayoff visibility and disabled state has been removed.
 		// --- End Removal ---
 
-		// Order Restored (Sheriff) - Verified Logic
+		// Order Restored (Sheriff)
 		if (btnOrderRestored) {
 			const isSelectedSheriff = selectedVampClass === 'Sheriff';
 			const abilityName = 'Order Restored';
 			const isUsed = resources.abilitiesUsed.includes(abilityName);
 			const canAfford = currentAP >= AP_COST.ORDER_RESTORED;
-			const playerIndex = currentGameState.currentPlayerIndex; // Index of the current player
-			// Check if an eliminated Sheriff ally exists for the CURRENT player
+			const playerIndex = currentGameState.currentPlayerIndex;
 			const hasEliminatedAlly = currentGameState.eliminatedVampires?.some(
 				v => v.player === playerIndex && currentGameState.players[v.player]?.class === 'Sheriff'
 			) ?? false;
-
 			const isVisible = isSelectedSheriff && hasEliminatedAlly;
 			btnOrderRestored.style.display = isVisible ? 'inline-block' : 'none';
 
 			if (isVisible) {
 				const isDisabled = !canControlSelected || !canAfford || isUsed || !!isCursed;
 				btnOrderRestored.disabled = isDisabled;
-				let title = `<span class="math-inline">\{abilityName\} \(</span>{AP_COST.ORDER_RESTORED} AP, 1/game)`;
+				// --- Corrected Syntax: Use Backticks ---
+				let title = `${abilityName} (${AP_COST.ORDER_RESTORED} AP, 1/game)`;
+				// --- End Correction ---
 				if (isUsed) title += ' - USED';
 				else if (isDisabled && !canAfford) title += ' (Not Enough AP)';
 				else if (isDisabled && !!isCursed) title += ' (Cannot Use While Cursed)';
@@ -2721,21 +2729,22 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 			}
 		}
 
-		// Vengeance is Mine (Vigilante) - Verified Logic
+		// Vengeance is Mine (Vigilante)
 		if (btnVengeance) {
 			const isSelectedVigilante = selectedVampClass === 'Vigilante';
 			const abilityName = 'Vengeance is Mine';
 			const isUsed = resources.abilitiesUsed.includes(abilityName);
-			const triggerMet = resources.wasShotSinceLastTurn; // Check the trigger flag
-			const canAfford = currentAP >= AP_COST.VENGEANCE_IS_MINE; // Cost is 0
+			const triggerMet = resources.wasShotSinceLastTurn;
+			const canAfford = currentAP >= AP_COST.VENGEANCE_IS_MINE;
 
-			// Visibility: Show only if Vigilante selected
 			btnVengeance.style.display = isSelectedVigilante ? 'inline-block' : 'none';
 
 			if (isSelectedVigilante) {
 				const isDisabled = !canControlSelected || !canAfford || isUsed || !triggerMet || !!isCursed;
 				btnVengeance.disabled = isDisabled;
-				let title = `<span class="math-inline">\{abilityName\} \(</span>{AP_COST.VENGEANCE_IS_MINE} AP, 1/game)`;
+				// --- Corrected Syntax: Use Backticks ---
+				let title = `${abilityName} (${AP_COST.VENGEANCE_IS_MINE} AP, 1/game)`;
+				// --- End Correction ---
 				if (isUsed) title += ' - USED';
 				else if (!triggerMet) title += ' (Ally Not Shot Recently)';
 				else if (isDisabled && !!isCursed) title += ' (Cannot Use While Cursed)';
@@ -2751,35 +2760,29 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 			} else {
 				movementBar.classList.remove('hidden');
 				if (isSwiftJusticeMovePending) {
-					// Force enabled during SJ move selection - ensure target validation handles blocks
 					if (btnMoveN) btnMoveN.disabled = !isValidSwiftJusticeTarget(getAdjacentCoord(selectedVamp.coord, 'N'), selectedVamp.id);
 					if (btnMoveE) btnMoveE.disabled = !isValidSwiftJusticeTarget(getAdjacentCoord(selectedVamp.coord, 'E'), selectedVamp.id);
 					if (btnMoveS) btnMoveS.disabled = !isValidSwiftJusticeTarget(getAdjacentCoord(selectedVamp.coord, 'S'), selectedVamp.id);
 					if (btnMoveW) btnMoveW.disabled = !isValidSwiftJusticeTarget(getAdjacentCoord(selectedVamp.coord, 'W'), selectedVamp.id);
-					// Add titles for SJ
 					if (btnMoveN) btnMoveN.title = "Swift Justice Move North (0 AP)";
 					if (btnMoveE) btnMoveE.title = "Swift Justice Move East (0 AP)";
 					if (btnMoveS) btnMoveS.title = "Swift Justice Move South (0 AP)";
 					if (btnMoveW) btnMoveW.title = "Swift Justice Move West (0 AP)";
 				} else {
-					// Normal turn movement/pivot logic
 					const canAffordMoveOrPivot = currentAP >= AP_COST.MOVE;
 					const movesTakenThisTurn = selectedVamp?.movesThisTurn || 0;
 					const canMoveForward = !isCursed || movesTakenThisTurn < 1;
 
-					// Disable Move Forward if cannot afford, cannot control, OR if cursed and already moved
 					if (btnMoveN) btnMoveN.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'N' && !canMoveForward);
 					if (btnMoveE) btnMoveE.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'E' && !canMoveForward);
 					if (btnMoveS) btnMoveS.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'S' && !canMoveForward);
 					if (btnMoveW) btnMoveW.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'W' && !canMoveForward);
 
-					// Ensure PIVOT buttons (those NOT matching facing) are only disabled if cannot afford or control
 					if (selectedVamp?.facing !== 'N' && btnMoveN) btnMoveN.disabled = !canControlSelected || !canAffordMoveOrPivot;
 					if (selectedVamp?.facing !== 'E' && btnMoveE) btnMoveE.disabled = !canControlSelected || !canAffordMoveOrPivot;
 					if (selectedVamp?.facing !== 'S' && btnMoveS) btnMoveS.disabled = !canControlSelected || !canAffordMoveOrPivot;
 					if (selectedVamp?.facing !== 'W' && btnMoveW) btnMoveW.disabled = !canControlSelected || !canAffordMoveOrPivot;
 
-					// Reset titles for normal move/pivot
 					const movePivotTitle = `Move/Pivot (${AP_COST.MOVE} AP)`;
 					if (btnMoveN) btnMoveN.title = movePivotTitle;
 					if (btnMoveE) btnMoveE.title = movePivotTitle;
@@ -2790,8 +2793,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 		} else {
 			console.warn("Movement bar element not found.");
 		}
-		
-} // End of updatePlayerInfoPanel
+	} // --- End updatePlayerInfoPanel ---
 
 	/**
 	 * Main UI update function, called after actions or turn changes.
@@ -2854,7 +2856,6 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 		updatePlayerInfoPanel(player, currentTurn, currentAP, resources);
 
 		// 5. --- Render the Game Board ---
-		console.log("Board state BEFORE renderBoard:", JSON.stringify(currentGameState.board)); // ADD THIS LINE
 		renderBoard(currentGameState); // Existing line
 
 		// 6. --- Update Undo Button State ---
@@ -4786,14 +4787,12 @@ function proceedToNextPlayerTurn() {
     }
 
 	// --- Batch 5 Ends Here ---
-	// Next batch will start with Initialization (initializeGame).
-
-	// --- Initialization ---
+	
 	/**
 	 * Initializes the game state, board, and UI for starting a new game.
 	 */
 	function initializeGame() {
-        console.trace("initializeGame() called"); // <--- ADD THIS
+		console.trace("initializeGame() called");
 		console.log("Initializing game with player data:", JSON.stringify(playerData));
 		gameHistory = []; // Reset history
 
@@ -4813,7 +4812,7 @@ function proceedToNextPlayerTurn() {
 		// --- Define Initial Game State ---
 		currentGameState = {
 			players: playerData.map((p, index) => ({
-				name: p.name || `P${index + 1}`, // Ensure name exists
+				name: p.name || `P${index + 1}`,
 				class: p.class,
 				eliminated: false,
 			})),
@@ -4835,29 +4834,34 @@ function proceedToNextPlayerTurn() {
 			playerResources: playerData.map(() => ({
 				silverBullet: 1,
 				abilitiesUsed: [],
-				wasShotSinceLastTurn: false, // Keep for Vengeance
-				contractPayoffNextTurnBonus: 0, // Keep, ensure it's 0
-				vengeanceNextTurnBonus: 0, // Keep for Vengeance
-				// --- NEW Contract Payoff State ---
+				wasShotSinceLastTurn: false,
+				contractPayoffNextTurnBonus: 0,
+				vengeanceNextTurnBonus: 0,
 				bhShotBWCount: 0,
 				contractPayoffUsed: false,
 				contractPayoffDeclinedFirst: false,
 			})),
 			turn: 1,
 			currentPlayerIndex: 0,
-			currentAP: 0, // Set below
+			currentAP: 0,
 			selectedVampireId: null,
 			lockedInVampireIdThisTurn: null,
 			lastActionVampId: null,
-			actionState: { // Only one actionState definition now
+			actionState: { // Consolidated action state
 				pendingAction: null,
-				selectedHazardType: null
+				selectedHazardType: null,
+				selectedAbility: null,
+				abilityTargetData: null,
+				showCpChoicePopupForPlayer: null, // Flags for popups
+				showCpAutoPopupForPlayer: null
 			},
 			eliminatedVampires: []
+			// bwDestroyedByShotThisTurn: false, // Ensure this is removed
 		};
-		// Inside initializeGame, AFTER currentGameState = { ... };
-		currentGameState.gameInstanceId = Date.now(); // Add a unique ID
-		console.log('Initialized game instance:', currentGameState.gameInstanceId); // Log it
+
+		// Add unique ID for debugging listener issues
+		currentGameState.gameInstanceId = Date.now();
+		console.log('Initialized game instance:', currentGameState.gameInstanceId);
 
 		// --- Set Initial AP ---
 		const pIdx = currentGameState.currentPlayerIndex;
@@ -4865,25 +4869,22 @@ function proceedToNextPlayerTurn() {
 			if (numberOfPlayers === 4) currentGameState.currentAP = [4, 5, 6, 8][pIdx];
 			else if (numberOfPlayers === 3) currentGameState.currentAP = 6;
 			else if (numberOfPlayers === 2) currentGameState.currentAP = 5;
-			else currentGameState.currentAP = 5; // Default/fallback
+			else currentGameState.currentAP = 5;
 		} else {
-			// This block shouldn't typically run during initialization,
-			// but serves as a fallback if initializeGame were called mid-game somehow.
 			console.warn("initializeGame called after turn 1, setting AP to default 5.");
 			currentGameState.currentAP = 5;
 		}
-		console.log(`Initial AP set to: ${currentGameState.currentAP} for Player ${pIdx+1}`);
+		console.log(`Initial AP set to: ${currentGameState.currentAP} for Player ${pIdx + 1}`);
 
 		// --- Setup Board and UI ---
-		generateGrid();
-		renderBoard(currentGameState);
-		updateUI(); // Set status bar, info panel, buttons
+		generateGrid(); // Create empty grid squares
+		renderBoard(currentGameState); // Populate the initial board element with pieces
+
+		// updateUI(); // REMOVED: Redundant call, renderBoard was just called
 
 		// --- Final Setup ---
-		// Ensure logList element exists before manipulating it
 		if (logList) {
 			logList.innerHTML = `<li>Game Started: ${layoutName}</li>`;
-			// Ensure gameLog element exists before manipulating scroll position
 			if (gameLog) gameLog.scrollTop = 0;
 		} else {
 			console.error("logList element not found during initialization.");
@@ -4892,48 +4893,32 @@ function proceedToNextPlayerTurn() {
 		if (btnUndo) btnUndo.disabled = true;
 		if (movementBar) movementBar.classList.add("hidden");
 
-		// Re-attach main gameplay listeners (remove first to prevent duplicates)
-		// --- MODIFICATION START ---
-		const currentBoardElement = document.getElementById("game-board"); // Re-acquire reference inside function scope
-		if (currentBoardElement) {
-			// Ensure we are removing/adding using the exact same function reference on the current element
-			console.log("Attempting to remove old board listener...");
-			currentBoardElement.removeEventListener("click", handleBoardClick);
-			console.log("Adding new board listener...");
-			currentBoardElement.addEventListener("click", handleBoardClick);
+		// --- Listener Handling using Cloning Workaround ---
+		const oldBoardElement = document.getElementById("game-board");
+		if (oldBoardElement && oldBoardElement.parentNode) {
+			console.log("Cloning board to remove old listeners...");
+			const boardClone = oldBoardElement.cloneNode(true); // Clone the board populated by the renderBoard above
+			oldBoardElement.parentNode.replaceChild(boardClone, oldBoardElement);
+			gameBoard = boardClone; // Update the script's reference to the new board
+			console.log("Adding new listener to the cloned board...");
+			gameBoard.addEventListener("click", handleBoardClick); // Add listener to the clean clone
 		} else {
-			// Log error if element is missing when trying to attach listeners
-			console.error("gameBoard element (#game-board) not found during listener re-attachment.");
+			console.error("Cannot find gameBoard element or its parent during listener re-attachment via cloning.");
+			// Fallback (should not be needed if HTML is correct)
+			if(gameBoard) {
+				console.warn("Falling back to adding listener directly to potentially old gameBoard reference.");
+				gameBoard.addEventListener("click", handleBoardClick);
+			}
 		}
-		// --- MODIFICATION END ---
+		// --- End Cloning Workaround ---
 
-// --- CLONING WORKAROUND START ---
-const oldBoardElement = document.getElementById("game-board"); // Get the potentially 'old' board
-if (oldBoardElement && oldBoardElement.parentNode) {
-    console.log("Cloning board to remove old listeners...");
-    const boardClone = oldBoardElement.cloneNode(true); // Clone the board and its grid squares
+		// --- Force Render After Cloning ---
+		// This addresses the issue where the board might appear empty initially after cloning
+		console.log("Forcing re-render after clone...");
+		renderBoard(currentGameState);
+		// --- End Force Render ---
 
-    // Replace the original element in the DOM with the clone
-    oldBoardElement.parentNode.replaceChild(boardClone, oldBoardElement);
-
-    // IMPORTANT: Update the script's 'gameBoard' variable to reference the NEW cloned element
-    gameBoard = boardClone; // Re-assign the top-level variable
-
-    console.log("Adding new listener to the cloned board...");
-    gameBoard.addEventListener("click", handleBoardClick); // Add the single, correct listener to the clone
-
-} else {
-    // This error means we can't even find the board to clone/replace or add a listener
-    console.error("Cannot find gameBoard element (#game-board) or its parent during listener re-attachment via cloning.");
-    // As a fallback, try attaching to the potentially stale global reference if it exists
-    if(gameBoard) {
-         console.warn("Falling back to adding listener directly to potentially old gameBoard reference.");
-         gameBoard.addEventListener("click", handleBoardClick);
-    }
-}
-// --- CLONING WORKAROUND END ---
-
-		// Ensure buttons exist before adding listeners (Keep existing checks for Undo/EndTurn)
+		// Re-attach other listeners (Undo/End Turn)
 		if (btnUndo) {
 			btnUndo.removeEventListener("click", undoLastAction);
 			btnUndo.addEventListener("click", undoLastAction);
@@ -4943,17 +4928,18 @@ if (oldBoardElement && oldBoardElement.parentNode) {
 			btnEndTurn.addEventListener("click", nextTurn);
 		}
 
+		// Show the gameplay screen only after everything is set up and rendered
 		showScreen("gameplay");
 
+		// Log turn start
 		const player = currentGameState.players[pIdx];
 		if (player) {
 			addToLog(`--- Turn ${currentGameState.turn} - ${player.name}'s turn (${player.class}). AP: ${currentGameState.currentAP} ---`);
 		} else {
-			// This case should ideally not happen if playerData is correctly processed
 			console.error(`Could not find player data for index ${pIdx} at the start of the game.`);
 			addToLog(`--- Turn ${currentGameState.turn} - Player ${pIdx + 1}'s turn. AP: ${currentGameState.currentAP} ---`);
 		}
-	}
+	} // --- End initializeGame ---
 
     /**
      * Populates the hazard picker popup (#hazard-picker-options)
