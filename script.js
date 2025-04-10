@@ -5400,7 +5400,7 @@ function proceedToNextPlayerTurn() {
 		} else { // Attempt Pivot
 			executePivot(selectedVamp, direction); // Handles checks & execution
 		}
-	};v
+	};
 
 	if (btnMoveN) btnMoveN.addEventListener("click", () => handleDirectionButtonClick("N"));
 	if (btnMoveE) btnMoveE.addEventListener("click", () => handleDirectionButtonClick("E"));
