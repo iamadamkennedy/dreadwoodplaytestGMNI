@@ -156,6 +156,9 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 		hazardPicker: document.getElementById("hazard-picker"),
 		howToPlay: document.getElementById("screen-how-to-play"), // Can be treated as a popup
 		swiftJustice: document.getElementById('popup-swift-justice'), // ADDED Ref
+		contractPayoffChoice: document.getElementById('popup-contract-payoff-choice'),
+		contractPayoffAuto: document.getElementById('popup-contract-payoff-auto'),
+		nextTurnBonus: document.getElementById('popup-next-turn-bonus'),
 	};
 
 	// Buttons - General UI / Navigation
@@ -2570,258 +2573,224 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 
 	// --- UI Update Functions ---
 
-/**
-     * Updates the detailed player info panel content (abilities, silver bullet)
-     * and the state (visibility, disabled, title) of action and movement buttons.
-     * Called by updateUI.
-     * @param {object} player - The current player object { name, class, eliminated }
-     * @param {number} turn - The current turn number (unused directly here, but context)
-     * @param {number} currentAP - The current action points
-     * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed, ... }
-     */
-function updatePlayerInfoPanel(player, turn, currentAP, resources) {
-	// --- Basic null checks ---
-	if (!player || !resources || !currentClassAbilitiesList || !infoSilverBullet) {
-		console.error("Info Panel Update Error: Missing required elements or data.");
-		if (currentClassAbilitiesList) currentClassAbilitiesList.innerHTML = '<li>Error loading details</li>';
-		if (infoSilverBullet) infoSilverBullet.textContent = 'Error';
-		return;
-	}
-
-	// --- Update Class Details Panel (Abilities List, Silver Bullet Status) ---
-	if (currentClassAbilitiesList && CLASS_DATA[player.class]?.abilities) {
-		currentClassAbilitiesList.innerHTML = ''; // Clear previous list
-		CLASS_DATA[player.class].abilities.forEach(ability => {
-			const li = document.createElement('li');
-			const isUsed = resources.abilitiesUsed.includes(ability.name);
-			// Show cost only for non-passive abilities
-			const apCostText = (ability.type !== 'Passive' && ability.apCost >= 0) ? ` (${ability.apCost} AP)` : '';
-			// Show USED status only for 1/game Active abilities (based on description text)
-			const isOneTimeActive = ability.type === 'Active' && (ability.description.includes('1/game') || ability.techDesc.includes('1/game'));
-			const usedText = (isOneTimeActive && isUsed) ? ' - USED' : '';
-			const displayDesc = ability.techDesc || ability.description; // Prefer techDesc if available
-			li.innerHTML = `<strong>${ability.name} (${ability.type})${apCostText}${usedText}:</strong> ${displayDesc}`;
-			currentClassAbilitiesList.appendChild(li);
-		});
-	} else if (currentClassAbilitiesList) {
-		currentClassAbilitiesList.innerHTML = '<li>Ability details unavailable.</li>';
-	}
-	// Update Silver Bullet status display
-	infoSilverBullet.textContent = resources.silverBullet > 0 ? `Available (${resources.silverBullet})` : "Used";
-
-	// ---== Gather State for Button Updates ==---
-	const selectedVamp = findVampireById(currentGameState.selectedVampireId);
-	const isVampSelected = !!selectedVamp;
-	const isCursed = selectedVamp?.cursed; // Check if the selected vampire is cursed
-	const selectedVampClass = isVampSelected ? currentGameState.players[selectedVamp.player]?.class : null;
-	const lockedVampId = currentGameState.lockedInVampireIdThisTurn;
-	// Determine if the current player can control the selected vampire
-	const canControlSelected = (
-		isVampSelected && // Must have a vampire selected
-		(player.class === 'Vigilante' || // Vigilante ignores lock-in
-		 !lockedVampId || // No lock-in yet this turn
-		 selectedVamp?.id === lockedVampId) // Locked into this specific vampire
-	);
-
-	// Find if there's a hazard on the selected vampire's square (for Dispel/Bite Fuse)
-	let hazardOnVampSquare = null;
-	if (selectedVamp) {
-		hazardOnVampSquare = currentGameState.board.hazards.find((h) => h.coord === selectedVamp.coord);
-	}
-
-	// --- Update Standard Action Button States ---
-	// (Assuming button consts btnShoot, etc., are defined globally)
-
-	if (btnShoot) {
-		btnShoot.style.display = "inline-block";
-		// Disable conditions: No selection OR cannot control OR not enough AP OR cursed
-		btnShoot.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.SHOOT || !!isCursed;
-	}
-
-	if (btnThrow) {
-		btnThrow.style.display = "inline-block";
-		 // Disable conditions: No selection OR cannot control OR not enough AP (min cost) OR cursed
-		btnThrow.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.THROW_HAZARD || !!isCursed;
-	}
-
-	if (btnSilverBullet) {
-		btnSilverBullet.style.display = "inline-block";
-		 // Disable conditions: No selection OR cannot control OR not enough AP OR no bullet left OR cursed
-		btnSilverBullet.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.SILVER_BULLET || resources.silverBullet <= 0 || !!isCursed;
-		btnSilverBullet.title = `Silver Bullet Shot (${AP_COST.SILVER_BULLET} AP)${resources.silverBullet <= 0 ? " - USED" : ""}`;
-	}
-
-	// Dispel Button (Visible only if on Grave Dust)
-	const canAffordDispel = currentAP >= AP_COST.DISPEL;
-	const canDispel = isVampSelected && hazardOnVampSquare?.type === "Grave Dust";
-	if (btnDispel) {
-		btnDispel.style.display = canDispel ? "inline-block" : "none";
-		if (canDispel) { // Only set disabled state if visible
-			// Disable conditions: Cannot control OR not enough AP
-			btnDispel.disabled = !canControlSelected || !canAffordDispel;
-			btnDispel.title = `Dispel Grave Dust (${AP_COST.DISPEL} AP)`;
+	/**
+	 * Updates the detailed player info panel content (abilities, silver bullet)
+	 * and the state (visibility, disabled, title) of action and movement buttons.
+	 * Called by updateUI.
+	 * @param {object} player - The current player object { name, class, eliminated }
+	 * @param {number} turn - The current turn number
+	 * @param {number} currentAP - The current action points
+	 * @param {object} resources - The current player's resources { silverBullet, abilitiesUsed, ... }
+	 */
+	function updatePlayerInfoPanel(player, turn, currentAP, resources) {
+		// --- Basic null checks ---
+		if (!player || !resources || !currentClassAbilitiesList || !infoSilverBullet) {
+			console.error("Info Panel Update Error: Missing required elements or data.");
+			if (currentClassAbilitiesList) currentClassAbilitiesList.innerHTML = '<li>Error loading details</li>';
+			if (infoSilverBullet) infoSilverBullet.textContent = 'Error';
+			return;
 		}
-	}
 
-	// Bite Fuse Button (Visible only if on Dynamite)
-	const canAffordBite = currentAP >= AP_COST.BITE_FUSE;
-	const canBite = isVampSelected && hazardOnVampSquare?.type === "Dynamite";
-	if (btnBiteFuse) {
-		btnBiteFuse.style.display = canBite ? "inline-block" : "none";
-		if (canBite) { // Only set disabled state if visible
-			 // Disable conditions: Cannot control OR not enough AP
-			btnBiteFuse.disabled = !canControlSelected || !canAffordBite;
-			btnBiteFuse.title = `Bite the Fuse (${AP_COST.BITE_FUSE} AP)`;
+		// --- Update Class Details Panel (Abilities List, Silver Bullet Status) ---
+		if (currentClassAbilitiesList && CLASS_DATA[player.class]?.abilities) {
+			currentClassAbilitiesList.innerHTML = ''; // Clear previous list
+			CLASS_DATA[player.class].abilities.forEach(ability => {
+				const li = document.createElement('li');
+				const isUsed = resources.abilitiesUsed.includes(ability.name);
+				const apCostText = (ability.type !== 'Passive' && ability.apCost >= 0) ? ` (${ability.apCost} AP)` : '';
+				// Determine if it's a 1/game Active ability based on description/techDesc
+				const isOneTimeActive = ability.type === 'Active' &&
+									(ability.description?.includes('1/game') || ability.techDesc?.includes('1/game') ||
+									ability.name === 'Order Restored' || ability.name === 'Vengeance is Mine' || // Explicitly add known 1/game actives
+									ability.name === 'Hand Cannon' || ability.name === 'Rampage' );
+				// Add USED status only if it's a 1/game active ability that has been used
+				const usedText = (isOneTimeActive && isUsed) ? ' - <strong style="color: red;">USED</strong>' : '';
+				const displayDesc = ability.techDesc || ability.description; // Prefer techDesc
+				li.innerHTML = `<strong><span class="math-inline">\{ability\.name\} \(</span>{ability.type})<span class="math-inline">\{apCostText\}</span>{usedText}:</strong> ${displayDesc}`;
+				currentClassAbilitiesList.appendChild(li);
+			});
+		} else if (currentClassAbilitiesList) {
+			currentClassAbilitiesList.innerHTML = '<li>Ability details unavailable.</li>';
 		}
-	}
+		infoSilverBullet.textContent = resources.silverBullet > 0 ? `Available (${resources.silverBullet})` : "Used";
 
-	// --- Update Class-Specific Ability Button States ---
-
-	// Rampage Button (Outlaw Only)
-	if (btnRampage) {
-		const isSelectedOutlaw = selectedVampClass === 'Outlaw';
-		btnRampage.style.display = isSelectedOutlaw ? 'inline-block' : 'none'; // Show only if Outlaw selected
-		if (isSelectedOutlaw) {
-			const rampageUsed = resources.abilitiesUsed.includes('Rampage');
-			const canAffordRampage = currentAP >= AP_COST.RAMPAGE;
-			 // Disable conditions: cannot control OR not enough AP OR already used OR cursed
-			btnRampage.disabled = !canControlSelected || !canAffordRampage || rampageUsed || !!isCursed;
-			btnRampage.title = `Rampage (${AP_COST.RAMPAGE} AP, 1/game)${rampageUsed ? ' - USED' : ''}`;
+		// ---== Gather State for Button Updates ==---
+		const selectedVamp = findVampireById(currentGameState.selectedVampireId);
+		const isVampSelected = !!selectedVamp;
+		const isCursed = selectedVamp?.cursed;
+		const selectedVampClass = isVampSelected ? currentGameState.players[selectedVamp.player]?.class : null;
+		const lockedVampId = currentGameState.lockedInVampireIdThisTurn;
+		const canControlSelected = (
+			isVampSelected &&
+			(player.class === 'Vigilante' || !lockedVampId || selectedVamp?.id === lockedVampId)
+		);
+		let hazardOnVampSquare = null;
+		if (selectedVamp) {
+			hazardOnVampSquare = currentGameState.board.hazards.find((h) => h.coord === selectedVamp.coord);
 		}
-	}
 
-	// Hand Cannon Button (Outlaw Only - Placeholder logic)
-	if (btnHandCannon) {
-		const isSelectedOutlaw = selectedVampClass === 'Outlaw';
-		btnHandCannon.style.display = isSelectedOutlaw ? 'inline-block' : 'none';
-		if (isSelectedOutlaw) {
-			const handCannonUsed = resources.abilitiesUsed.includes('Hand Cannon');
-			const canAffordHandCannon = currentAP >= AP_COST.HAND_CANNON;
-			 // Disable conditions: cannot control OR not enough AP OR already used OR cursed
-			btnHandCannon.disabled = !canControlSelected || !canAffordHandCannon || handCannonUsed || !!isCursed;
-			btnHandCannon.title = `Hand Cannon (${AP_COST.HAND_CANNON} AP, 1/game)${handCannonUsed ? ' - USED' : ''}`;
+		// --- Update Standard Action Button States ---
+		if (btnShoot) {
+			btnShoot.style.display = "inline-block";
+			btnShoot.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.SHOOT || !!isCursed;
+			btnShoot.title = `Shoot (${AP_COST.SHOOT} AP)`;
 		}
-	}
-
-	// Contract Payoff Button (Bounty Hunter Only) - UPDATED
-	if (btnContractPayoff) {
-		const isSelectedBH = selectedVampClass === 'Bounty Hunter';
-		btnContractPayoff.style.display = isSelectedBH ? 'inline-block' : 'none'; // Show only if BH selected
-		if (isSelectedBH) {
-			const abilityName = 'Contract Payoff';
-			const contractUsed = resources.abilitiesUsed.includes(abilityName);
-			const canAffordContract = currentAP >= AP_COST.CONTRACT_PAYOFF;
-			const triggerMet = currentGameState.bwDestroyedByShotThisTurn; // <<< ADDED Check trigger flag
-
-			// Disable conditions: Cannot control OR not enough AP OR already used OR trigger not met OR cursed
-			const isDisabled = !canControlSelected || !canAffordContract || contractUsed || !triggerMet || !!isCursed;
-			btnContractPayoff.disabled = isDisabled;
-
-			// Update tooltip to be more informative
-			let title = `${abilityName} (${AP_COST.CONTRACT_PAYOFF} AP, 1/game)`;
-			if (contractUsed) title += ' - USED';
-			else if (!triggerMet) title += ' (No BW Destroyed By Shot This Turn)';
-			else if (!canControlSelected) title += ' (Cannot Control Selected)'; // Added specific reasons
-			else if (!canAffordContract) title += ' (Not Enough AP)';
-			else if (isCursed) title += ' (Cannot Use While Cursed)';
-			btnContractPayoff.title = title;
+		if (btnThrow) {
+			btnThrow.style.display = "inline-block";
+			btnThrow.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.THROW_HAZARD || !!isCursed;
+			btnThrow.title = `Throw Hazard (${AP_COST.THROW_HAZARD} / ${AP_COST.THROW_DYNAMITE} AP)`;
 		}
-	}
-
-	// Order Restored Button (Sheriff Only) - Verified Logic
-	if (btnOrderRestored) {
-		const isSelectedSheriff = selectedVampClass === 'Sheriff';
-		const abilityName = 'Order Restored';
-		const orderUsed = resources.abilitiesUsed.includes(abilityName);
-		const canAffordOrder = currentAP >= AP_COST.ORDER_RESTORED;
-		const playerIndex = currentGameState.currentPlayerIndex;
-
-		// Check if an eliminated Sheriff ally exists
-		const hasEliminatedAlly = currentGameState.eliminatedVampires?.some(
-			v => v.player === playerIndex && currentGameState.players[v.player]?.class === 'Sheriff'
-		) ?? false;
-
-		// Visibility: Show only if a Sheriff is selected AND there's an ally to revive
-		const isVisible = isSelectedSheriff && hasEliminatedAlly;
-		btnOrderRestored.style.display = isVisible ? 'inline-block' : 'none';
-
-		// Disabled state (only matters if visible)
-		if (isVisible) {
-			// Disable conditions: Cannot control OR not enough AP OR already used OR cursed
-			const isDisabled = !canControlSelected || !canAffordOrder || orderUsed || !!isCursed;
-			btnOrderRestored.disabled = isDisabled;
-			// Update tooltip
-			let title = `${abilityName} (${AP_COST.ORDER_RESTORED} AP, 1/game)`;
-			 if (orderUsed) title += ' - USED';
-			 else if (!canControlSelected) title += ' (Cannot Control Selected)';
-			 else if (!canAffordOrder) title += ' (Not Enough AP)';
-			 else if (isCursed) title += ' (Cannot Use While Cursed)';
-			btnOrderRestored.title = title;
+		if (btnSilverBullet) {
+			btnSilverBullet.style.display = "inline-block";
+			btnSilverBullet.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.SILVER_BULLET || resources.silverBullet <= 0 || !!isCursed;
+			btnSilverBullet.title = `Silver Bullet Shot (<span class="math-inline">\{AP\_COST\.SILVER\_BULLET\} AP\)</span>{resources.silverBullet <= 0 ? " - USED" : ""}`;
 		}
-	}
-
-	// Vengeance is Mine Button (Vigilante Only) - Verified Logic
-	if (btnVengeance) {
-		const isSelectedVigilante = selectedVampClass === 'Vigilante';
-		btnVengeance.style.display = isSelectedVigilante ? 'inline-block' : 'none'; // Show only if Vigilante selected
-		if (isSelectedVigilante) {
-			const abilityName = 'Vengeance is Mine';
-			const vengeanceUsed = resources.abilitiesUsed.includes(abilityName);
-			const wasShot = resources.wasShotSinceLastTurn; // Check the trigger flag
-			const canAffordVengeance = currentAP >= AP_COST.VENGEANCE_IS_MINE; // Cost is 0
-
-			// Disable conditions: Cannot control OR not enough AP (0) OR already used OR trigger not met OR cursed
-			const isDisabled = !canControlSelected || !canAffordVengeance || vengeanceUsed || !wasShot || !!isCursed;
-			btnVengeance.disabled = isDisabled;
-
-			// Update tooltip
-			let title = `${abilityName} (${AP_COST.VENGEANCE_IS_MINE} AP, 1/game)`;
-			if (vengeanceUsed) title += ' - USED';
-			else if (!wasShot) title += ' (Ally Not Shot Recently)';
-			else if (!canControlSelected) title += ' (Cannot Control Selected)';
-			else if (isCursed) title += ' (Cannot Use While Cursed)';
-			btnVengeance.title = title;
-		}
-	}
-
-
-	// --- Movement Buttons Visibility & State ---
-	if (movementBar) {
-		if (!isVampSelected) {
-			movementBar.classList.add('hidden');
-		} else {
-			movementBar.classList.remove('hidden');
-			// Logic for enabling/disabling based on Swift Justice or normal turn
-			if (isSwiftJusticeMovePending) {
-				// Force enabled during SJ move selection
-				if (btnMoveN) btnMoveN.disabled = false;
-				if (btnMoveE) btnMoveE.disabled = false;
-				if (btnMoveS) btnMoveS.disabled = false;
-				if (btnMoveW) btnMoveW.disabled = false;
-			} else {
-				// Normal turn movement/pivot logic
-				const canAffordMoveOrPivot = currentAP >= AP_COST.MOVE; // Cost is same for move/pivot
-				const movesTakenThisTurn = selectedVamp?.movesThisTurn || 0;
-				const canMoveForward = !isCursed || movesTakenThisTurn < 1; // Cursed only allow 1 move action
-
-				// Disable Move Forward if cannot afford, cannot control, OR if cursed and already moved
-				if (btnMoveN) btnMoveN.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'N' && !canMoveForward);
-				if (btnMoveE) btnMoveE.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'E' && !canMoveForward);
-				if (btnMoveS) btnMoveS.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'S' && !canMoveForward);
-				if (btnMoveW) btnMoveW.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'W' && !canMoveForward);
-
-				// Ensure PIVOT buttons (those NOT matching facing) are only disabled if cannot afford or control
-				// (Cursed status doesn't prevent pivoting)
-				if (selectedVamp?.facing !== 'N' && btnMoveN) btnMoveN.disabled = !canControlSelected || !canAffordMoveOrPivot;
-				if (selectedVamp?.facing !== 'E' && btnMoveE) btnMoveE.disabled = !canControlSelected || !canAffordMoveOrPivot;
-				if (selectedVamp?.facing !== 'S' && btnMoveS) btnMoveS.disabled = !canControlSelected || !canAffordMoveOrPivot;
-				if (selectedVamp?.facing !== 'W' && btnMoveW) btnMoveW.disabled = !canControlSelected || !canAffordMoveOrPivot;
+		const canAffordDispel = currentAP >= AP_COST.DISPEL;
+		const canDispel = isVampSelected && hazardOnVampSquare?.type === "Grave Dust";
+		if (btnDispel) {
+			btnDispel.style.display = canDispel ? "inline-block" : "none";
+			if (canDispel) {
+				btnDispel.disabled = !canControlSelected || !canAffordDispel;
+				btnDispel.title = `Dispel Grave Dust (${AP_COST.DISPEL} AP)`;
 			}
 		}
-	} else {
-		console.warn("Movement bar element not found.");
-	}
+		const canAffordBite = currentAP >= AP_COST.BITE_FUSE;
+		const canBite = isVampSelected && hazardOnVampSquare?.type === "Dynamite";
+		if (btnBiteFuse) {
+			btnBiteFuse.style.display = canBite ? "inline-block" : "none";
+			if (canBite) {
+				btnBiteFuse.disabled = !canControlSelected || !canAffordBite;
+				btnBiteFuse.title = `Bite the Fuse (${AP_COST.BITE_FUSE} AP)`;
+			}
+		}
 
+		// --- Update Class-Specific Ability Button States ---
+		// Rampage (Outlaw)
+		if (btnRampage) {
+			const isSelectedOutlaw = selectedVampClass === 'Outlaw';
+			btnRampage.style.display = isSelectedOutlaw ? 'inline-block' : 'none';
+			if (isSelectedOutlaw) {
+				const abilityName = 'Rampage';
+				const isUsed = resources.abilitiesUsed.includes(abilityName);
+				const canAfford = currentAP >= AP_COST.RAMPAGE;
+				btnRampage.disabled = !canControlSelected || !canAfford || isUsed || !!isCursed;
+				btnRampage.title = `<span class="math-inline">\{abilityName\} \(</span>{AP_COST.RAMPAGE} AP, 1/game)${isUsed ? ' - USED' : ''}`;
+			}
+		}
+		// Hand Cannon (Outlaw)
+		if (btnHandCannon) {
+			const isSelectedOutlaw = selectedVampClass === 'Outlaw';
+			btnHandCannon.style.display = isSelectedOutlaw ? 'inline-block' : 'none';
+			if (isSelectedOutlaw) {
+				const abilityName = 'Hand Cannon';
+				const isUsed = resources.abilitiesUsed.includes(abilityName);
+				const canAfford = currentAP >= AP_COST.HAND_CANNON;
+				btnHandCannon.disabled = !canControlSelected || !canAfford || isUsed || !!isCursed;
+				btnHandCannon.title = `<span class="math-inline">\{abilityName\} \(</span>{AP_COST.HAND_CANNON} AP, 1/game)${isUsed ? ' - USED' : ''}`;
+			}
+		}
+
+		// --- REMOVED Contract Payoff Button Logic ---
+		// The entire block handling btnContractPayoff visibility and disabled state has been removed.
+		// --- End Removal ---
+
+		// Order Restored (Sheriff) - Verified Logic
+		if (btnOrderRestored) {
+			const isSelectedSheriff = selectedVampClass === 'Sheriff';
+			const abilityName = 'Order Restored';
+			const isUsed = resources.abilitiesUsed.includes(abilityName);
+			const canAfford = currentAP >= AP_COST.ORDER_RESTORED;
+			const playerIndex = currentGameState.currentPlayerIndex; // Index of the current player
+			// Check if an eliminated Sheriff ally exists for the CURRENT player
+			const hasEliminatedAlly = currentGameState.eliminatedVampires?.some(
+				v => v.player === playerIndex && currentGameState.players[v.player]?.class === 'Sheriff'
+			) ?? false;
+
+			const isVisible = isSelectedSheriff && hasEliminatedAlly;
+			btnOrderRestored.style.display = isVisible ? 'inline-block' : 'none';
+
+			if (isVisible) {
+				const isDisabled = !canControlSelected || !canAfford || isUsed || !!isCursed;
+				btnOrderRestored.disabled = isDisabled;
+				let title = `<span class="math-inline">\{abilityName\} \(</span>{AP_COST.ORDER_RESTORED} AP, 1/game)`;
+				if (isUsed) title += ' - USED';
+				else if (isDisabled && !canAfford) title += ' (Not Enough AP)';
+				else if (isDisabled && !!isCursed) title += ' (Cannot Use While Cursed)';
+				else if (isDisabled && !canControlSelected) title += ' (Cannot Control Selected)';
+				btnOrderRestored.title = title;
+			}
+		}
+
+		// Vengeance is Mine (Vigilante) - Verified Logic
+		if (btnVengeance) {
+			const isSelectedVigilante = selectedVampClass === 'Vigilante';
+			const abilityName = 'Vengeance is Mine';
+			const isUsed = resources.abilitiesUsed.includes(abilityName);
+			const triggerMet = resources.wasShotSinceLastTurn; // Check the trigger flag
+			const canAfford = currentAP >= AP_COST.VENGEANCE_IS_MINE; // Cost is 0
+
+			// Visibility: Show only if Vigilante selected
+			btnVengeance.style.display = isSelectedVigilante ? 'inline-block' : 'none';
+
+			if (isSelectedVigilante) {
+				const isDisabled = !canControlSelected || !canAfford || isUsed || !triggerMet || !!isCursed;
+				btnVengeance.disabled = isDisabled;
+				let title = `<span class="math-inline">\{abilityName\} \(</span>{AP_COST.VENGEANCE_IS_MINE} AP, 1/game)`;
+				if (isUsed) title += ' - USED';
+				else if (!triggerMet) title += ' (Ally Not Shot Recently)';
+				else if (isDisabled && !!isCursed) title += ' (Cannot Use While Cursed)';
+				else if (isDisabled && !canControlSelected) title += ' (Cannot Control Selected)';
+				btnVengeance.title = title;
+			}
+		}
+
+		// --- Movement Buttons Visibility & State ---
+		if (movementBar) {
+			if (!isVampSelected) {
+				movementBar.classList.add('hidden');
+			} else {
+				movementBar.classList.remove('hidden');
+				if (isSwiftJusticeMovePending) {
+					// Force enabled during SJ move selection - ensure target validation handles blocks
+					if (btnMoveN) btnMoveN.disabled = !isValidSwiftJusticeTarget(getAdjacentCoord(selectedVamp.coord, 'N'), selectedVamp.id);
+					if (btnMoveE) btnMoveE.disabled = !isValidSwiftJusticeTarget(getAdjacentCoord(selectedVamp.coord, 'E'), selectedVamp.id);
+					if (btnMoveS) btnMoveS.disabled = !isValidSwiftJusticeTarget(getAdjacentCoord(selectedVamp.coord, 'S'), selectedVamp.id);
+					if (btnMoveW) btnMoveW.disabled = !isValidSwiftJusticeTarget(getAdjacentCoord(selectedVamp.coord, 'W'), selectedVamp.id);
+					// Add titles for SJ
+					if (btnMoveN) btnMoveN.title = "Swift Justice Move North (0 AP)";
+					if (btnMoveE) btnMoveE.title = "Swift Justice Move East (0 AP)";
+					if (btnMoveS) btnMoveS.title = "Swift Justice Move South (0 AP)";
+					if (btnMoveW) btnMoveW.title = "Swift Justice Move West (0 AP)";
+				} else {
+					// Normal turn movement/pivot logic
+					const canAffordMoveOrPivot = currentAP >= AP_COST.MOVE;
+					const movesTakenThisTurn = selectedVamp?.movesThisTurn || 0;
+					const canMoveForward = !isCursed || movesTakenThisTurn < 1;
+
+					// Disable Move Forward if cannot afford, cannot control, OR if cursed and already moved
+					if (btnMoveN) btnMoveN.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'N' && !canMoveForward);
+					if (btnMoveE) btnMoveE.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'E' && !canMoveForward);
+					if (btnMoveS) btnMoveS.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'S' && !canMoveForward);
+					if (btnMoveW) btnMoveW.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'W' && !canMoveForward);
+
+					// Ensure PIVOT buttons (those NOT matching facing) are only disabled if cannot afford or control
+					if (selectedVamp?.facing !== 'N' && btnMoveN) btnMoveN.disabled = !canControlSelected || !canAffordMoveOrPivot;
+					if (selectedVamp?.facing !== 'E' && btnMoveE) btnMoveE.disabled = !canControlSelected || !canAffordMoveOrPivot;
+					if (selectedVamp?.facing !== 'S' && btnMoveS) btnMoveS.disabled = !canControlSelected || !canAffordMoveOrPivot;
+					if (selectedVamp?.facing !== 'W' && btnMoveW) btnMoveW.disabled = !canControlSelected || !canAffordMoveOrPivot;
+
+					// Reset titles for normal move/pivot
+					const movePivotTitle = `Move/Pivot (${AP_COST.MOVE} AP)`;
+					if (btnMoveN) btnMoveN.title = movePivotTitle;
+					if (btnMoveE) btnMoveE.title = movePivotTitle;
+					if (btnMoveS) btnMoveS.title = movePivotTitle;
+					if (btnMoveW) btnMoveW.title = movePivotTitle;
+				}
+			}
+		} else {
+			console.warn("Movement bar element not found.");
+		}
+		
 } // End of updatePlayerInfoPanel
 
 	/**
@@ -3039,248 +3008,292 @@ function updatePlayerInfoPanel(player, turn, currentAP, resources) {
 	// Next batch will start with Action Execution functions (executeMove, executePivot, etc.).
 	// --- Action Execution Functions ---
 
-/**
-     * Executes a Shoot action (standard or Silver Bullet).
-     * Handles path tracing, hitting pieces/hazards, and applying effects including passives.
-     * @param {object} vampire - The vampire object shooting.
-     * @param {boolean} [isSilverBullet=false] - If true, performs Silver Bullet logic.
-     * @param {string | null} [overrideFacing=null] - Optional facing for abilities like Rampage.
-     * @param {number | null} [apCostOverride=null] - Optional AP cost for ability sub-shots (e.g., 0).
-     * @returns {boolean} - True if the shot attempt occurred, false otherwise.
-     */
-function executeShoot(vampire, isSilverBullet = false, overrideFacing = null, apCostOverride = null) {
-	if (!vampire) {
-		console.error("executeShoot: Missing vampire object.");
-		return false;
-	}
-
-	const cost = apCostOverride ?? (isSilverBullet ? AP_COST.SILVER_BULLET : AP_COST.SHOOT);
-	const playerIndex = vampire.player;
-	const playerResources = currentGameState.playerResources[playerIndex];
-
-	// --- Validation ---
-	if (apCostOverride === null && currentGameState.currentAP < cost) { // Check AP only if not an override
-		addToLog(`Not enough AP to Shoot (Need ${cost}, Have ${currentGameState.currentAP}).`);
-		return false;
-	}
-	if (vampire.cursed) {
-		addToLog("Cursed vampires cannot shoot.");
-		return false;
-	}
-	if (isSilverBullet && (playerResources.silverBullet <= 0)) {
-		addToLog("No Silver Bullet available.");
-		return false;
-	}
-
-	// --- Lock-in, Resource Deduction & State Tracking (only for player-initiated actions) ---
-	let historySaved = false; // Track if we saved state for potential undo
-	if (apCostOverride === null) {
-		const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
-		if (currentPlayerClass !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
-			currentGameState.lockedInVampireIdThisTurn = vampire.id;
-			addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
+	/**
+	 * Executes a Shoot action (standard or Silver Bullet).
+	 * Handles path tracing, hitting pieces/hazards, and applying effects including passives.
+	 * Sets flags in actionState if Contract Payoff popups need showing post-action.
+	 * @param {object} vampire - The vampire object shooting.
+	 * @param {boolean} [isSilverBullet=false] - If true, performs Silver Bullet logic.
+	 * @param {string | null} [overrideFacing=null] - Optional facing for abilities like Rampage.
+	 * @param {number | null} [apCostOverride=null] - Optional AP cost for ability sub-shots (e.g., 0).
+	 * @returns {boolean} - True if the shot attempt occurred, false otherwise.
+	 */
+	function executeShoot(vampire, isSilverBullet = false, overrideFacing = null, apCostOverride = null) {
+		if (!vampire) {
+			console.error("executeShoot: Missing vampire object.");
+			return false;
 		}
-		currentGameState.lastActionVampId = vampire.id;
 
-		saveStateToHistory(); // Save state before the action resolves
-		historySaved = true; // Mark state saved
+		const cost = apCostOverride ?? (isSilverBullet ? AP_COST.SILVER_BULLET : AP_COST.SHOOT);
+		const playerIndex = vampire.player;
+		const playerResources = currentGameState.playerResources[playerIndex]; // Get resources early
 
-		currentGameState.currentAP -= cost; // Deduct AP
-		if (isSilverBullet) {
-			playerResources.silverBullet--; // Use Silver Bullet
+		// --- Validation ---
+		if (apCostOverride === null && currentGameState.currentAP < cost) {
+			addToLog(`Not enough AP to Shoot (Need ${cost}, Have ${currentGameState.currentAP}).`);
+			return false;
 		}
-		// Reset BW destruction flag at start of a new *player-initiated* shot action
-		currentGameState.bwDestroyedByShotThisTurn = false;
-	} // else: Don't save/deduct AP/reset flags for ability sub-shots like Rampage
-
-	// --- Prepare Shot ---
-	const shooterClass = currentGameState.players[playerIndex].class;
-	const facingToUse = overrideFacing || vampire.facing;
-	let currentCoord = vampire.coord;
-	let hitMessage = `Shot from ${vampire.coord} facing ${facingToUse} went off board.`;
-	let shotResolved = false;
-	let needsEliminationCheck = false;
-	let shotHitOwnVampireFlag = false; // Flag for Vengeance trigger
-	let targetPieceHit = null; // Store the piece that was hit for Vengeance tracking
-	let targetType = null;     // Declare targetType and targetPiece here
-	let targetPiece = null;    // to ensure they are accessible for Vengeance check
-
-	addToLog(`${vampire.id} shoots facing ${facingToUse}${isSilverBullet ? ' (Silver Bullet)' : ''}${apCostOverride !== null ? ' (Ability)' : ''}...`);
-
-	// --- Trace Shot Path ---
-	for (let i = 0; i < 9 && !shotResolved; i++) { // Max 9 squares range
-		const nextCoord = getAdjacentCoord(currentCoord, facingToUse);
-		if (!nextCoord) {
-			shotResolved = true; // Hit board edge
-			break;
+		if (vampire.cursed) {
+			addToLog("Cursed vampires cannot shoot.");
+			return false;
 		}
-		currentCoord = nextCoord;
-		const pieceAtCoord = findPieceAtCoord(currentCoord);
+		if (isSilverBullet && (playerResources.silverBullet <= 0)) {
+			addToLog("No Silver Bullet available.");
+			return false;
+		}
 
-		if (pieceAtCoord) {
-			targetType = pieceAtCoord.type; // Assign type when a piece is found
-			targetPiece = pieceAtCoord.piece; // Assign piece when found
-			targetPieceHit = targetPiece; // Store the reference
+		// --- Lock-in, Resource Deduction & State Tracking (only for player-initiated actions) ---
+		let historySaved = false; // Track if we saved state for potential undo
+		if (apCostOverride === null) {
+			const currentPlayerClass = currentGameState.players[currentGameState.currentPlayerIndex].class;
+			if (currentPlayerClass !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
+				currentGameState.lockedInVampireIdThisTurn = vampire.id;
+				addToLog(`Locked into controlling ${vampire.id} for the rest of the turn.`);
+			}
+			currentGameState.lastActionVampId = vampire.id;
 
-			// --- Hazard Interactions ---
-			if (targetType === "hazard") {
-				if (targetPiece.type === "Tombstone") {
-					const isSharpshooter = shooterClass === "Bounty Hunter";
-					if (isSharpshooter) {
-						addToLog(`Shot passes through Tombstone at ${currentCoord} (Sharpshooter).`);
-						continue; // Shot continues
-					} else {
-						hitMessage = `Shot DESTROYED Tombstone at ${currentCoord}!`;
-						if (isSilverBullet) hitMessage = `Silver Bullet shattered Tombstone at ${currentCoord} (Shot Blocked)!`;
-						returnHazardToPool("Tombstone");
+			saveStateToHistory(); // Save state before the action resolves
+			historySaved = true; // Mark state saved
+
+			currentGameState.currentAP -= cost; // Deduct AP
+			if (isSilverBullet) {
+				playerResources.silverBullet--; // Use Silver Bullet
+			}
+			// REMOVED: Resetting bwDestroyedByShotThisTurn (flag no longer exists)
+		} // else: Don't save/deduct AP for ability sub-shots like Rampage
+
+		// --- Prepare Shot ---
+		const shooterClass = currentGameState.players[playerIndex].class;
+		const facingToUse = overrideFacing || vampire.facing;
+		let currentCoord = vampire.coord;
+		let hitMessage = `Shot from ${vampire.coord} facing ${facingToUse} went off board.`;
+		let shotResolved = false;
+		let needsEliminationCheck = false;
+		let shotHitOwnVampireFlag = false; // Flag for Vengeance trigger
+		let targetPieceHit = null; // Store the piece that was hit for Vengeance tracking
+		let targetType = null;
+		let targetPiece = null;
+		let explosionQueue = []; // Initialize queue here for dynamite
+
+		// --- ADDED: Reset flags for popups before tracing shot ---
+		currentGameState.actionState.showCpChoicePopupForPlayer = null;
+		currentGameState.actionState.showCpAutoPopupForPlayer = null;
+
+		addToLog(`${vampire.id} shoots facing ${facingToUse}${isSilverBullet ? ' (Silver Bullet)' : ''}${apCostOverride !== null ? ' (Ability)' : ''}...`);
+
+		// --- Trace Shot Path ---
+		for (let i = 0; i < 9 && !shotResolved; i++) {
+			const nextCoord = getAdjacentCoord(currentCoord, facingToUse);
+			if (!nextCoord) {
+				shotResolved = true; // Hit board edge
+				break;
+			}
+			currentCoord = nextCoord;
+			const pieceAtCoord = findPieceAtCoord(currentCoord);
+
+			if (pieceAtCoord) {
+				targetType = pieceAtCoord.type;
+				targetPiece = pieceAtCoord.piece;
+				targetPieceHit = targetPiece; // Store reference for Vengeance
+
+				// --- Hazard Interactions ---
+				if (targetType === "hazard") {
+					if (targetPiece.type === "Tombstone") {
+						const isSharpshooter = shooterClass === "Bounty Hunter";
+						if (isSharpshooter) {
+							addToLog(`Shot passes through Tombstone at ${currentCoord} (Sharpshooter).`);
+							continue; // Shot continues
+						} else {
+							hitMessage = `Shot DESTROYED Tombstone at ${currentCoord}!`;
+							if (isSilverBullet) hitMessage = `Silver Bullet shattered Tombstone at ${currentCoord} (Shot Blocked)!`;
+							returnHazardToPool("Tombstone");
+							currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
+							shotResolved = true;
+						}
+					} else if (targetPiece.type === "Dynamite") {
+						hitMessage = `Shot hit Dynamite at ${currentCoord}! BOOM!`;
+						shotResolved = true; // Shot resolution is handled by explosion processing
+						console.log(`Dynamite hit by shot at ${currentCoord}. Adding to explosion queue.`);
+						addToLog(`Shot triggers Dynamite at ${currentCoord}!`);
+						if (!explosionQueue.includes(currentCoord)) { // Avoid duplicates if hit directly
+							explosionQueue.push(currentCoord);
+						}
+						// Don't remove/return hazard here; let processExplosionQueue handle it
+					} else if (targetPiece.type === "Black Widow") {
+						hitMessage = `Shot destroyed Black Widow at ${currentCoord}!`;
+						returnHazardToPool("Black Widow");
 						currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
 						shotResolved = true;
+					} else if (targetPiece.type === "Grave Dust") {
+						addToLog(`Shot passes through Grave Dust at ${currentCoord}.`);
+						continue;
 					}
-				} else if (targetPiece.type === "Dynamite") {
-					hitMessage = `Shot hit Dynamite at ${currentCoord}! BOOM!`;
-					shotResolved = true;
-					console.log(`Dynamite hit by shot at ${currentCoord}. Initiating explosion.`);
-					addToLog(`Shot triggers Dynamite at ${currentCoord}!`);
-					const explosionQueue = [currentCoord];
-					const processedExplosions = new Set();
-					returnHazardToPool("Dynamite");
-					currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
-					processExplosionQueue(explosionQueue, processedExplosions); // This handles chains & UI update
-				} else if (targetPiece.type === "Black Widow") {
-					hitMessage = `Shot destroyed Black Widow at ${currentCoord}!`;
-					returnHazardToPool("Black Widow");
-					currentGameState.board.hazards = currentGameState.board.hazards.filter(h => h.coord !== currentCoord);
-					shotResolved = true;
-				} else if (targetPiece.type === "Grave Dust") {
-					addToLog(`Shot passes through Grave Dust at ${currentCoord}.`);
-					continue;
 				}
-			}
-			// --- Piece Interactions ---
-			else if (targetType === 'vampire') {
-				const targetVampInState = findVampireById(targetPiece.id); // Get reference
+				// --- Piece Interactions ---
+				else if (targetType === 'vampire') {
+					const targetVampInState = findVampireById(targetPiece.id); // Get reference
 
-				if (targetPiece.player !== playerIndex) { // --- Hit an ENEMY vampire ---
-					if (isSilverBullet) {
-						hitMessage = `Silver Bullet HIT & ELIMINATED enemy ${targetPiece.id} at ${currentCoord}!`;
-						addToLog(hitMessage);
-						if (targetVampInState) currentGameState.eliminatedVampires.push(JSON.parse(JSON.stringify(targetVampInState)));
-						currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.id !== targetPiece.id);
-						needsEliminationCheck = true;
-					} else {
-						 // Marked Man (Bounty Hunter) Passive Check - Apply Curse
-						 let curseApplied = false;
-						 if (shooterClass === 'Bounty Hunter' && targetVampInState) {
-							curseApplied = applyCurse(targetVampInState); // Use helper
-						 }
-						 hitMessage = `Shot HIT enemy ${targetPiece.id} at ${currentCoord}.${curseApplied ? ' Target CURSED!' : ''}`;
+					if (targetPiece.player !== playerIndex) { // --- Hit an ENEMY vampire ---
+						if (isSilverBullet) {
+							hitMessage = `Silver Bullet HIT & ELIMINATED enemy ${targetPiece.id} at ${currentCoord}!`;
+							addToLog(hitMessage);
+							if (targetVampInState) currentGameState.eliminatedVampires.push(JSON.parse(JSON.stringify(targetVampInState)));
+							currentGameState.board.vampires = currentGameState.board.vampires.filter(v => v.id !== targetPiece.id);
+							needsEliminationCheck = true;
+						} else {
+							// --- ADDED: Marked Man (Bounty Hunter) Passive Check ---
+							let curseApplied = false;
+							if (shooterClass === 'Bounty Hunter' && targetVampInState) {
+								curseApplied = applyCurse(targetVampInState); // Use helper
+							}
+							hitMessage = `Shot HIT enemy ${targetPiece.id} at ${currentCoord}.${curseApplied ? ' Target CURSED!' : ''}`;
+							// --- End Marked Man ---
+						}
+					} else { // --- Hit an ALLY vampire ---
+						hitMessage = `Shot hit ally ${targetPiece.id} at ${currentCoord}.`;
+						shotHitOwnVampireFlag = true; // Set flag for Vengeance check later
 					}
-				} else { // --- Hit an ALLY vampire ---
-					hitMessage = `Shot hit ally ${targetPiece.id} at ${currentCoord}.`;
-					shotHitOwnVampireFlag = true; // Set flag for Vengeance check later
-				}
-				shotResolved = true; // Shot always stops on hitting a vampire
-			} else if (targetType === 'bloodwell') {
-				const targetBWPlayerIndex = targetPiece.player;
-				let isProtected = false;
-				// Check Sheriff Protection (only for standard shots)
-				if (!isSilverBullet) {
-					const ownerPlayer = currentGameState.players[targetBWPlayerIndex];
-					if (ownerPlayer?.class === 'Sheriff' && !ownerPlayer.eliminated) {
-						const activeSheriffVamps = currentGameState.board.vampires.filter(v => v.player === targetBWPlayerIndex);
-						for (const sheriffVamp of activeSheriffVamps) {
-							const protectionZone = getCoordsInArea(sheriffVamp.coord, 1);
-							if (protectionZone.includes(targetPiece.coord)) {
-								isProtected = true;
-								break;
+					shotResolved = true; // Shot always stops on hitting a vampire
+				} else if (targetType === 'bloodwell') {
+					const targetBWPlayerIndex = targetPiece.player;
+					let isProtected = false;
+					// Check Sheriff Protection (only for standard shots)
+					if (!isSilverBullet) {
+						const ownerPlayer = currentGameState.players[targetBWPlayerIndex];
+						// Check if owner is Sheriff and NOT eliminated
+						if (ownerPlayer?.class === 'Sheriff' && !ownerPlayer.eliminated) {
+							// Check if any active Sheriff vamps of that player are nearby
+							const activeSheriffVamps = currentGameState.board.vampires.filter(v => v.player === targetBWPlayerIndex);
+							for (const sheriffVamp of activeSheriffVamps) {
+								const protectionZone = getCoordsInArea(sheriffVamp.coord, 1);
+								if (protectionZone.includes(targetPiece.coord)) {
+									isProtected = true;
+									break;
+								}
 							}
 						}
 					}
-				}
 
-				if (isProtected) {
-					 hitMessage = `Shot blocked! Sheriff's Bloodwell at ${targetPiece.coord} is protected!`;
-					 addToLog(hitMessage);
-				} else {
-					// Destroy Bloodwell
-					hitMessage = `Shot DESTROYED Bloodwell ${targetPiece.id} at ${targetPiece.coord}!`;
-					addToLog(hitMessage);
-					currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== targetPiece.id);
-					needsEliminationCheck = true;
+					if (isProtected) {
+						hitMessage = `Shot blocked! Sheriff's Bloodwell at ${targetPiece.coord} is protected!`;
+						addToLog(hitMessage);
+					} else {
+						// Destroy Bloodwell
+						hitMessage = `Shot DESTROYED Bloodwell ${targetPiece.id} at ${targetPiece.coord}!`;
+						addToLog(hitMessage);
+						currentGameState.board.bloodwells = currentGameState.board.bloodwells.filter(bw => bw.id !== targetPiece.id);
+						needsEliminationCheck = true;
 
-					// --- Trigger Checks for Abilities ---
-					// Set flag for Contract Payoff check later this turn (if shooter is BH & player action)
-					if (apCostOverride === null && shooterClass === 'Bounty Hunter') {
-						currentGameState.bwDestroyedByShotThisTurn = true;
-						console.log("BW destroyed by shot, enabling Contract Payoff option.");
+						// --- MODIFIED: Trigger Checks for Abilities ---
+						// Contract Payoff (Bounty Hunter) - New Logic
+						if (shooterClass === 'Bounty Hunter' && apCostOverride === null) { // Only for player-initiated shots
+							// Get player resources again (might have changed if multi-hit scenario existed)
+							const bhResources = currentGameState.playerResources[playerIndex];
+							if (!bhResources.contractPayoffUsed) {
+								bhResources.bhShotBWCount++;
+								console.log(`BH (${playerIndex}) destroyed BW #${bhResources.bhShotBWCount}`);
+								if (bhResources.bhShotBWCount === 1) {
+									// Trigger choice popup after action resolves
+									currentGameState.actionState.showCpChoicePopupForPlayer = playerIndex;
+									console.log(`Setting flag to show CP Choice popup for P${playerIndex}`);
+								} else if (bhResources.bhShotBWCount === 2 && bhResources.contractPayoffDeclinedFirst) {
+									// Trigger automatic bonus application and notification
+									bhResources.contractPayoffNextTurnBonus = 4;
+									bhResources.contractPayoffUsed = true;
+									currentGameState.actionState.showCpAutoPopupForPlayer = playerIndex;
+									console.log(`Setting flag to show CP Auto popup for P${playerIndex}`);
+								}
+								// If count > 2 or count is 2 but didn't decline first, do nothing more.
+							}
+						}
+						// TODO: Trigger Daring Escape check if shooter is Outlaw and it was an ENEMY BW
+						// if (apCostOverride === null && shooterClass === 'Outlaw' && targetBWPlayerIndex !== playerIndex) { ... }
 					}
-					// TODO: Trigger Daring Escape check if shooter is Outlaw and it was an ENEMY BW
-					// if (apCostOverride === null && shooterClass === 'Outlaw' && targetBWPlayerIndex !== playerIndex) { ... }
+					shotResolved = true; // Shot stops on hitting bloodwell (protected or destroyed)
 				}
-				shotResolved = true; // Shot stops on hitting bloodwell
+			} // End if(pieceAtCoord)
+
+			if (shotResolved && explosionQueue.length === 0) break; // Exit loop if shot resolved *and* no explosion pending
+			// If explosion is pending, let loop finish path tracing in case other things are hit *before* explosion resolves everything
+		} // End for loop (shot path)
+
+
+		// --- Handle Dynamite Explosion ---
+		if (explosionQueue.length > 0) {
+			// Process the explosion queue. This function handles chain reactions, UI updates, and elimination checks internally.
+			processExplosionQueue(explosionQueue, new Set()); // Pass a new Set for processed explosions
+			// Since processExplosionQueue handles updates, return early
+			return true;
+		}
+
+		// --- Final Logging & Vengeance Check (Only if NO explosion happened) ---
+		const requiresFinalUpdate = apCostOverride === null; // Don't update if ability sub-call
+
+		if (requiresFinalUpdate) { // Log final outcome only if explosion didn't happen
+			const finalLogAPMsg = ` (${currentGameState.currentAP} AP left)`;
+			addToLog(hitMessage + finalLogAPMsg);
+		}
+
+		// Vengeance is Mine Trigger Check (Still relevant even if shot stopped before hitting ally, e.g. hit hazard first)
+		// Use targetPieceHit reference stored during the loop
+		if (shotHitOwnVampireFlag && apCostOverride === null && targetPieceHit && targetPieceHit.type === 'vampire') {
+			const allyPlayerIndex = targetPieceHit.player;
+			if (currentGameState.playerResources[allyPlayerIndex]) {
+				currentGameState.playerResources[allyPlayerIndex].wasShotSinceLastTurn = true;
+				console.log(`Vengeance trigger: P${allyPlayerIndex + 1}'s vampire (${targetPieceHit.id}) was shot.`);
 			}
-		} // End if(pieceAtCoord)
-
-		if (shotResolved) break; // Exit loop if shot resolved
-	} // End for loop (shot path)
-
-	// --- Final Logging & Updates ---
-	const requiresFinalUpdate = apCostOverride === null && !hitMessage.includes("Dynamite"); // Don't update if ability sub-call or explosion handles it
-
-	if (requiresFinalUpdate) { // Log final outcome only if explosion didn't happen
-		 const finalLogAPMsg = ` (${currentGameState.currentAP} AP left)`;
-		 addToLog(hitMessage + finalLogAPMsg);
-	}
-
-	// --- Vengeance is Mine Trigger Check ---
-	// Check if an ally vampire was hit by a player-initiated shot
-	// Use targetPieceHit reference stored during the loop
-	if (shotHitOwnVampireFlag && apCostOverride === null && targetPieceHit && targetPieceHit.type === 'vampire') {
-		 const allyPlayerIndex = targetPieceHit.player; // Get index of the player whose vamp was hit
-		 if (currentGameState.playerResources[allyPlayerIndex]) {
-			  currentGameState.playerResources[allyPlayerIndex].wasShotSinceLastTurn = true;
-			  console.log(`Vengeance trigger: P${allyPlayerIndex + 1}'s vampire (${targetPieceHit.id}) was shot.`);
-		 }
-	}
-
-
-	// --- Post-Action Updates (Elimination, Game End, UI Refresh) ---
-	if (requiresFinalUpdate) { // Only perform these if not handled by explosion queue
-		let gameEnded = false;
-		if (needsEliminationCheck) {
-			 console.log("Checking elimination status after shot resolution.");
-			 const newlyEliminatedIndexes = new Set();
-			 for (let i = 0; i < currentGameState.players.length; i++) {
-				 // Check only players not already known to be eliminated
-				 if (!currentGameState.players[i].eliminated && checkPlayerElimination(i)) {
-					 if (updateEliminationState(i)) {
-						  newlyEliminatedIndexes.add(i);
-					 }
-				 }
-			 }
-			 gameEnded = checkGameEnd(); // Check for winner AFTER processing eliminations
-			 if (gameEnded) {
-				  if (historySaved) { // Invalidate undo if game ended
-					   gameHistory = [];
-					   if(btnUndo) btnUndo.disabled = true;
-				  }
-				  // Don't show elimination popups if game ended, victory popup handles it
-			 } else {
-				 // Show popups only if game continues for newly eliminated players
-				 newlyEliminatedIndexes.forEach(eliminatedIndex => {
-					showEliminationPopup(eliminatedIndex);
-				 });
-			 }
 		}
-		// Re-render board state and update UI only if game hasn't ended and explosion didn't handle it
-		if (!gameEnded) {
-			renderBoard(currentGameState);
-			updateUI();
-		}
-	}
 
-	return true; // Indicate shot attempt occurred
-}
+		// --- Post-Action Updates (Elimination, Game End, UI Refresh) ---
+		let gameEnded = false; // Declare here for scope
+		if (requiresFinalUpdate) { // Only perform these if not handled by explosion queue
+			if (needsEliminationCheck) {
+				console.log("Checking elimination status after shot resolution.");
+				const newlyEliminatedIndexes = new Set();
+				for (let i = 0; i < currentGameState.players.length; i++) {
+					if (!currentGameState.players[i].eliminated && checkPlayerElimination(i)) {
+						if (updateEliminationState(i)) {
+							newlyEliminatedIndexes.add(i);
+						}
+					}
+				}
+				gameEnded = checkGameEnd(); // Check for winner AFTER processing eliminations
+				if (gameEnded) {
+					if (historySaved) { // Invalidate undo if game ended
+						gameHistory = [];
+						if(btnUndo) btnUndo.disabled = true;
+					}
+					// Don't show elimination popups if game ended, victory popup handles it
+				} else {
+					// Show popups only if game continues for newly eliminated players
+					newlyEliminatedIndexes.forEach(eliminatedIndex => {
+						// Check if popup should show (might be delayed if CP popup also needs showing?)
+						// For now, show immediately. Potential overlap if player is eliminated AND gets CP choice.
+						showEliminationPopup(eliminatedIndex);
+					});
+				}
+			}
+
+			// --- Check for Contract Payoff Popups needing display AFTER potential elimination checks ---
+			if (!gameEnded) { // Don't show CP popups if game ended
+				if (currentGameState.actionState.showCpChoicePopupForPlayer !== null) {
+					showContractPayoffChoicePopup(currentGameState.actionState.showCpChoicePopupForPlayer);
+					currentGameState.actionState.showCpChoicePopupForPlayer = null; // Reset flag
+				} else if (currentGameState.actionState.showCpAutoPopupForPlayer !== null) {
+					showContractPayoffAutoPopup(currentGameState.actionState.showCpAutoPopupForPlayer);
+					currentGameState.actionState.showCpAutoPopupForPlayer = null; // Reset flag
+				}
+			}
+
+			// Re-render board state and update UI only if game hasn't ended and explosion didn't handle it
+			if (!gameEnded) {
+				renderBoard(currentGameState);
+				updateUI();
+			}
+		} // end requiresFinalUpdate
+
+		return true; // Indicate shot attempt occurred
+	}
 
 	/**
 	 * Executes a Pivot action for the selected vampire.
@@ -3663,63 +3676,59 @@ function executeShoot(vampire, isSilverBullet = false, overrideFacing = null, ap
 	}
 
 /**
-     * Executes the Sheriff's Order Restored ability (initiates targeting).
-     * Checks conditions and sets up the game state for target square selection.
-     * @param {object} sheriffVamp - The Sheriff vampire initiating the revival.
-     * @returns {boolean} - True if targeting successfully initiated, false otherwise.
-     */
+ * Executes the Sheriff's Order Restored ability (initiates targeting).
+ * Checks conditions and sets up the game state for target square selection.
+ * @param {object} sheriffVamp - The Sheriff vampire initiating the revival.
+ * @returns {boolean} - True if targeting successfully initiated, false otherwise.
+ */
 function executeOrderRestored(sheriffVamp) {
-	// --- Validation ---
-	if (!sheriffVamp || currentGameState.players[sheriffVamp.player]?.class !== 'Sheriff') {
-		console.error("executeOrderRestored: Invalid activating vampire.");
-		return false;
-	}
+    // --- Validation ---
+    if (!sheriffVamp || currentGameState.players[sheriffVamp.player]?.class !== 'Sheriff') {
+        console.error("executeOrderRestored: Invalid activating vampire.");
+        return false;
+    }
 
-	const cost = AP_COST.ORDER_RESTORED;
-	const abilityName = 'Order Restored';
-	const playerIndex = sheriffVamp.player;
-	const playerResources = currentGameState.playerResources[playerIndex];
+    const cost = AP_COST.ORDER_RESTORED;
+    const abilityName = 'Order Restored';
+    const playerIndex = sheriffVamp.player;
+    const playerResources = currentGameState.playerResources[playerIndex];
 
-	if (currentGameState.currentAP < cost) {
-		addToLog(`Not enough AP for ${abilityName}. Need ${cost}, have ${currentGameState.currentAP}.`);
-		return false;
-	}
-	if (playerResources.abilitiesUsed.includes(abilityName)) {
-		addToLog(`${abilityName} already used this game.`);
-		return false;
-	}
-	if (sheriffVamp.cursed) {
-		addToLog(`Cannot use ${abilityName} while cursed.`);
-		return false;
-	}
-	// Check if there's an eliminated Sheriff of the current player to revive
-	const eliminatedSheriff = currentGameState.eliminatedVampires.find(
-		 ev => ev.player === playerIndex && currentGameState.players[ev.player]?.class === 'Sheriff'
-	);
-	if (!eliminatedSheriff) {
-		addToLog(`No eliminated Sheriffs available to revive.`);
-		// Disable button state should ideally prevent this, but double-check
-		return false;
-	}
+    if (currentGameState.currentAP < cost) {
+        addToLog(`Not enough AP for ${abilityName}. Need ${cost}, have ${currentGameState.currentAP}.`);
+        return false;
+    }
+    if (playerResources.abilitiesUsed.includes(abilityName)) {
+        addToLog(`${abilityName} already used this game.`);
+        return false;
+    }
+    if (sheriffVamp.cursed) {
+        addToLog(`Cannot use ${abilityName} while cursed.`);
+        return false;
+    }
+    // Check if there's an eliminated Sheriff of the current player to revive
+    const eliminatedSheriff = currentGameState.eliminatedVampires.find(
+         ev => ev.player === playerIndex && currentGameState.players[ev.player]?.class === 'Sheriff' // Find first eligible one
+    );
+    if (!eliminatedSheriff) {
+        addToLog(`No eliminated Sheriffs available to revive.`);
+        return false;
+    }
 
-	// --- Initiate Targeting ---
-	// Note: State is saved in handleBoardClick AFTER target selection is confirmed.
-	currentGameState.actionState.pendingAction = 'order-restored-select-target';
-	currentGameState.actionState.selectedAbility = abilityName;
-	// Store needed info for resolution after click
-	currentGameState.actionState.abilityTargetData = {
-		 activatingVampId: sheriffVamp.id,
-		 reviveVampId: eliminatedSheriff.id // Store ID of the specific vamp to revive
-		 // We only support reviving one at a time, find finds the first. If multiple were possible, UI would need selection.
-	};
+    // --- Initiate Targeting ---
+    // Note: State is saved in handleBoardClick AFTER target selection is confirmed.
+    currentGameState.actionState.pendingAction = 'order-restored-select-target';
+    currentGameState.actionState.selectedAbility = abilityName;
+    // Store needed info for resolution after click
+    currentGameState.actionState.abilityTargetData = {
+         activatingVampId: sheriffVamp.id,
+         reviveVampId: eliminatedSheriff.id // Store ID of the specific vamp to revive
+    };
 
-	// Highlight potential squares and check if any are valid
-	highlightOrderRestoredTargets(sheriffVamp); // This function handles logging for target selection or lack thereof
+    // Highlight potential squares and check if any are valid
+    highlightOrderRestoredTargets(sheriffVamp); // This function handles logging for target selection or lack thereof
 
-	// Check if the highlighter found any targets; if not, it should reset the action state itself.
-	// Assuming highlighter works correctly, we don't need an extra check here.
-
-	return true; // Indicate targeting started (or potentially failed if highlighter found no spots)
+    // If highlighter finds no valid targets, it should reset actionState and log message.
+    return true; // Indicate targeting started (or potentially failed if highlighter found no spots)
 }
 
 /**
@@ -3729,120 +3738,141 @@ function executeOrderRestored(sheriffVamp) {
  * @returns {boolean} - True if action successful, false otherwise.
  */
 function executeVengeanceIsMine(vigilanteVamp) {
-	 // --- Validation ---
-	 if (!vigilanteVamp || currentGameState.players[vigilanteVamp.player]?.class !== 'Vigilante') {
-		console.error("executeVengeanceIsMine: Invalid activating vampire.");
-		return false;
-	 }
+     // --- Validation ---
+     if (!vigilanteVamp || currentGameState.players[vigilanteVamp.player]?.class !== 'Vigilante') {
+        console.error("executeVengeanceIsMine: Invalid activating vampire.");
+        return false;
+     }
 
-	 const cost = AP_COST.VENGEANCE_IS_MINE; // Should be 0
-	 const abilityName = 'Vengeance is Mine';
-	 const playerIndex = vigilanteVamp.player;
-	 const playerResources = currentGameState.playerResources[playerIndex];
+     const cost = AP_COST.VENGEANCE_IS_MINE; // Should be 0
+     const abilityName = 'Vengeance is Mine';
+     const playerIndex = vigilanteVamp.player;
+     const playerResources = currentGameState.playerResources[playerIndex];
 
-	 if (currentGameState.currentAP < cost) { // Check even if 0, for consistency
-		 addToLog(`Not enough AP for ${abilityName}. Need ${cost}, have ${currentGameState.currentAP}.`);
-		 return false;
-	 }
-	 if (playerResources.abilitiesUsed.includes(abilityName)) {
-		 addToLog(`${abilityName} already used this game.`);
-		 return false;
-	 }
-	 // Check the trigger condition: Was an owned vampire shot since last turn?
-	 if (!playerResources.wasShotSinceLastTurn) {
-		 addToLog(`Cannot use ${abilityName}: No owned vampire was shot since your last turn.`);
-		 return false;
-	 }
-	 // Cannot use if cursed? Assumed yes.
-	 if (vigilanteVamp.cursed) {
-		 addToLog(`Cannot use ${abilityName} while cursed.`);
-		 return false;
-	 }
+     if (currentGameState.currentAP < cost) {
+         addToLog(`Not enough AP for ${abilityName}. Need ${cost}, have ${currentGameState.currentAP}.`);
+         return false;
+     }
+     if (playerResources.abilitiesUsed.includes(abilityName)) {
+         addToLog(`${abilityName} already used this game.`);
+         return false;
+     }
+     if (!playerResources.wasShotSinceLastTurn) {
+         addToLog(`Cannot use ${abilityName}: No owned vampire was shot since your last turn.`);
+         return false;
+     }
+     if (vigilanteVamp.cursed) {
+         addToLog(`Cannot use ${abilityName} while cursed.`);
+         return false;
+     }
 
-	 // --- Action Valid - Execute ---
-	 saveStateToHistory(); // Save state before applying effects
+     // --- Action Valid - Execute ---
+     saveStateToHistory(); // Save state before applying effects
 
-	 // Set bonus flag for next turn
-	 playerResources.vengeanceNextTurnBonus = 7; // The specified bonus AP
-	 playerResources.abilitiesUsed.push(abilityName); // Mark ability as used
-	 currentGameState.currentAP -= cost; // Deduct AP (should be 0)
+     // Set bonus flag for next turn
+     playerResources.vengeanceNextTurnBonus = 7; // The specified bonus AP
+     playerResources.abilitiesUsed.push(abilityName); // Mark ability as used
+     currentGameState.currentAP -= cost; // Deduct AP (should be 0)
+     playerResources.wasShotSinceLastTurn = false; // Consume the trigger flag
 
-	  // Lock-in logic (important even for 0 AP actions to potentially lock the player in)
-	 const currentPlayerClass = currentGameState.players[playerIndex].class; // Should be Vigilante, but check anyway
-	 if (currentPlayerClass !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
-		 currentGameState.lockedInVampireIdThisTurn = vigilanteVamp.id;
-		 addToLog(`Locked into controlling ${vigilanteVamp.id} for the rest of the turn.`);
-	 }
-	 // Update last action vamp ID
-	 currentGameState.lastActionVampId = vigilanteVamp.id;
+     // Lock-in logic
+     const currentPlayerClass = currentGameState.players[playerIndex].class;
+     if (currentPlayerClass !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
+         currentGameState.lockedInVampireIdThisTurn = vigilanteVamp.id;
+         addToLog(`Locked into controlling ${vigilanteVamp.id} for the rest of the turn.`);
+     }
+     currentGameState.lastActionVampId = vigilanteVamp.id;
 
-	 addToLog(`${vigilanteVamp.id} activates ${abilityName}! +7 AP next turn. (${currentGameState.currentAP} AP left)`);
+     addToLog(`${vigilanteVamp.id} activates <span class="math-inline">\{abilityName\}\! \+7 AP next turn\. \(</span>{currentGameState.currentAP} AP left)`);
 
-	 updateUI(); // Update UI to reflect AP change (if any) and ability used status
-	 return true; // Action successful
+     updateUI(); // Update UI to reflect AP change (if any) and ability used status
+     return true; // Action successful
 }
 
- /**
- * Executes the Bounty Hunter's Contract Payoff ability.
- * Checks conditions (including if a BW was destroyed by shot this turn),
- * saves state, sets the AP bonus flag for the next turn, and updates UI.
- * @param {object} bhVamp - The Bounty Hunter vampire using the ability.
- * @returns {boolean} - True if action successful, false otherwise.
+/**
+ * Shows the Contract Payoff choice popup.
+ * @param {number} playerIndex - The index of the BH player who triggered it.
  */
- function executeContractPayoff(bhVamp) {
-	 // --- Validation ---
-	 if (!bhVamp || currentGameState.players[bhVamp.player]?.class !== 'Bounty Hunter') {
-		console.error("executeContractPayoff: Invalid activating vampire.");
-		return false;
-	 }
+function showContractPayoffChoicePopup(playerIndex) {
+    console.log(`Showing Contract Payoff Choice Popup for P${playerIndex}`);
+    const popup = popups.contractPayoffChoice; // Use reference from popups object
+    if (popup) {
+        // Optional: Update message if needed, though static is likely fine
+        // const msgElement = document.getElementById('cp-choice-message');
+        // if(msgElement) msgElement.textContent = "New message...";
+        popup.style.display = 'flex';
+        // Store triggering player index if needed by handlers, e.g., on the popup element itself
+        popup.dataset.triggeringPlayer = playerIndex;
+    } else {
+        console.error("Contract Payoff Choice popup element not found!");
+    }
+}
 
-	 const cost = AP_COST.CONTRACT_PAYOFF; // Should be 3
-	 const abilityName = 'Contract Payoff';
-	 const playerIndex = bhVamp.player;
-	 const playerResources = currentGameState.playerResources[playerIndex];
+/**
+ * Shows the Contract Payoff automatic bonus notification popup.
+ * @param {number} playerIndex - The index of the BH player who triggered it.
+ */
+function showContractPayoffAutoPopup(playerIndex) {
+    console.log(`Showing Contract Payoff Auto Popup for P${playerIndex}`);
+    const popup = popups.contractPayoffAuto;
+    if (popup) {
+        // Optional: Update message text if needed
+        // const msgElement = document.getElementById('cp-auto-message');
+        popup.style.display = 'flex';
+        popup.dataset.triggeringPlayer = playerIndex; // Store index if needed
+    } else {
+        console.error("Contract Payoff Auto popup element not found!");
+    }
+}
 
-	 if (currentGameState.currentAP < cost) {
-		 addToLog(`Not enough AP for ${abilityName}. Need ${cost}, have ${currentGameState.currentAP}.`);
-		 return false;
-	 }
-	 if (playerResources.abilitiesUsed.includes(abilityName)) {
-		 addToLog(`${abilityName} already used this game.`);
-		 return false;
-	 }
-	 // Check the trigger condition: Was a Bloodwell destroyed by player shot THIS turn?
-	 if (!currentGameState.bwDestroyedByShotThisTurn) {
-		 addToLog(`Cannot use ${abilityName}: No Bloodwell destroyed by your shot this turn.`);
-		 return false;
-	 }
-	  // Cannot use if cursed? Assumed yes.
-	 if (bhVamp.cursed) {
-		 addToLog(`Cannot use ${abilityName} while cursed.`);
-		 return false;
-	 }
+/**
+ * Shows the start-of-turn AP bonus reminder popup.
+ * @param {string} bonusMessage - The message detailing the bonus(es) applied.
+ */
+function showNextTurnBonusPopup(bonusMessage) {
+    console.log("Showing Next Turn Bonus Popup");
+    const popup = popups.nextTurnBonus; // Use reference from popups object
+    const msgElement = document.getElementById('ntb-message');
+    if (popup && ntbMessageElement) { // MODIFIED line
+        ntbMessageElement.innerHTML = bonusMessage; // Use innerHTML to allow <br> tags
+        popup.style.display = 'flex';
+    } else {
+        console.error("Next Turn Bonus popup or message element not found!");
+    }
+}
 
-	 // --- Action Valid - Execute ---
-	 saveStateToHistory(); // Save state before applying effects
+/**
+ * Resolves the choice made on the Contract Payoff choice popup.
+ * Called by event listeners (added in Step 5).
+ * @param {number} playerIndex - The index of the player making the choice.
+ * @param {boolean} choseYes - True if 'Yes' was clicked, false if 'No' was clicked.
+ */
+function resolveContractPayoffChoice(playerIndex, choseYes) {
+    const playerResources = currentGameState.playerResources[playerIndex];
+    const popup = popups.contractPayoffChoice;
 
-	 // Set bonus flag for next turn based on player count
-	 const bonusAmount = (numberOfPlayers === 2) ? 3 : 5;
-	 playerResources.contractPayoffNextTurnBonus = bonusAmount;
-	 playerResources.abilitiesUsed.push(abilityName); // Mark ability as used
-	 currentGameState.currentAP -= cost; // Deduct AP
+    if (!playerResources) {
+        console.error("resolveContractPayoffChoice: Could not find player resources for index", playerIndex);
+        if (popup) popup.style.display = 'none'; // Hide popup defensively
+        return;
+    }
 
-	  // Lock-in logic
-	 const currentPlayerClass = currentGameState.players[playerIndex].class; // Should be BH
-	 if (currentPlayerClass !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
-		 currentGameState.lockedInVampireIdThisTurn = bhVamp.id;
-		 addToLog(`Locked into controlling ${bhVamp.id} for the rest of the turn.`);
-	 }
-	  // Update last action vamp ID
-	 currentGameState.lastActionVampId = bhVamp.id;
+    if (choseYes) {
+        // Player chose to take the immediate (next turn) bonus
+        playerResources.contractPayoffNextTurnBonus = 2;
+        playerResources.contractPayoffUsed = true; // Mark ability as used
+        addToLog(`Player ${playerIndex + 1} accepted Contract Payoff. +2 AP next turn.`);
+    } else {
+        // Player chose to wait
+        playerResources.contractPayoffDeclinedFirst = true;
+        addToLog(`Player ${playerIndex + 1} declined immediate Contract Payoff, waiting for larger bonus.`);
+    }
 
-	 addToLog(`${bhVamp.id} activates ${abilityName}! +${bonusAmount} AP next turn. (${currentGameState.currentAP} AP left)`);
-
-	 updateUI(); // Update UI to reflect AP change and ability used status
-	 return true; // Action successful
- }
+    // Hide the popup
+    if (popup) popup.style.display = 'none';
+    // No need to call updateUI immediately unless something visible changed (AP won't change yet)
+    // Maybe update log or a status indicator if desired.
+}
 
 	// --- Batch 4 Ends Here ---
 	// Next batch will start with Turn Management & Specific Abilities (nextTurn, executeSwiftJusticeMove, etc.).
@@ -4111,141 +4141,142 @@ function executeVengeanceIsMine(vigilanteVamp) {
 	}
 
 /**
-     * Advances the game to the next active player's turn.
-     * Handles turn increments, AP resets/bonuses, state cleanup, and UI updates.
-     */
+ * Advances the game to the next active player's turn.
+ * Handles turn increments, AP resets/bonuses, state cleanup, and UI updates.
+ * Calls popup function if start-of-turn bonus reminder is needed.
+ */
 function proceedToNextPlayerTurn() {
-	console.log("Proceeding to next player's turn...");
+    console.log("Proceeding to next player's turn...");
 
-	// --- Reset State from Turn JUST ENDED ---
-	const endingPlayerIdx = currentGameState.currentPlayerIndex;
-	// Reset flags for the player whose turn just ended
-	if (endingPlayerIdx >= 0 && endingPlayerIdx < currentGameState.playerResources.length) {
-		currentGameState.playerResources[endingPlayerIdx].wasShotSinceLastTurn = false; // For Vengeance
-	}
-	// Reset global flags and turn-specific state
-	currentGameState.lockedInVampireIdThisTurn = null;
-	currentGameState.selectedVampireId = null; // Deselect any vampire
-	currentGameState.bwDestroyedByShotThisTurn = false; // <<< ADDED Reset global flag for Contract Payoff
-	if (currentGameState.actionState) { // Reset pending actions state completely
-		currentGameState.actionState.pendingAction = null;
-		currentGameState.actionState.selectedHazardType = null;
-		currentGameState.actionState.selectedAbility = null; // <<< ADDED (Ensure ability selections are cleared)
-		currentGameState.actionState.abilityTargetData = null; // <<< ADDED
-	}
-	// Reset movesThisTurn for ALL currently active vampires
-	if (currentGameState.board?.vampires) {
-		currentGameState.board.vampires.forEach((v) => {
-			if (v) v.movesThisTurn = 0;
-		});
-	}
-	// Note: Contract/Vengeance *NextTurnBonus flags are reset after application below.
+    // --- Reset State from Turn JUST ENDED ---
+    const endingPlayerIdx = currentGameState.currentPlayerIndex;
+    // Reset flags for the player whose turn just ended
+    if (endingPlayerIdx >= 0 && endingPlayerIdx < currentGameState.playerResources.length) {
+        currentGameState.playerResources[endingPlayerIdx].wasShotSinceLastTurn = false; // For Vengeance
+    }
+    // Reset global flags and turn-specific state
+    currentGameState.lockedInVampireIdThisTurn = null;
+    currentGameState.selectedVampireId = null; // Deselect any vampire
+    // REMOVED: bwDestroyedByShotThisTurn reset (flag gone)
+    if (currentGameState.actionState) { // Reset pending actions state completely
+        currentGameState.actionState.pendingAction = null;
+        currentGameState.actionState.selectedHazardType = null;
+        currentGameState.actionState.selectedAbility = null;
+        currentGameState.actionState.abilityTargetData = null;
+        // Reset CP popup flags from executeShoot just in case
+        currentGameState.actionState.showCpChoicePopupForPlayer = null;
+        currentGameState.actionState.showCpAutoPopupForPlayer = null;
+    }
+    // Reset movesThisTurn for ALL currently active vampires
+    if (currentGameState.board?.vampires) {
+        currentGameState.board.vampires.forEach((v) => {
+            if (v) v.movesThisTurn = 0;
+        });
+    }
 
+    // --- Advance Player Index (Find next active player) ---
+    let nextPlayerIndex = currentGameState.currentPlayerIndex;
+    let loopCheck = 0;
+    do {
+        nextPlayerIndex = (nextPlayerIndex + 1) % numberOfPlayers;
+        loopCheck++;
+    } while (currentGameState.players[nextPlayerIndex]?.eliminated && loopCheck <= numberOfPlayers);
 
-	// --- Advance Player Index (Find next active player) ---
-	let nextPlayerIndex = currentGameState.currentPlayerIndex; // Start from current
-	let loopCheck = 0;
-	do {
-		nextPlayerIndex = (nextPlayerIndex + 1) % numberOfPlayers;
-		loopCheck++;
-		// Stop if we find an active player OR we've looped through everyone (prevents infinite loop if all eliminated)
-	} while (currentGameState.players[nextPlayerIndex]?.eliminated && loopCheck <= numberOfPlayers);
+    if (loopCheck > numberOfPlayers && currentGameState.players.some(p => !p.eliminated)) {
+        console.error("Error in proceedToNextPlayerTurn: Could not find next active player!", currentGameState);
+        addToLog("FATAL ERROR: Could not advance turn!");
+        return;
+    }
 
-	// If loopCheck exceeds numberOfPlayers, it implies no active players were found (or only one was left)
-	if (loopCheck > numberOfPlayers && currentGameState.players.some(p => !p.eliminated)) {
-		 // This condition specifically catches potential infinite loops if elimination logic failed
-		console.error("Error in proceedToNextPlayerTurn: Could not find next active player!", currentGameState);
-		addToLog("FATAL ERROR: Could not advance turn!");
-		return; // Game is stuck
-	}
+    // --- Set New Turn State ---
+    const previousPlayerIndex = currentGameState.currentPlayerIndex;
+    currentGameState.currentPlayerIndex = nextPlayerIndex;
 
+    if (currentGameState.currentPlayerIndex <= previousPlayerIndex && loopCheck > 1) {
+        if (currentGameState.turn > 0 || numberOfPlayers > 1) {
+            currentGameState.turn++;
+            console.log(`Advanced to Turn ${currentGameState.turn}`);
+        }
+    }
 
-	// --- Set New Turn State ---
-	const previousPlayerIndex = currentGameState.currentPlayerIndex;
-	currentGameState.currentPlayerIndex = nextPlayerIndex;
+    // --- Get Data for the NEW Player ---
+    const startingPlayer = currentGameState.players[currentGameState.currentPlayerIndex];
+    const startingPlayerResources = currentGameState.playerResources[currentGameState.currentPlayerIndex];
 
-	// Increment turn number only if we wrapped around to the starting player (or first active player)
-	if (currentGameState.currentPlayerIndex <= previousPlayerIndex && loopCheck > 1) { // loopCheck > 1 ensures it wasn't a 1-player scenario
-		if (currentGameState.turn > 0 || numberOfPlayers > 1) { // Avoid incrementing turn 0->1 in 1p game setup/testing
-			currentGameState.turn++;
-			console.log(`Advanced to Turn ${currentGameState.turn}`);
-		}
-	}
+    if (!startingPlayer || startingPlayer.eliminated || !startingPlayerResources) {
+        console.error(`Error starting turn for P${currentGameState.currentPlayerIndex + 1}: Player data invalid or already eliminated.`);
+        if (!checkGameEnd()) {
+            addToLog(`ERROR starting turn for Player ${currentGameState.currentPlayerIndex + 1}.`);
+        }
+        return;
+    }
+    const playerName = startingPlayer.name;
 
-	// --- Get Data for the NEW Player ---
-	const startingPlayer = currentGameState.players[currentGameState.currentPlayerIndex];
-	const startingPlayerResources = currentGameState.playerResources[currentGameState.currentPlayerIndex];
+    // --- Calculate AP for the New Player's Turn ---
+    let baseAP = 5;
+    if (currentGameState.turn === 1) {
+        if (numberOfPlayers === 4) baseAP = [4, 5, 6, 8][currentGameState.currentPlayerIndex];
+        else if (numberOfPlayers === 3) baseAP = 6;
+        // 2P uses standard 5 AP
+    }
 
-	// Check if the game should have already ended or if player data is missing
-	// This might happen if the last action eliminated the second-to-last player
-	if (!startingPlayer || startingPlayer.eliminated || !startingPlayerResources) {
-		console.error(`Error starting turn for P${currentGameState.currentPlayerIndex + 1}: Player data invalid or already eliminated.`);
-		// Attempt game end check as fallback - maybe the previous turn ended the game
-		if (!checkGameEnd()) {
-			// If game hasn't ended, something is wrong
-			addToLog(`ERROR starting turn for Player ${currentGameState.currentPlayerIndex + 1}.`);
-		}
-		return; // Don't proceed if the designated player isn't valid
-	}
-	const playerName = startingPlayer.name; // Use for logging
+    let apBonus = 0; // Start with 0 bonus AP
+    let bonusMessages = []; // Store messages for the reminder popup
 
-	// --- Calculate AP for the New Player's Turn ---
-	let baseAP = 5; // Standard AP
-	// Apply Turn 1 variable AP rules
-	if (currentGameState.turn === 1) {
-		if (numberOfPlayers === 4) baseAP = [4, 5, 6, 8][currentGameState.currentPlayerIndex];
-		else if (numberOfPlayers === 3) baseAP = 6;
-		// 2P uses standard 5 AP based on previous logic
-	}
+    // --- Apply Bonuses Earned from Previous Turn ---
+    // Apply BH Contract Payoff Bonus (Next Turn Bonus)
+    if (startingPlayerResources.contractPayoffNextTurnBonus > 0) {
+        const cpBonus = startingPlayerResources.contractPayoffNextTurnBonus; // Store amount
+        apBonus += cpBonus;
+        const msg = `Contract Payoff: +${cpBonus} AP!`;
+        addToLog(`${playerName} gains ${cpBonus} AP from Contract Payoff!`);
+        bonusMessages.push(msg);
+        startingPlayerResources.contractPayoffNextTurnBonus = 0; // Reset after accounting for it
+    }
+    // Apply Vigilante Vengeance Bonus (Next Turn Bonus)
+    if (startingPlayerResources.vengeanceNextTurnBonus > 0) {
+        const vBonus = startingPlayerResources.vengeanceNextTurnBonus; // Store amount (should be 7)
+        apBonus += vBonus;
+        const msg = `Vengeance is Mine: +${vBonus} AP!`;
+        addToLog(`${playerName} gains ${vBonus} AP from Vengeance is Mine!`);
+        bonusMessages.push(msg);
+        startingPlayerResources.vengeanceNextTurnBonus = 0; // Reset after accounting for it
+    }
 
-	let apBonus = 0; // Start with 0 bonus AP
+    // --- Apply Start-of-Turn Passive Bonuses ---
+    // Apply Vigilante Blood Brothers Bonus Check
+    if (startingPlayer.class === 'Vigilante') {
+        const vigVamps = currentGameState.board.vampires.filter(v => v.player === currentGameState.currentPlayerIndex);
+        if (vigVamps.length === 2 && vigVamps[0].coord && vigVamps[1].coord) {
+            const v1Coord = vigVamps[0].coord;
+            const v2Coord = vigVamps[1].coord;
+            const areaAroundV1 = getCoordsInArea(v1Coord, 1);
+            if (areaAroundV1.includes(v2Coord)) {
+                apBonus += 1;
+                addToLog(`${playerName} gains +1 AP from Blood Brothers! (Vamps started turn nearby)`);
+                // Optionally add to bonusMessages if reminder desired: bonusMessages.push("Blood Brothers: +1 AP!");
+            }
+        }
+    }
 
-	// --- Apply Bonuses Earned from Previous Turn ---
-	// Apply BH Contract Payoff Bonus
-	if (startingPlayerResources.contractPayoffNextTurnBonus > 0) {
-		apBonus += startingPlayerResources.contractPayoffNextTurnBonus;
-		addToLog(`${playerName} gains +${startingPlayerResources.contractPayoffNextTurnBonus} AP from Contract Payoff!`);
-		startingPlayerResources.contractPayoffNextTurnBonus = 0; // Reset after applying
-	}
-	// Apply Vigilante Vengeance Bonus
-	if (startingPlayerResources.vengeanceNextTurnBonus > 0) {
-		apBonus += startingPlayerResources.vengeanceNextTurnBonus; // Should be 7
-		addToLog(`${playerName} gains +${startingPlayerResources.vengeanceNextTurnBonus} AP from Vengeance is Mine!`);
-		startingPlayerResources.vengeanceNextTurnBonus = 0; // Reset after applying
-	}
+    currentGameState.currentAP = baseAP + apBonus; // Set final AP for the turn
 
-	// --- Apply Start-of-Turn Passive Bonuses ---
-	// Apply Vigilante Blood Brothers Bonus Check <<< IMPLEMENTED
-	if (startingPlayer.class === 'Vigilante') {
-		// Find the player's vampires currently on the board
-		const vigVamps = currentGameState.board.vampires.filter(v => v.player === currentGameState.currentPlayerIndex);
-		// Check if both vampires exist and have coordinates
-		if (vigVamps.length === 2 && vigVamps[0].coord && vigVamps[1].coord) {
-			const v1Coord = vigVamps[0].coord;
-			const v2Coord = vigVamps[1].coord;
-			const areaAroundV1 = getCoordsInArea(v1Coord, 1); // Get 3x3 grid around V1
+    // --- Final UI Updates for New Turn ---
+    clearHighlights();
+    if (movementBar) movementBar.classList.add("hidden");
+    if (btnUndo) btnUndo.disabled = true;
 
-			// Check if V2's coordinate is within the 3x3 grid of V1
-			if (areaAroundV1.includes(v2Coord)) {
-				apBonus += 1; // Add the bonus AP
-				addToLog(`${playerName} gains +1 AP from Blood Brothers! (Vamps started turn nearby)`);
-			}
-		}
-	}
-	// --- End Blood Brothers Check ---
+    renderBoard(currentGameState); // Render board FIRST
+    updateUI(); // Update status bar, info panel, buttons SECOND
 
-	currentGameState.currentAP = baseAP + apBonus; // Set final AP for the turn
+    // --- Show Start-of-Turn Bonus Reminder Popup LAST (if applicable) ---
+    if (bonusMessages.length > 0) {
+        // Calls the function we will define in the next step
+        showNextTurnBonusPopup(bonusMessages.join("<br>")); // Join messages with line breaks
+    }
 
-	// --- Final UI Updates for New Turn ---
-	clearHighlights(); // Clear any leftover target highlights
-	if (movementBar) movementBar.classList.add("hidden"); // Hide movement bar initially
-	if (btnUndo) btnUndo.disabled = true; // Disable undo at start of turn (no history yet for this turn)
-
-	renderBoard(currentGameState); // Render board for new turn state
-	updateUI(); // Update status bar, info panel, button states
-
-	// Log start of new turn
-	addToLog(`--- Turn ${currentGameState.turn} - ${playerName}'s turn (${startingPlayer.class}). AP: ${currentGameState.currentAP} ---`);
+    // Log start of new turn AFTER potential popup display
+    addToLog(`--- Turn ${currentGameState.turn} - ${playerName}'s turn (${startingPlayer.class}). AP: ${currentGameState.currentAP} ---`);
 }
 
 	// --- Game End / Elimination Logic --- (processExplosionQueue is in this category too)
@@ -4498,14 +4529,9 @@ function proceedToNextPlayerTurn() {
 	 */
 	function handleBoardClick(event) {
 		const clickedElement = event.target;
-		// Find the grid square element, even if the click was on a piece inside it
 		const targetSquare = clickedElement.closest(".grid-square");
 
-		if (!targetSquare) {
-			// Clicked somewhere on the board container but not on a specific square
-			console.log("Clicked outside grid squares.");
-			return;
-		}
+		if (!targetSquare) return;
 
 		const targetCoord = targetSquare.dataset.coord;
 		if (!targetCoord) {
@@ -4513,7 +4539,6 @@ function proceedToNextPlayerTurn() {
 			return;
 		}
 
-		// --- Get current state info ---
 		const pieceInfo = findPieceAtCoord(targetCoord);
 		const currentPlayerIndex = currentGameState.currentPlayerIndex;
 		const currentPlayer = currentGameState.players[currentPlayerIndex];
@@ -4522,56 +4547,50 @@ function proceedToNextPlayerTurn() {
 		const lockedVampId = currentGameState.lockedInVampireIdThisTurn;
 		const pendingAction = currentGameState.actionState?.pendingAction;
 
-		console.log(`Board Clicked: Coord=${targetCoord}, Piece=${pieceInfo?.type || 'None'}, PendingAction=${pendingAction}`);
+		console.log(`Board Clicked: Coord=<span class="math-inline">\{targetCoord\}, Piece\=</span>{pieceInfo?.type || 'None'}, PendingAction=${pendingAction}`);
 
 		// --- 1. Handle Clicks Based on Pending Action State ---
 		if (pendingAction === "throw-select-target") {
 			if (targetSquare.classList.contains("valid-target")) {
 				const hazardType = currentGameState.actionState.selectedHazardType;
-				const throwingVamp = findVampireById(selectedVampId); // Use the currently selected vampire
+				const throwingVamp = findVampireById(selectedVampId);
 
 				if (throwingVamp && hazardType) {
-					// Attempt the throw - executeThrow handles AP, history, etc.
 					const success = executeThrow(throwingVamp, hazardType, targetCoord);
 					if (success) {
-						// Reset action state ONLY on successful execution
 						currentGameState.actionState.pendingAction = null;
 						currentGameState.actionState.selectedHazardType = null;
-						clearHighlights(); // Clear target highlights
-						// executeThrow calls render/updateUI
-					} else {
-						// executeThrow failed (e.g. AP check), keep state, log handled inside executeThrow
-					}
+						clearHighlights();
+					} // else: executeThrow failed, state remains, log handled inside executeThrow
 				} else {
 					console.error("Throw state error: Missing throwing vamp or hazard type during target click.");
-					// Reset state defensively
 					currentGameState.actionState.pendingAction = null;
 					currentGameState.actionState.selectedHazardType = null;
 					clearHighlights();
 					updateUI();
 				}
 			} else {
-				// Clicked an invalid square while throw target selection was pending
 				addToLog("Invalid target for throw. Click a highlighted square or cancel throw.");
 			}
-			return; // Stop further processing, click was for targeting
+			return; // Stop further processing
 		}
-		// --- ADDED: Handle click for Order Restored target selection ---
+		// --- MODIFIED/CONFIRMED: Handle click for Order Restored target selection ---
 		else if (pendingAction === 'order-restored-select-target') {
 			if (targetSquare.classList.contains('valid-target')) {
 				// --- Target is Valid - Resolve Order Restored ---
 				const abilityData = currentGameState.actionState.abilityTargetData;
 				const activatingVamp = findVampireById(abilityData?.activatingVampId);
 				const reviveVampId = abilityData?.reviveVampId;
-				const playerResources = currentGameState.playerResources[currentPlayerIndex]; // Use current index
-				const abilityName = 'Order Restored'; // Or get from actionState.selectedAbility
+				// Find the index of the player activating the ability (needed for resources)
+				const activatingPlayerIndex = activatingVamp?.player; // Should match currentPlayerIndex, but use activatingVamp for safety
+				const playerResources = activatingPlayerIndex !== undefined ? currentGameState.playerResources[activatingPlayerIndex] : null;
+				const abilityName = currentGameState.actionState.selectedAbility || 'Order Restored';
 				const cost = AP_COST.ORDER_RESTORED;
 
 				// Find the specific eliminated Sheriff data to revive
 				const eliminatedIndex = currentGameState.eliminatedVampires.findIndex(ev => ev.id === reviveVampId);
 
-				// Double check everything needed exists
-				if (activatingVamp && reviveVampId && eliminatedIndex !== -1 && playerResources) {
+				if (activatingVamp && reviveVampId && eliminatedIndex !== -1 && playerResources && activatingPlayerIndex !== undefined) {
 					// --- Execute the Revival ---
 					saveStateToHistory(); // Save state BEFORE revival action completes
 
@@ -4581,7 +4600,7 @@ function proceedToNextPlayerTurn() {
 					revivedVampData.coord = targetCoord;
 					revivedVampData.cursed = false;
 					revivedVampData.movesThisTurn = 0;
-					revivedVampData.facing = 'S'; // Default facing South after revival (adjust if needed)
+					revivedVampData.facing = 'S'; // Default facing South
 					currentGameState.board.vampires.push(revivedVampData); // Add back to active vampires list
 
 					// Deduct cost, mark ability used
@@ -4589,24 +4608,24 @@ function proceedToNextPlayerTurn() {
 					playerResources.abilitiesUsed.push(abilityName);
 
 					// Lock-in logic (based on the activating vampire)
-					if (currentGameState.players[activatingVamp.player].class !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
+					// Check class of the *activating* player
+					if (currentGameState.players[activatingPlayerIndex]?.class !== 'Vigilante' && !currentGameState.lockedInVampireIdThisTurn) {
 						currentGameState.lockedInVampireIdThisTurn = activatingVamp.id;
 						addToLog(`Locked into controlling ${activatingVamp.id} for the rest of the turn.`);
 					}
 					currentGameState.lastActionVampId = activatingVamp.id; // Mark activating vamp as last actor
 
-					addToLog(`${activatingVamp.id} uses ${abilityName} to revive ${revivedVampData.id} at ${targetCoord}! (${currentGameState.currentAP} AP left)`);
+					addToLog(`${activatingVamp.id} uses ${abilityName} to revive ${revivedVampData.id} at <span class="math-inline">\{targetCoord\}\! \(</span>{currentGameState.currentAP} AP left)`);
 
 					// Clear action state now that it's resolved
 					currentGameState.actionState.pendingAction = null;
 					currentGameState.actionState.selectedAbility = null;
 					currentGameState.actionState.abilityTargetData = null;
-					clearHighlights(); // Clear revival target highlights
-					renderBoard(currentGameState); // Render immediately to show revived piece
+					clearHighlights();
+					renderBoard(currentGameState); // Render immediately
 					updateUI(); // Update buttons/AP/info panel
 
 				} else {
-					// Log error if data was missing unexpectedly
 					console.error("Order Restored resolution failed: Missing critical data.", { abilityData, activatingVamp, reviveVampId, eliminatedIndex, playerResources });
 					addToLog("Error reviving Sheriff. Action cancelled.");
 					// Reset state defensively
@@ -4614,69 +4633,48 @@ function proceedToNextPlayerTurn() {
 					currentGameState.actionState.selectedAbility = null;
 					currentGameState.actionState.abilityTargetData = null;
 					clearHighlights();
-					updateUI(); // Update UI to reflect cancellation
+					updateUI();
 				}
-
 			} else {
-				// Clicked an invalid square while Order Restored target selection was pending
-				addToLog("Invalid target for Order Restored. Click a highlighted empty square.");
-				// Do not clear highlights here, let user choose again or cancel (though no cancel implemented yet)
+				addToLog("Invalid target for Order Restored. Click a highlighted empty square adjacent to Sheriff or own Bloodwell.");
 			}
-			return; // Stop further processing, click was for ability targeting
+			return; // Stop further processing
 		}
 		// --- Add 'else if' blocks here for other pending actions (Hand Cannon target etc.) ---
 
-
 		// --- 2. Handle Clicks for Selection/Deselection (No relevant pending action) ---
+		clearHighlights(); // Always clear if not targeting
 
-		// Always clear highlights if we reach this point (not targeting)
-		clearHighlights();
-
-		// Ignore board clicks if waiting for Swift Justice D-Pad input
 		if (isSwiftJusticeMovePending) {
 			addToLog("Use the Directional buttons to perform the Swift Justice move.");
 			return;
 		}
 
-		// --- Determine what was clicked (Piece Selection/Deselection Logic) ---
 		if (pieceInfo?.type === "vampire") {
 			const clickedVamp = pieceInfo.piece;
-
-			// a) Clicked a friendly vampire?
 			if (clickedVamp.player === currentPlayerIndex) {
-				// Check lock-in rules (Vigilante ignores lock-in for selection)
 				const canSelectThisVamp = (currentPlayerClass === 'Vigilante' || !lockedVampId || clickedVamp.id === lockedVampId);
-
 				if (canSelectThisVamp) {
 					if (selectedVampId === clickedVamp.id) {
-						// Clicked the *already selected* vampire: Deselect
 						currentGameState.selectedVampireId = null;
 						addToLog(`Deselected ${clickedVamp.id}.`);
 					} else {
-						// Clicked a *different*, selectable friendly vampire: Select it
 						currentGameState.selectedVampireId = clickedVamp.id;
 						addToLog(`Selected ${clickedVamp.id}.`);
 					}
-					updateUI(); // Update UI for selection change
+					updateUI();
 				} else {
-					// Cannot select this friendly vampire due to being locked into another
 					addToLog(`Cannot select ${clickedVamp.id}. Locked into ${lockedVampId} this turn.`);
-					// Do not change selection or update UI here
 				}
-			}
-			// b) Clicked an enemy vampire?
-			else {
+			} else {
 				if (selectedVampId) addToLog(`Clicked enemy ${clickedVamp.id}. Deselected ${selectedVampId}.`);
-				currentGameState.selectedVampireId = null; // Deselect current piece
-				// Future: Maybe show info about the enemy piece here?
-				updateUI(); // Update UI to show deselection
+				currentGameState.selectedVampireId = null;
+				updateUI();
 			}
-		}
-		// c) Clicked an empty square, hazard, or bloodwell?
-		else {
-			if (selectedVampId) addToLog(`Clicked ${targetCoord} (${pieceInfo?.type || 'empty'}). Deselected ${selectedVampId}.`);
-			currentGameState.selectedVampireId = null; // Deselect current piece
-			updateUI(); // Update UI to show deselection
+		} else {
+			if (selectedVampId) addToLog(`Clicked <span class="math-inline">\{targetCoord\} \(</span>{pieceInfo?.type || 'empty'}). Deselected ${selectedVampId}.`);
+			currentGameState.selectedVampireId = null;
+			updateUI();
 		}
 	} // --- End handleBoardClick ---
 
@@ -4835,9 +4833,13 @@ function proceedToNextPlayerTurn() {
 			playerResources: playerData.map(() => ({
 				silverBullet: 1,
 				abilitiesUsed: [],
-				wasShotSinceLastTurn: false,
-				contractPayoffNextTurnBonus: 0,
-				vengeanceNextTurnBonus: 0,
+				wasShotSinceLastTurn: false, // Keep for Vengeance
+				contractPayoffNextTurnBonus: 0, // Keep, ensure it's 0
+				vengeanceNextTurnBonus: 0, // Keep for Vengeance
+				// --- NEW Contract Payoff State ---
+				bhShotBWCount: 0,
+				contractPayoffUsed: false,
+				contractPayoffDeclinedFirst: false,
 			})),
 			turn: 1,
 			currentPlayerIndex: 0,
@@ -4849,7 +4851,6 @@ function proceedToNextPlayerTurn() {
 				pendingAction: null,
 				selectedHazardType: null
 			},
-			bwDestroyedByShotThisTurn: false, // <<< ADDED FLAG
 			eliminatedVampires: []
 		};
 
@@ -5237,52 +5238,83 @@ function proceedToNextPlayerTurn() {
         });
     }
 
-    // Contract Payoff Button (Bounty Hunter Only) - UPDATED LISTENER
-    if (btnContractPayoff) {
-        btnContractPayoff.addEventListener("click", () => {
-            const selectedVamp = findVampireById(currentGameState?.selectedVampireId);
-            // Basic check: Is a Bounty Hunter selected? (More detailed checks in execute function)
-            if (selectedVamp && currentGameState.players[selectedVamp.player]?.class === 'Bounty Hunter') {
-                 executeContractPayoff(selectedVamp); // Call the actual execution function
-            } else if (!selectedVamp) {
-                addToLog("Select a Bounty Hunter to use Contract Payoff.");
-            } else {
-                // Log if wrong class is selected, though button should ideally be disabled/hidden
-                addToLog("Only Bounty Hunters can use Contract Payoff.");
-            }
-        });
-    }
+    // --- NEW: Contract Payoff Popup Listeners ---
 
-    // Order Restored Button (Sheriff Only) - UPDATED LISTENER
+	// Get references to the new popup buttons
+	const btnCpChoiceYes = document.getElementById('btn-cp-choice-yes');
+	const ntbMessageElement = document.getElementById('ntb-message');
+	const btnCpChoiceNo = document.getElementById('btn-cp-choice-no');
+	const btnCpAutoOk = document.getElementById('btn-cp-auto-ok');
+	const btnNtbOk = document.getElementById('btn-ntb-ok');
+
+	if (btnCpChoiceYes && btnCpChoiceNo && popups.contractPayoffChoice) {
+		btnCpChoiceYes.addEventListener('click', () => {
+			// Retrieve player index stored on the popup (if stored there)
+			const playerIndexStr = popups.contractPayoffChoice.dataset.triggeringPlayer;
+			if (playerIndexStr !== undefined) {
+				const playerIndex = parseInt(playerIndexStr);
+				resolveContractPayoffChoice(playerIndex, true); // User chose Yes
+			} else {
+				console.error("Could not determine triggering player for CP Choice 'Yes'");
+				popups.contractPayoffChoice.style.display = 'none'; // Hide defensively
+			}
+		});
+
+		btnCpChoiceNo.addEventListener('click', () => {
+			const playerIndexStr = popups.contractPayoffChoice.dataset.triggeringPlayer;
+			if (playerIndexStr !== undefined) {
+				const playerIndex = parseInt(playerIndexStr);
+				resolveContractPayoffChoice(playerIndex, false); // User chose No
+			} else {
+				console.error("Could not determine triggering player for CP Choice 'No'");
+				popups.contractPayoffChoice.style.display = 'none'; // Hide defensively
+			}
+		});
+	} else {
+		console.warn("Contract Payoff Choice popup or its buttons not found.");
+	}
+
+	if (btnCpAutoOk && popups.contractPayoffAuto) {
+		btnCpAutoOk.addEventListener('click', () => {
+			popups.contractPayoffAuto.style.display = 'none'; // Just hide the notification
+		});
+	} else {
+		console.warn("Contract Payoff Auto popup or its OK button not found.");
+	}
+
+	if (btnNtbOk && popups.nextTurnBonus) {
+		btnNtbOk.addEventListener('click', () => {
+			popups.nextTurnBonus.style.display = 'none'; // Just hide the reminder
+		});
+	} else {
+		console.warn("Next Turn Bonus popup or its OK button not found.");
+	}
+
     if (btnOrderRestored) {
-        btnOrderRestored.addEventListener("click", () => {
-            const selectedVamp = findVampireById(currentGameState?.selectedVampireId);
-            // Basic check: Is a Sheriff selected?
-            if (selectedVamp && currentGameState.players[selectedVamp.player]?.class === 'Sheriff') {
-                executeOrderRestored(selectedVamp); // Call the actual execution function (initiates targeting)
-            } else if (!selectedVamp) {
-                addToLog("Select a Sheriff to use Order Restored.");
-            } else {
-                addToLog("Only Sheriffs can use Order Restored.");
-            }
-        });
-    }
-
-    // Vengeance is Mine Button (Vigilante Only) - UPDATED LISTENER
-    if (btnVengeance) {
-        btnVengeance.addEventListener("click", () => {
-            const selectedVamp = findVampireById(currentGameState?.selectedVampireId);
-            // Basic check: Is a Vigilante selected?
-            if (selectedVamp && currentGameState.players[selectedVamp.player]?.class === 'Vigilante') {
-                executeVengeanceIsMine(selectedVamp); // Call the function to execute the ability
-            } else if (!selectedVamp) {
-                addToLog("Select a Vigilante to use Vengeance is Mine.");
-            } else {
-                addToLog("Only Vigilantes can use Vengeance is Mine.");
-            }
-        });
-    }
-
+		btnOrderRestored.addEventListener("click", () => {
+			const selectedVamp = findVampireById(currentGameState?.selectedVampireId);
+			if (selectedVamp && currentGameState.players[selectedVamp.player]?.class === 'Sheriff') {
+				executeOrderRestored(selectedVamp);
+			} else if (!selectedVamp) {
+				addToLog("Select a Sheriff to use Order Restored.");
+			} else {
+				addToLog("Only Sheriffs can use Order Restored.");
+			}
+		});
+	}
+   
+	if (btnVengeance) {
+		btnVengeance.addEventListener("click", () => {
+			const selectedVamp = findVampireById(currentGameState?.selectedVampireId);
+			if (selectedVamp && currentGameState.players[selectedVamp.player]?.class === 'Vigilante') {
+				executeVengeanceIsMine(selectedVamp);
+			} else if (!selectedVamp) {
+				addToLog("Select a Vigilante to use Vengeance is Mine.");
+			} else {
+				addToLog("Only Vigilantes can use Vengeance is Mine.");
+			}
+		});
+	}
 
 	// --- D-Pad Movement Listener ---
 	const handleDirectionButtonClick = (direction) => {
