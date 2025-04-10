@@ -3883,133 +3883,160 @@ function resolveContractPayoffChoice(playerIndex, choseYes) {
 
 	/**
 	 * Called when the current player clicks "End Turn".
-	 * Checks for Swift Justice eligibility and shows custom prompt if applicable,
-	 * otherwise proceeds to the next player's turn.
+	 * Checks for Swift Justice eligibility. If eligible, shows prompt and waits.
+	 * Otherwise, saves state and proceeds to the next player's turn.
 	 */
 	function nextTurn() {
-		// Check if an action (like selecting a throw target) is still pending
-		if (currentGameState.actionState?.pendingAction) {
-			addToLog("Cannot end turn: Action pending. Cancel or complete.");
+		// Prevent ending turn if another action (like targeting) is pending
+		if (currentGameState.actionState?.pendingAction && currentGameState.actionState.pendingAction !== 'swift-justice-prompt') { // Allow ending if only waiting on SJ prompt
+			addToLog("Cannot end turn: Action pending. Cancel or complete the current action.");
 			return;
 		}
 
 		const endingPlayerIndex = currentGameState.currentPlayerIndex;
 		const endingPlayer = currentGameState.players[endingPlayerIndex];
-		const potentialSwiftJusticeVampId = currentGameState.lastActionVampId; // ID of last acting vamp
+		const potentialSwiftJusticeVampId = currentGameState.lastActionVampId; // ID of last acting vamp for this player
 
-		let swiftJusticeTriggered = false; // Flag to prevent auto-advancing if prompt shown
+		let showSJPrompt = false; // Flag to determine if we should show the prompt
 
 		// Check Swift Justice eligibility
 		if (endingPlayer?.class === "Sheriff" && !endingPlayer.eliminated && potentialSwiftJusticeVampId) {
 			const lastVamp = findVampireById(potentialSwiftJusticeVampId);
+			// Ensure the last action was by a Sheriff of the current player and they are not cursed
 			if (lastVamp && lastVamp.player === endingPlayerIndex && !lastVamp.cursed) {
-				// --- Show Custom Swift Justice Popup ---
-				const sjPopup = popups.swiftJustice;
-				const sjMessage = document.getElementById('swift-justice-message');
-				if (sjPopup && sjMessage) {
-					sjMessage.textContent = `The Sheriffs are duty bound. Execute Swift Justice for ${lastVamp.id}? (Move 1 free)`;
-					sjPopup.style.display = 'flex';
-					swiftJusticeTriggered = true; // Mark that we paused for user input
-				} else {
-					console.error("Swift Justice popup elements not found!");
-					addToLog("Error showing Swift Justice prompt. Proceeding without.");
-				}
+				showSJPrompt = true; // Conditions met to offer SJ
 			} else {
-				// Log why not triggered if relevant conditions were met
 				if (lastVamp?.cursed) {
 					addToLog("Swift Justice not offered: Last acting Sheriff is cursed.");
+				} else {
+					addToLog("Swift Justice not offered: Last action may not have been by the current Sheriff.");
 				}
 			}
 		}
 
-		// Proceed to next player ONLY IF the Swift Justice popup was NOT shown
-		if (!swiftJusticeTriggered) {
+		if (showSJPrompt) {
+			// --- Show Swift Justice Popup and Wait ---
+			const sjPopup = popups.swiftJustice;
+			const sjMessage = document.getElementById('swift-justice-message');
+			const lastVamp = findVampireById(potentialSwiftJusticeVampId); // Get vamp ref again
+
+			if (sjPopup && sjMessage && lastVamp) {
+				console.log(`Offering Swift Justice for ${potentialSwiftJusticeVampId} at ${lastVamp.coord} facing ${lastVamp.facing}`);
+				// Store necessary info for the Yes/No handlers
+				swiftJusticeVampId = potentialSwiftJusticeVampId; // Store ID globally/temporarily
+				swiftJusticePlayerIndex = endingPlayerIndex; // Store player index globally/temporarily
+
+				sjMessage.textContent = `The Sheriffs are duty bound. Execute Swift Justice for ${lastVamp.id}? (Move 1 square forward: ${lastVamp.facing})`;
+				sjPopup.style.display = 'flex';
+				// Set a pending action state so other actions are blocked
+				currentGameState.actionState.pendingAction = 'swift-justice-prompt';
+				// DO NOT proceed to next turn here - wait for button click
+				addToLog("Swift Justice offered. Choose Yes or No.");
+			} else {
+				console.error("Swift Justice popup elements not found or vamp ID missing! Proceeding without SJ.");
+				addToLog("Error showing Swift Justice prompt. Proceeding without.");
+				saveStateToHistory(); // Save state before proceeding without SJ due to error
+				proceedToNextPlayerTurn();
+			}
+		} else {
+			// --- No Swift Justice Offered - Proceed Normally ---
 			console.log("No Swift Justice trigger/prompt, proceeding to next turn.");
 			saveStateToHistory(); // Save the state of the turn just ended
 			proceedToNextPlayerTurn();
 		}
-		// Otherwise, wait for the Yes/No button click handler
 	}
 
 	/**
-	 * Executes the Sheriff's Swift Justice move after confirmation.
-	 * @param {string} direction - 'N', 'E', 'S', or 'W'.
+	 * Executes the Sheriff's Swift Justice move AFTER validation in the 'Yes' handler.
+	 * Performs the move, checks effects, resets state, and proceeds to the next turn.
+	 * @param {string} direction - The validated forward direction ('N', 'E', 'S', or 'W').
 	 */
 	function executeSwiftJusticeMove(direction) {
-		// Double check state flags are correctly set
+		// State should already be set by the Yes handler confirmation
 		if (!isSwiftJusticeMovePending || swiftJusticePlayerIndex === -1 || !swiftJusticeVampId) {
-			console.error("executeSwiftJusticeMove called incorrectly - state not properly set.");
-			// Attempt to reset state and proceed to avoid getting stuck
-			isSwiftJusticeMovePending = false;
-			swiftJusticePlayerIndex = -1;
-			swiftJusticeVampId = null;
-			proceedToNextPlayerTurn();
+			console.error("executeSwiftJusticeMove called incorrectly - state flags not properly set.");
+			proceedToNextPlayerTurn(); // Try to recover by just ending the turn attempt
 			return;
 		}
 
 		const vampire = findVampireById(swiftJusticeVampId);
-		if (!vampire || vampire.player !== swiftJusticePlayerIndex) { // Verify vamp exists and belongs to correct player
-			console.error("Swift Justice Error: Could not find valid vampire for SJ:", swiftJusticeVampId);
-			isSwiftJusticeMovePending = false; // Reset state
+		// Basic check - should have been validated before, but safety first
+		if (!vampire || vampire.player !== swiftJusticePlayerIndex || vampire.cursed) {
+			console.error(`Swift Justice Execute Error: Vampire ${swiftJusticeVampId} invalid.`);
+			addToLog(`Error performing Swift Justice with ${swiftJusticeVampId}.`);
+			// Reset state and proceed
+			isSwiftJusticeMovePending = false;
 			swiftJusticePlayerIndex = -1;
 			swiftJusticeVampId = null;
-			proceedToNextPlayerTurn(); // Abort SJ and go to next turn
+			if (currentGameState.actionState) {
+				currentGameState.actionState.pendingAction = null;
+				currentGameState.actionState.swiftJusticeDirection = null;
+			}
+			proceedToNextPlayerTurn();
 			return;
 		}
 
-		// Final eligibility check (not cursed) right before moving
-		if (vampire.cursed) {
-			addToLog(`Swift Justice cannot be performed by cursed Sheriff (${vampire.id}).`);
-			isSwiftJusticeMovePending = false; // Reset state
-			swiftJusticePlayerIndex = -1;
-			swiftJusticeVampId = null;
-			proceedToNextPlayerTurn(); // Abort SJ and go to next turn
-			return;
-		}
-
-		// Calculate and Validate Target
+		// Double-check the target coord is valid (redundant but safe)
 		const targetCoord = getAdjacentCoord(vampire.coord, direction);
-		if (!isValidSwiftJusticeTarget(targetCoord, vampire.id)) {
-			addToLog(`Invalid Swift Justice move target: ${targetCoord || 'Off-board'}. Choose another direction.`);
-			// Do NOT reset flags or proceed; wait for another direction click
+		if (!isValidSwiftJusticeTarget(targetCoord, swiftJusticeVampId)) {
+			console.error(`Swift Justice Execute Error: Target ${targetCoord} became invalid.`);
+			addToLog(`Swift Justice move to ${targetCoord} blocked. Cancelling.`);
+			// Reset state and proceed
+			isSwiftJusticeMovePending = false;
+			swiftJusticePlayerIndex = -1;
+			swiftJusticeVampId = null;
+			if (currentGameState.actionState) {
+				currentGameState.actionState.pendingAction = null;
+				currentGameState.actionState.swiftJusticeDirection = null;
+			}
+			proceedToNextPlayerTurn(); // Don't save history if move failed validation here
 			return;
 		}
 
-		// --- Move is Valid ---
+		// --- Move is Valid and Confirmed ---
 		console.log(`Executing Swift Justice move for ${vampire.id} to ${targetCoord} facing ${direction}`);
 		saveStateToHistory(); // Save state *before* the SJ move
 
-		// Get reference *in state* for modification
-		const vampInState = findVampireById(swiftJusticeVampId); // Use ID just in case reference changed
-		if (!vampInState) { // Should not happen if initial check passed, but safety first
+		const vampInState = findVampireById(swiftJusticeVampId);
+		if (!vampInState) {
 			console.error("Swift Justice Error: Failed to get vampire reference in state during execution!");
-			undoLastAction(); // Revert history save
-			isSwiftJusticeMovePending = false; // Reset state
+			undoLastAction();
+			isSwiftJusticeMovePending = false;
 			swiftJusticePlayerIndex = -1;
 			swiftJusticeVampId = null;
-			proceedToNextPlayerTurn(); // Abort SJ
+			if (currentGameState.actionState) {
+				currentGameState.actionState.pendingAction = null;
+				currentGameState.actionState.swiftJusticeDirection = null;
+			}
+			proceedToNextPlayerTurn();
 			return;
 		}
 
 		const originalCoord = vampInState.coord;
 		vampInState.coord = targetCoord; // Move the vampire
-		vampInState.facing = direction; // Update facing
+		vampInState.facing = direction; // Update facing to the move direction
 
 		addToLog(`Sheriff ${vampInState.id} executed Swift Justice: ${originalCoord} -> ${targetCoord}, facing ${direction}. (0 AP)`);
 
 		// Check Post-Move Effects (Curse/Cure)
 		checkSwiftJusticeMoveEndEffects(vampInState);
 
-		// Clean up Swift Justice state
+		// --- IMPORTANT: Reset State AFTER move completes ---
 		isSwiftJusticeMovePending = false;
 		swiftJusticePlayerIndex = -1;
 		swiftJusticeVampId = null;
+		if (currentGameState.actionState) {
+			currentGameState.actionState.pendingAction = null; // Clear pending state
+			currentGameState.actionState.swiftJusticeDirection = null;
+		}
+		// --- End Reset ---
 
-		// Update Display
+		// Update Display Immediately (optional, proceedToNextPlayerTurn also calls it)
 		renderBoard(currentGameState);
-		updateUI(); // Update buttons etc.
+		updateUI();
 
 		// NOW proceed to the actual next player's turn
+		// NOTE: Do NOT save history again here, it was saved before the move
 		proceedToNextPlayerTurn();
 	}
 
@@ -5340,12 +5367,21 @@ function proceedToNextPlayerTurn() {
 
 	// --- D-Pad Movement Listener ---
 	const handleDirectionButtonClick = (direction) => {
-		// Check for Swift Justice first
+		// --- MODIFIED: Check for Swift Justice first ---
 		if (isSwiftJusticeMovePending) {
-			console.log("Calling executeSwiftJusticeMove for direction:", direction);
-			executeSwiftJusticeMove(direction);
+			const validDirection = currentGameState.actionState?.swiftJusticeDirection;
+			if (validDirection && direction === validDirection) {
+				// Only execute if the clicked direction matches the validated forward direction
+				console.log(`Calling executeSwiftJusticeMove for valid direction: ${direction}`);
+				executeSwiftJusticeMove(direction);
+			} else {
+				// Ignore clicks on buttons other than the allowed forward direction
+				addToLog(`Invalid direction for Swift Justice. Only ${validDirection} allowed.`);
+				console.log(`Ignored SJ direction click: ${direction}. Expected: ${validDirection}`);
+			}
 			return; // Stop processing for normal move/pivot
 		}
+		// --- End Modification ---
 
 		// Normal Move/Pivot
 		const selectedVamp = findVampireById(currentGameState?.selectedVampireId);
@@ -5364,7 +5400,7 @@ function proceedToNextPlayerTurn() {
 		} else { // Attempt Pivot
 			executePivot(selectedVamp, direction); // Handles checks & execution
 		}
-	};
+	};v
 
 	if (btnMoveN) btnMoveN.addEventListener("click", () => handleDirectionButtonClick("N"));
 	if (btnMoveE) btnMoveE.addEventListener("click", () => handleDirectionButtonClick("E"));
@@ -5393,41 +5429,93 @@ function proceedToNextPlayerTurn() {
 		});
 	}
 
-	// --- Swift Justice Popup Listeners ---
-	if (btnSwiftJusticeYes) {
+	// --- Swift Justice Popup Listeners (REVISED) ---
+	if (btnSwiftJusticeYes && popups.swiftJustice) {
 		btnSwiftJusticeYes.addEventListener('click', () => {
-			if (popups.swiftJustice) popups.swiftJustice.style.display = 'none';
+			popups.swiftJustice.style.display = 'none'; // Hide popup immediately
 
-			isSwiftJusticeMovePending = true;
-			swiftJusticePlayerIndex = currentGameState.currentPlayerIndex;
-			swiftJusticeVampId = currentGameState.lastActionVampId;
-
-			if (swiftJusticePlayerIndex === -1 || !swiftJusticeVampId || currentGameState.players[swiftJusticePlayerIndex]?.class !== 'Sheriff') {
-				console.error("Swift Justice Yes Error: State mismatch.");
+			// Verify state consistency
+			if (currentGameState.actionState?.pendingAction !== 'swift-justice-prompt' || swiftJusticePlayerIndex === -1 || !swiftJusticeVampId) {
+				console.error("Swift Justice Yes Error: State mismatch or missing data upon click.");
+				addToLog("Error processing Swift Justice acceptance. Turn ending.");
+				// Reset state defensively and proceed
 				isSwiftJusticeMovePending = false;
 				swiftJusticePlayerIndex = -1;
 				swiftJusticeVampId = null;
-				saveStateToHistory(); // Save state before trying to recover
+				if (currentGameState.actionState) currentGameState.actionState.pendingAction = null;
+				saveStateToHistory(); // Save state before forced proceed
 				proceedToNextPlayerTurn();
 				return;
 			}
 
-			addToLog(`Sheriff ${swiftJusticeVampId} will execute Swift Justice. Select move direction.`);
-			updateUI(); // Enable D-pad etc.
+			const vampire = findVampireById(swiftJusticeVampId);
+			if (!vampire || vampire.player !== swiftJusticePlayerIndex || vampire.cursed) {
+				console.error(`Swift Justice Yes Error: Vampire ${swiftJusticeVampId} invalid (missing, wrong player, or cursed).`);
+				addToLog(`Cannot perform Swift Justice with ${swiftJusticeVampId}. Turn ending.`);
+				// Reset state defensively and proceed
+				isSwiftJusticeMovePending = false;
+				swiftJusticePlayerIndex = -1;
+				swiftJusticeVampId = null;
+				if (currentGameState.actionState) currentGameState.actionState.pendingAction = null;
+				saveStateToHistory(); // Save state before forced proceed
+				proceedToNextPlayerTurn();
+				return;
+			}
+
+			// --- Validate the FORWARD move ---
+			const forwardDirection = vampire.facing;
+			const targetCoord = getAdjacentCoord(vampire.coord, forwardDirection);
+
+			if (isValidSwiftJusticeTarget(targetCoord, swiftJusticeVampId)) {
+				// --- Move is VALID ---
+				console.log(`Swift Justice accepted for ${swiftJusticeVampId}. Move direction ${forwardDirection} is valid.`);
+				isSwiftJusticeMovePending = true; // Set flag to indicate waiting for D-pad input
+				currentGameState.actionState.pendingAction = 'swift-justice-move'; // Update pending action state
+				currentGameState.actionState.swiftJusticeDirection = forwardDirection; // Store the *only* valid direction
+
+				addToLog(`Sheriff ${swiftJusticeVampId} will execute Swift Justice. Select move direction (${forwardDirection}).`);
+				updateUI(); // Update UI to show D-pad (logic in updatePlayerInfoPanel handles highlighting/disabling)
+
+			} else {
+				// --- Move is INVALID (Blocked/Off-board) ---
+				console.log(`Swift Justice forward move (${forwardDirection} to ${targetCoord}) is blocked or off-board. Cancelling SJ.`);
+				addToLog(`Swift Justice move forward (${forwardDirection}) is blocked. Ability cancelled.`);
+				// Reset state completely, turn ends here
+				isSwiftJusticeMovePending = false;
+				swiftJusticePlayerIndex = -1;
+				swiftJusticeVampId = null;
+				if (currentGameState.actionState) {
+					currentGameState.actionState.pendingAction = null;
+					currentGameState.actionState.swiftJusticeDirection = null;
+				}
+				saveStateToHistory(); // Save state before proceeding
+				proceedToNextPlayerTurn(); // Proceed to next player
+			}
 		});
 	} else {
-		console.warn("Swift Justice YES button (#btn-swift-justice-yes) not found");
+		console.warn("Swift Justice YES button (#btn-swift-justice-yes) or popup not found");
 	}
 
-	if (btnSwiftJusticeNo) {
+	if (btnSwiftJusticeNo && popups.swiftJustice) {
 		btnSwiftJusticeNo.addEventListener('click', () => {
-			if (popups.swiftJustice) popups.swiftJustice.style.display = 'none';
+			popups.swiftJustice.style.display = 'none'; // Hide popup
+
+			// Verify state consistency
+			if (currentGameState.actionState?.pendingAction !== 'swift-justice-prompt') {
+				console.warn("Swift Justice No clicked when not expected.");
+			}
+
 			addToLog("Sheriff declined Swift Justice.");
-			saveStateToHistory();
-			proceedToNextPlayerTurn();
+			// Reset state completely
+			isSwiftJusticeMovePending = false;
+			swiftJusticePlayerIndex = -1;
+			swiftJusticeVampId = null;
+			if (currentGameState.actionState) currentGameState.actionState.pendingAction = null;
+			saveStateToHistory(); // Save state before proceeding
+			proceedToNextPlayerTurn(); // Proceed to next player
 		});
 	} else {
-		console.warn("Swift Justice NO button (#btn-swift-justice-no) not found");
+		console.warn("Swift Justice NO button (#btn-swift-justice-no) or popup not found");
 	}
 
 	// --- Elimination/Victory Popup Listeners ---
