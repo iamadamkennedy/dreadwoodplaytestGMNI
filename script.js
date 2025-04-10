@@ -185,7 +185,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 	// Elements - Gameplay Screen
 	const gameplayScreen = screens.gameplay;
 	const actionBar = document.getElementById("action-bar");
-	const gameBoard = document.getElementById("game-board");
+	let gameBoard = document.getElementById("game-board");
 	const playerInfoDisplay = document.getElementById("player-info"); // Container for status/info/controls below board
 	const currentClassAbilitiesList = document.getElementById("info-class-abilities");
 	const infoSilverBullet = document.getElementById("info-silver-bullet");
@@ -4907,7 +4907,33 @@ function proceedToNextPlayerTurn() {
 		}
 		// --- MODIFICATION END ---
 
-		// Ensure buttons exist before adding listeners
+// --- CLONING WORKAROUND START ---
+const oldBoardElement = document.getElementById("game-board"); // Get the potentially 'old' board
+if (oldBoardElement && oldBoardElement.parentNode) {
+    console.log("Cloning board to remove old listeners...");
+    const boardClone = oldBoardElement.cloneNode(true); // Clone the board and its grid squares
+
+    // Replace the original element in the DOM with the clone
+    oldBoardElement.parentNode.replaceChild(boardClone, oldBoardElement);
+
+    // IMPORTANT: Update the script's 'gameBoard' variable to reference the NEW cloned element
+    gameBoard = boardClone; // Re-assign the top-level variable
+
+    console.log("Adding new listener to the cloned board...");
+    gameBoard.addEventListener("click", handleBoardClick); // Add the single, correct listener to the clone
+
+} else {
+    // This error means we can't even find the board to clone/replace or add a listener
+    console.error("Cannot find gameBoard element (#game-board) or its parent during listener re-attachment via cloning.");
+    // As a fallback, try attaching to the potentially stale global reference if it exists
+    if(gameBoard) {
+         console.warn("Falling back to adding listener directly to potentially old gameBoard reference.");
+         gameBoard.addEventListener("click", handleBoardClick);
+    }
+}
+// --- CLONING WORKAROUND END ---
+
+		// Ensure buttons exist before adding listeners (Keep existing checks for Undo/EndTurn)
 		if (btnUndo) {
 			btnUndo.removeEventListener("click", undoLastAction);
 			btnUndo.addEventListener("click", undoLastAction);
