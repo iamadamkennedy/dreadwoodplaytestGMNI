@@ -4893,13 +4893,19 @@ function proceedToNextPlayerTurn() {
 		if (movementBar) movementBar.classList.add("hidden");
 
 		// Re-attach main gameplay listeners (remove first to prevent duplicates)
-		// Ensure gameBoard exists before adding listeners
-		if (gameBoard) {
-			gameBoard.removeEventListener("click", handleBoardClick);
-			gameBoard.addEventListener("click", handleBoardClick);
+		// --- MODIFICATION START ---
+		const currentBoardElement = document.getElementById("game-board"); // Re-acquire reference inside function scope
+		if (currentBoardElement) {
+			// Ensure we are removing/adding using the exact same function reference on the current element
+			console.log("Attempting to remove old board listener...");
+			currentBoardElement.removeEventListener("click", handleBoardClick);
+			console.log("Adding new board listener...");
+			currentBoardElement.addEventListener("click", handleBoardClick);
 		} else {
-			console.error("gameBoard element not found during initialization.");
+			// Log error if element is missing when trying to attach listeners
+			console.error("gameBoard element (#game-board) not found during listener re-attachment.");
 		}
+		// --- MODIFICATION END ---
 
 		// Ensure buttons exist before adding listeners
 		if (btnUndo) {
