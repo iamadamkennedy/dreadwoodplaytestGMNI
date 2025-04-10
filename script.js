@@ -4529,6 +4529,7 @@ function proceedToNextPlayerTurn() {
 	 * @param {Event} event - The click event object.
 	 */
 	function handleBoardClick(event) {
+		console.log('handleBoardClick executing for game instance:', currentGameState?.gameInstanceId); // ADD THIS LINE
 		const clickedElement = event.target;
 		const targetSquare = clickedElement.closest(".grid-square");
 
@@ -4854,6 +4855,9 @@ function proceedToNextPlayerTurn() {
 			},
 			eliminatedVampires: []
 		};
+		// Inside initializeGame, AFTER currentGameState = { ... };
+		currentGameState.gameInstanceId = Date.now(); // Add a unique ID
+		console.log('Initialized game instance:', currentGameState.gameInstanceId); // Log it
 
 		// --- Set Initial AP ---
 		const pIdx = currentGameState.currentPlayerIndex;
