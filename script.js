@@ -3933,7 +3933,7 @@ function resolveContractPayoffChoice(playerIndex, choseYes) {
 				swiftJusticeVampId = potentialSwiftJusticeVampId;
 				swiftJusticePlayerIndex = endingPlayerIndex;
 
-				sjMessage.textContent = `The Sheriffs are duty bound. Execute Swift Justice for ${lastVamp.id}? (Move 1 square free)`;
+				sjMessage.textContent = `Execute Swift Justice to move 1 space and face that direction?`;
 				// Ensure board is rendered before showing
 				console.log("Rendering board before showing SJ prompt...");
 				renderBoard(currentGameState);
