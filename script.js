@@ -5462,16 +5462,16 @@ function proceedToNextPlayerTurn() {
 			popups.swiftJustice.style.display = 'none'; // Hide popup
 
 			// Ensure we are in the correct state
-			if (currentGameState.actionState?.pendingAction !== 'swift-justice-prompt' || swiftJusticePlayerIndex === -1 || !swiftJusticeVampId) {
-				console.error("Swift Justice Yes Error: State mismatch or missing data.");
-				addToLog("Error processing Swift Justice acceptance.");
-				// Reset state defensively - don't proceed to next turn here, let player retry End Turn maybe?
-				isSwiftJusticeMovePending = false;
-				swiftJusticePlayerIndex = -1;
-				swiftJusticeVampId = null;
-				if (currentGameState.actionState) currentGameState.actionState.pendingAction = null;
-				return; // Stop processing this click
-			}
+			//if (currentGameState.actionState?.pendingAction !== 'swift-justice-prompt' || swiftJusticePlayerIndex === -1 || !swiftJusticeVampId) {
+			//	console.error("Swift Justice Yes Error: State mismatch or missing data.");
+			//	addToLog("Error processing Swift Justice acceptance.");
+			//	// Reset state defensively - don't proceed to next turn here, let player retry End Turn maybe?
+			//	isSwiftJusticeMovePending = false;
+			//	swiftJusticePlayerIndex = -1;
+			//	swiftJusticeVampId = null;
+			//	if (currentGameState.actionState) currentGameState.actionState.pendingAction = null;
+			//	return; // Stop processing this click
+			//}
 
 			const vampire = findVampireById(swiftJusticeVampId);
 			if (!vampire || vampire.player !== swiftJusticePlayerIndex || vampire.cursed) {
