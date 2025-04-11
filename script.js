@@ -2493,7 +2493,6 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 	 * @param {object} gameState - The current game state object.
 	 */
 	function renderBoard(gameState) {
-		console.log("--- renderBoard called ---"); // ADD LOG
 		// Clear existing pieces but not the grid squares themselves
 		document.querySelectorAll(".piece").forEach((p) => p.remove());
 
@@ -4656,28 +4655,12 @@ function proceedToNextPlayerTurn() {
 	
 		if (popups.hazardPicker) popups.hazardPicker.style.display = "none";
 	
-		console.log(">>> Calling highlightThrowTargets..."); // ADD LOG
+		// console.log(">>> Calling highlightThrowTargets..."); // <<< COMMENT OUT OR DELETE
 		highlightThrowTargets(selectedVamp, hazardType);
-		console.log(">>> Returned from highlightThrowTargets."); // ADD LOG
+		// console.log(">>> Returned from highlightThrowTargets."); // <<< COMMENT OUT OR DELETE
 	
 		addToLog(`Selected ${hazardType}. Click a highlighted square to throw.`);
 	}
-
-        console.log(`Hazard type selected: ${hazardType}`);
-
-        // Update the action state
-        currentGameState.actionState.selectedHazardType = hazardType;
-        currentGameState.actionState.pendingAction = "throw-select-target"; // Now waiting for target coord click
-
-        // Hide the hazard picker popup
-        if (popups.hazardPicker) popups.hazardPicker.style.display = "none";
-
-        // Highlight the valid target squares on the board for throwing
-        highlightThrowTargets(selectedVamp, hazardType); // <<< We need to define this next!
-
-        addToLog(`Selected ${hazardType}. Click a highlighted square to throw.`);
-        // No updateUI() needed here, highlighting handles visual change. handleBoardClick will call updateUI after target selection.
-    }
 
     /**
      * Highlights valid target squares (EMPTY SQUARES ONLY) on the board for throwing a hazard
@@ -4874,31 +4857,31 @@ function proceedToNextPlayerTurn() {
 		// --- End Cloning Workaround ---
 
 		// --- Force Render After Cloning ---
-		console.log("Forcing re-render after clone...");
-		renderBoard(currentGameState);
-		// --- End Force Render ---
+    console.log("Forcing re-render after clone...");
+    renderBoard(currentGameState);
+    // --- End Force Render ---
 
-		// --- Re-attach/Attach other listeners ---
-		if (btnUndo) {
-			btnUndo.removeEventListener("click", undoLastAction);
-			btnUndo.addEventListener("click", undoLastAction);
-		}
-		if (btnEndTurn) {
-			btnEndTurn.removeEventListener("click", nextTurn);
-			btnEndTurn.addEventListener("click", nextTurn);
-		}
-		// ... (Manage SJ listeners if they were re-added) ...
-
-
-		// --- ADDED: Call updateUI to populate info panels ---
-		console.log("Calling updateUI to set initial info panels...");
-		updateUI(); // <<< ADD THIS CALL
-		// --- END ADDED ---
+    // --- Re-attach/Attach other listeners ---
+    if (btnUndo) {
+        btnUndo.removeEventListener("click", undoLastAction);
+        btnUndo.addEventListener("click", undoLastAction);
+    }
+    if (btnEndTurn) {
+        btnEndTurn.removeEventListener("click", nextTurn);
+        btnEndTurn.addEventListener("click", nextTurn);
+    }
+    // ... (Manage SJ listeners if they were re-added) ...
 
 
-		showScreen("gameplay"); // Show screen AFTER initial render and UI update
+    // --- ADDED: Call updateUI to populate info panels ---
+    console.log("Calling updateUI to set initial info panels...");
+    updateUI(); // <<< ADD THIS CALL
+    // --- END ADDED ---
 
-		// Log turn start
+
+    showScreen("gameplay"); // Show screen AFTER initial render and UI update
+
+    // Log turn start
 		const player = currentGameState.players[pIdx];
 		if (player) {
 			addToLog(`--- Turn ${currentGameState.turn} - ${player.name}'s turn (${player.class}). AP: ${currentGameState.currentAP} ---`);
