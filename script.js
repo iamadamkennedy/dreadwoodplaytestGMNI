@@ -4872,12 +4872,11 @@ function proceedToNextPlayerTurn() {
 		// --- End Cloning Workaround ---
 
 		// --- Force Render After Cloning ---
-		// This addresses the issue where the board might appear empty initially after cloning
 		console.log("Forcing re-render after clone...");
 		renderBoard(currentGameState);
 		// --- End Force Render ---
 
-		// Re-attach other listeners (Undo/End Turn)
+		// --- Re-attach/Attach other listeners ---
 		if (btnUndo) {
 			btnUndo.removeEventListener("click", undoLastAction);
 			btnUndo.addEventListener("click", undoLastAction);
@@ -4886,9 +4885,16 @@ function proceedToNextPlayerTurn() {
 			btnEndTurn.removeEventListener("click", nextTurn);
 			btnEndTurn.addEventListener("click", nextTurn);
 		}
+		// ... (Manage SJ listeners if they were re-added) ...
 
-		// Show the gameplay screen only after everything is set up and rendered
-		showScreen("gameplay");
+
+		// --- ADDED: Call updateUI to populate info panels ---
+		console.log("Calling updateUI to set initial info panels...");
+		updateUI(); // <<< ADD THIS CALL
+		// --- END ADDED ---
+
+
+		showScreen("gameplay"); // Show screen AFTER initial render and UI update
 
 		// Log turn start
 		const player = currentGameState.players[pIdx];
