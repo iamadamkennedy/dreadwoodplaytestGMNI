@@ -3926,7 +3926,13 @@ function resolveContractPayoffChoice(playerIndex, choseYes) {
 				swiftJusticeVampId = potentialSwiftJusticeVampId; // Store ID globally/temporarily
 				swiftJusticePlayerIndex = endingPlayerIndex; // Store player index globally/temporarily
 
-				sjMessage.textContent = `The Sheriffs are duty bound. Execute Swift Justice for ${lastVamp.id}? (Move 1 square forward: ${lastVamp.facing})`;
+				sjMessage.textContent = `The Sheriffs are duty bound. Execute Swift Justice to move 1 space and face that direction?`;
+
+				// --- ADDED: Ensure board is rendered correctly before showing modal ---
+				console.log("Ensuring board is rendered before showing SJ prompt...");
+				renderBoard(currentGameState); // <<< ADD THIS LINE
+				// --- END ADDED ---
+
 				sjPopup.style.display = 'flex';
 				// Set a pending action state so other actions are blocked
 				currentGameState.actionState.pendingAction = 'swift-justice-prompt';
