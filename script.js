@@ -3910,51 +3910,60 @@ function resolveContractPayoffChoice(playerIndex, choseYes) {
 		const endingPlayer = currentGameState.players[endingPlayerIndex];
 		const potentialSwiftJusticeVampId = currentGameState.lastActionVampId;
 
-		let showSJPrompt = false; // Assume no initially
+		let showSJPrompt = false;
 
-		// Check Swift Justice eligibility more carefully
+		// Check Swift Justice eligibility carefully
 		if (endingPlayer?.class === "Sheriff" && !endingPlayer.eliminated && potentialSwiftJusticeVampId) {
 			const lastVamp = findVampireById(potentialSwiftJusticeVampId);
-			// Check if last action was by THIS player's Sheriff and not cursed
 			if (lastVamp && lastVamp.player === endingPlayerIndex && !lastVamp.cursed) {
 				showSJPrompt = true;
 			}
 		}
 
+		// --- Decision Point ---
 		if (showSJPrompt) {
-			// --- Show Swift Justice Popup and Wait ---
+			// --- Attempt to Show Swift Justice Popup and Wait ---
 			const sjPopup = popups.swiftJustice;
-			const sjMessage = document.getElementById('swift-justice-message');
+			// Re-get message element reference here for safety
+			const sjMessage = sjPopup ? sjPopup.querySelector('#swift-justice-message') : null;
 			const lastVamp = findVampireById(potentialSwiftJusticeVampId);
 
 			if (sjPopup && sjMessage && lastVamp) {
+				// *** Conditions met AND elements found: Show prompt and RETURN ***
 				console.log(`Offering Swift Justice for ${potentialSwiftJusticeVampId} at ${lastVamp.coord}`);
-				// Store info needed by handlers
 				swiftJusticeVampId = potentialSwiftJusticeVampId;
 				swiftJusticePlayerIndex = endingPlayerIndex;
 
+				// Use your updated prompt text:
 				sjMessage.textContent = `Execute Swift Justice to move 1 space and face that direction?`;
-				// Ensure board is rendered before showing
 				console.log("Rendering board before showing SJ prompt...");
-				renderBoard(currentGameState);
-				// Ensure other UI elements are up-to-date too
-				updateUI(); // Call updateUI to refresh buttons etc. *before* showing modal
+				renderBoard(currentGameState); // Ensure board is visually correct
+				updateUI(); // Refresh button states etc. before showing modal
 
 				sjPopup.style.display = 'flex'; // Show popup
-				currentGameState.actionState.pendingAction = 'swift-justice-prompt'; // Set state to waiting
+				currentGameState.actionState.pendingAction = 'swift-justice-prompt'; // Set waiting state
 				addToLog("Swift Justice offered. Choose Yes or No.");
-				// *** Stop here - Do NOT proceed to next turn ***
-				return;
+				return; // *** Crucial: Stop further execution in nextTurn ***
+
 			} else {
-				console.error("Swift Justice popup elements/vamp ID missing! Proceeding without SJ offer.");
-				addToLog("Error showing Swift Justice prompt.");
-				// Fall through to normal turn end
+				// *** Conditions met BUT elements missing: Log error, end turn normally ***
+				console.error("Swift Justice popup elements/vamp ID missing! Cannot offer SJ.");
+				addToLog("Error showing Swift Justice prompt. Ending turn without offer.");
+				// Reset any potentially set global SJ state
+				swiftJusticePlayerIndex = -1;
+				swiftJusticeVampId = null;
+				// Save history because the player *did* intend to end their turn
+				saveStateToHistory();
+				// Proceed to next turn because the prompt couldn't be shown
+				proceedToNextPlayerTurn();
+				return; // *** Crucial: Stop further execution after handling error ***
 			}
 		}
+		// --- End of 'if (showSJPrompt)' block ---
 
-		// --- No Swift Justice Offered or Error Showing Prompt ---
-		console.log("No Swift Justice trigger/prompt (or error showing), proceeding to next turn normally.");
-		saveStateToHistory(); // Save the state of the turn just ended
+		// --- Execute ONLY if showSJPrompt was initially FALSE ---
+		console.log("No Swift Justice trigger, proceeding to next turn normally.");
+		saveStateToHistory();
 		proceedToNextPlayerTurn();
 	}
 
