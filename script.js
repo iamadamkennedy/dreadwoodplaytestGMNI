@@ -5534,28 +5534,45 @@ function proceedToNextPlayerTurn() {
 		console.warn("Swift Justice YES button (#btn-swift-justice-yes) or popup not found");
 	}
 
+	// --- Swift Justice Popup Listeners ---
+	// ... (Keep the btnSwiftJusticeYes listener block as it was) ...
+
 	if (btnSwiftJusticeNo && popups.swiftJustice) {
 		btnSwiftJusticeNo.addEventListener('click', () => {
+			const currentState = currentGameState.actionState?.pendingAction; // Get state FIRST
+			alert(`No Clicked! Current pendingAction: ${currentState}`); // <<< DEBUG ALERT
+
 			popups.swiftJustice.style.display = 'none'; // Hide popup
 
-			// --- MODIFIED: Add return on state check failure ---
-			if (currentGameState.actionState?.pendingAction !== 'swift-justice-prompt') {
-				console.warn("Swift Justice No clicked when not expected.");
-				addToLog("Error processing Swift Justice decline (unexpected state)."); // Add user log
-				// We might be in a weird state, maybe just reset actionState?
+			// Check the state we captured at the start
+			if (currentState !== 'swift-justice-prompt') {
+				console.warn("Swift Justice No clicked when state was not 'swift-justice-prompt'. State:", currentState);
+				addToLog("Error processing Swift Justice decline (unexpected state).");
+				// Still reset global state just in case, but DO NOT proceed
+				isSwiftJusticeMovePending = false;
+				swiftJusticePlayerIndex = -1;
+				swiftJusticeVampId = null;
 				if(currentGameState.actionState) currentGameState.actionState.pendingAction = null;
-				return; // *** ADD RETURN HERE ***
+				return; // Stop here if state was wrong
 			}
-			// --- End Modification ---
 
+			// --- State was CORRECT ('swift-justice-prompt') ---
 			addToLog("Sheriff declined Swift Justice.");
 			// Reset state completely
-			isSwiftJusticeMovePending = false; // Keep this for consistency? Or remove if purely using actionState
+			isSwiftJusticeMovePending = false;
 			swiftJusticePlayerIndex = -1;
 			swiftJusticeVampId = null;
-			if (currentGameState.actionState) currentGameState.actionState.pendingAction = null; // Clear pending action state
-			saveStateToHistory(); // Save state because turn *did* end
-			proceedToNextPlayerTurn(); // Proceed to next player
+			if (currentGameState.actionState) currentGameState.actionState.pendingAction = null;
+
+			// Save history because turn *did* end
+			saveStateToHistory();
+
+			// *** TEMPORARILY COMMENT OUT to stop incorrect looping ***
+			// proceedToNextPlayerTurn();
+			console.log(">>> proceedToNextPlayerTurn() SKIPPED from NO handler for testing <<<");
+			addToLog(">>> Turn progression paused after NO click for testing <<<");
+
+
 		});
 	} else {
 		console.warn("Swift Justice NO button (#btn-swift-justice-no) or popup not found");
