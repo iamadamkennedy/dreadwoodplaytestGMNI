@@ -4924,24 +4924,27 @@ const handleSJYesClick = () => {
 const handleSJNoClick = () => {
     const popup = popups.swiftJustice; // Get popup reference
     const currentState = currentGameState.actionState?.pendingAction; // Get state FIRST
-    alert(`No Clicked! Current pendingAction: ${currentState}`); // <<< DEBUG ALERT
+    // Keep alert for one more test
+    alert(`No Clicked! Current pendingAction: ${currentState}`);
 
-    if(popup) popup.style.display = 'none'; // Hide popup
+    if(popup) popup.style.display = 'none'; // Hide popup regardless
 
     // Check the state we captured at the start
     if (currentState !== 'swift-justice-prompt') {
          console.warn("Swift Justice No clicked when state was not 'swift-justice-prompt'. State:", currentState);
          addToLog("Error processing Swift Justice decline (unexpected state).");
-         // Still reset global state just in case, but DO NOT proceed
+         // Reset global state vars just in case they were somehow set
          isSwiftJusticeMovePending = false;
          swiftJusticePlayerIndex = -1;
          swiftJusticeVampId = null;
-         if(currentGameState.actionState) currentGameState.actionState.pendingAction = null;
-         alert("SJ No State Mismatch - RETURN"); // Debug Alert
-         return; // *** Stop here if state was wrong ***
+         // If the state IS wrong, DO NOT proceed. Just stop.
+         return; // *** ENSURE THIS RETURN STOPS EXECUTION ***
     }
 
-    // --- State was CORRECT ('swift-justice-prompt') ---
+    // --- State was CORRECT ('swift-justice-prompt') when handler started ---
+    // This block should only execute ONCE per intended "No" click.
+    console.log("handleSJNoClick: State OK, processing 'No' decision."); // Add log
+
     addToLog("Sheriff declined Swift Justice.");
     // Reset state completely
     isSwiftJusticeMovePending = false;
@@ -4952,10 +4955,9 @@ const handleSJNoClick = () => {
     // Save history because turn *did* end
     saveStateToHistory();
 
-    // *** KEEP COMMENTED OUT FOR NOW to isolate the handler issue ***
-    // proceedToNextPlayerTurn();
-    console.log(">>> proceedToNextPlayerTurn() SKIPPED from NO handler for testing <<<");
-    addToLog(">>> Turn progression paused after NO click for testing <<<");
+    // *** RESTORE this call - only runs if state was correct ***
+    console.log("handleSJNoClick: Calling proceedToNextPlayerTurn after No.");
+    proceedToNextPlayerTurn(); // Proceed to next player
 
 }; // End handleSJNoClick
 
