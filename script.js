@@ -154,7 +154,6 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 		victory: document.getElementById("popup-victory"),
 		hazardPicker: document.getElementById("hazard-picker"),
 		howToPlay: document.getElementById("screen-how-to-play"),
-		swiftJustice: document.getElementById('popup-swift-justice'),
 		// --- Corrected: Ensure these are defined ---
 		contractPayoffChoice: document.getElementById('popup-contract-payoff-choice'),
 		contractPayoffAuto: document.getElementById('popup-contract-payoff-auto'),
@@ -223,10 +222,6 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 	// Elements - Hazard Picker Popup
 	const hazardPickerOptions = document.getElementById("hazard-picker-options");
 	const btnCancelThrow = document.getElementById("btn-cancel-throw");
-
-	// Buttons - Swift Justice Popup
-	const btnSwiftJusticeYes = document.getElementById('btn-swift-justice-yes');
-	const btnSwiftJusticeNo = document.getElementById('btn-swift-justice-no');
 
 	// --- Corrected: Add reference needed for showNextTurnBonusPopup ---
 	const ntbMessageElement = document.getElementById('ntb-message');
@@ -2596,7 +2591,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 
 		// --- Update Class Details Panel (Abilities List, Silver Bullet Status) ---
 		if (currentClassAbilitiesList && CLASS_DATA[player.class]?.abilities) {
-			currentClassAbilitiesList.innerHTML = ''; // Clear previous list
+			currentClassAbilitiesList.innerHTML = '';
 			CLASS_DATA[player.class].abilities.forEach(ability => {
 				const li = document.createElement('li');
 				const isUsed = resources.abilitiesUsed.includes(ability.name);
@@ -2607,9 +2602,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 									ability.name === 'Hand Cannon' || ability.name === 'Rampage' );
 				const usedText = (isOneTimeActive && isUsed) ? ' - <strong style="color: red;">USED</strong>' : '';
 				const displayDesc = ability.techDesc || ability.description;
-				// --- Corrected Syntax: Use Backticks for Template Literal ---
-				li.innerHTML = `<strong>${ability.name} (${ability.type})${apCostText}${usedText}:</strong> ${displayDesc}`;
-				// --- End Correction ---
+				li.innerHTML = `<strong><span class="math-inline">\{ability\.name\} \(</span>{ability.type})<span class="math-inline">\{apCostText\}</span>{usedText}:</strong> ${displayDesc}`;
 				currentClassAbilitiesList.appendChild(li);
 			});
 		} else if (currentClassAbilitiesList) {
@@ -2646,9 +2639,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 		if (btnSilverBullet) {
 			btnSilverBullet.style.display = "inline-block";
 			btnSilverBullet.disabled = !isVampSelected || !canControlSelected || currentAP < AP_COST.SILVER_BULLET || resources.silverBullet <= 0 || !!isCursed;
-			// --- Corrected Syntax: Use Backticks ---
-			btnSilverBullet.title = `Silver Bullet Shot (${AP_COST.SILVER_BULLET} AP)${resources.silverBullet <= 0 ? " - USED" : ""}`;
-			// --- End Correction ---
+			btnSilverBullet.title = `Silver Bullet Shot (<span class="math-inline">\{AP\_COST\.SILVER\_BULLET\} AP\)</span>{resources.silverBullet <= 0 ? " - USED" : ""}`;
 		}
 		const canAffordDispel = currentAP >= AP_COST.DISPEL;
 		const canDispel = isVampSelected && hazardOnVampSquare?.type === "Grave Dust";
@@ -2679,9 +2670,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 				const isUsed = resources.abilitiesUsed.includes(abilityName);
 				const canAfford = currentAP >= AP_COST.RAMPAGE;
 				btnRampage.disabled = !canControlSelected || !canAfford || isUsed || !!isCursed;
-				// --- Corrected Syntax: Use Backticks ---
-				btnRampage.title = `${abilityName} (${AP_COST.RAMPAGE} AP, 1/game)${isUsed ? ' - USED' : ''}`;
-				// --- End Correction ---
+				btnRampage.title = `<span class="math-inline">\{abilityName\} \(</span>{AP_COST.RAMPAGE} AP, 1/game)${isUsed ? ' - USED' : ''}`;
 			}
 		}
 		// Hand Cannon (Outlaw)
@@ -2693,14 +2682,9 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 				const isUsed = resources.abilitiesUsed.includes(abilityName);
 				const canAfford = currentAP >= AP_COST.HAND_CANNON;
 				btnHandCannon.disabled = !canControlSelected || !canAfford || isUsed || !!isCursed;
-				// --- Corrected Syntax: Use Backticks ---
-				btnHandCannon.title = `${abilityName} (${AP_COST.HAND_CANNON} AP, 1/game)${isUsed ? ' - USED' : ''}`;
-				// --- End Correction ---
+				btnHandCannon.title = `<span class="math-inline">\{abilityName\} \(</span>{AP_COST.HAND_CANNON} AP, 1/game)${isUsed ? ' - USED' : ''}`;
 			}
 		}
-
-		// --- REMOVED Contract Payoff Button Logic ---
-		// --- End Removal ---
 
 		// Order Restored (Sheriff)
 		if (btnOrderRestored) {
@@ -2718,9 +2702,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 			if (isVisible) {
 				const isDisabled = !canControlSelected || !canAfford || isUsed || !!isCursed;
 				btnOrderRestored.disabled = isDisabled;
-				// --- Corrected Syntax: Use Backticks ---
-				let title = `${abilityName} (${AP_COST.ORDER_RESTORED} AP, 1/game)`;
-				// --- End Correction ---
+				let title = `<span class="math-inline">\{abilityName\} \(</span>{AP_COST.ORDER_RESTORED} AP, 1/game)`;
 				if (isUsed) title += ' - USED';
 				else if (isDisabled && !canAfford) title += ' (Not Enough AP)';
 				else if (isDisabled && !!isCursed) title += ' (Cannot Use While Cursed)';
@@ -2742,9 +2724,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 			if (isSelectedVigilante) {
 				const isDisabled = !canControlSelected || !canAfford || isUsed || !triggerMet || !!isCursed;
 				btnVengeance.disabled = isDisabled;
-				// --- Corrected Syntax: Use Backticks ---
-				let title = `${abilityName} (${AP_COST.VENGEANCE_IS_MINE} AP, 1/game)`;
-				// --- End Correction ---
+				let title = `<span class="math-inline">\{abilityName\} \(</span>{AP_COST.VENGEANCE_IS_MINE} AP, 1/game)`;
 				if (isUsed) title += ' - USED';
 				else if (!triggerMet) title += ' (Ally Not Shot Recently)';
 				else if (isDisabled && !!isCursed) title += ' (Cannot Use While Cursed)';
@@ -2753,49 +2733,32 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 			}
 		}
 
-		// --- Movement Buttons Visibility & State ---
+		// --- Movement Buttons Visibility & State (Simplified - SJ Logic Removed) ---
 		if (movementBar) {
 			if (!isVampSelected) {
 				movementBar.classList.add('hidden');
 			} else {
 				movementBar.classList.remove('hidden');
-				// --- MODIFIED: Handle SJ multi-direction ---
-				if (isSwiftJusticeMovePending) {
-					const allowedDirs = currentGameState.actionState?.swiftJusticeValidDirections || [];
-					// Enable only allowed directions
-					if (btnMoveN) btnMoveN.disabled = !allowedDirs.includes('N');
-					if (btnMoveE) btnMoveE.disabled = !allowedDirs.includes('E');
-					if (btnMoveS) btnMoveS.disabled = !allowedDirs.includes('S');
-					if (btnMoveW) btnMoveW.disabled = !allowedDirs.includes('W');
-					// Update titles for clarity
-					const sjTitle = "Swift Justice Move (0 AP)";
-					if (btnMoveN) btnMoveN.title = allowedDirs.includes('N') ? sjTitle : "Invalid SJ Target";
-					if (btnMoveE) btnMoveE.title = allowedDirs.includes('E') ? sjTitle : "Invalid SJ Target";
-					if (btnMoveS) btnMoveS.title = allowedDirs.includes('S') ? sjTitle : "Invalid SJ Target";
-					if (btnMoveW) btnMoveW.title = allowedDirs.includes('W') ? sjTitle : "Invalid SJ Target";
-				} else {
-					// --- End Modification ---
-					// Normal turn movement/pivot logic (remains the same)
-					const canAffordMoveOrPivot = currentAP >= AP_COST.MOVE;
-					const movesTakenThisTurn = selectedVamp?.movesThisTurn || 0;
-					const canMoveForward = !isCursed || movesTakenThisTurn < 1;
+				// Normal turn movement/pivot logic
+				const canAffordMoveOrPivot = currentAP >= AP_COST.MOVE;
+				const movesTakenThisTurn = selectedVamp?.movesThisTurn || 0;
+				const canMoveForward = !isCursed || movesTakenThisTurn < 1;
 
-					if (btnMoveN) btnMoveN.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'N' && !canMoveForward);
-					if (btnMoveE) btnMoveE.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'E' && !canMoveForward);
-					if (btnMoveS) btnMoveS.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'S' && !canMoveForward);
-					if (btnMoveW) btnMoveW.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'W' && !canMoveForward);
+				if (btnMoveN) btnMoveN.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'N' && !canMoveForward);
+				if (btnMoveE) btnMoveE.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'E' && !canMoveForward);
+				if (btnMoveS) btnMoveS.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'S' && !canMoveForward);
+				if (btnMoveW) btnMoveW.disabled = !canControlSelected || !canAffordMoveOrPivot || (selectedVamp?.facing === 'W' && !canMoveForward);
 
-					if (selectedVamp?.facing !== 'N' && btnMoveN) btnMoveN.disabled = !canControlSelected || !canAffordMoveOrPivot;
-					if (selectedVamp?.facing !== 'E' && btnMoveE) btnMoveE.disabled = !canControlSelected || !canAffordMoveOrPivot;
-					if (selectedVamp?.facing !== 'S' && btnMoveS) btnMoveS.disabled = !canControlSelected || !canAffordMoveOrPivot;
-					if (selectedVamp?.facing !== 'W' && btnMoveW) btnMoveW.disabled = !canControlSelected || !canAffordMoveOrPivot;
+				if (selectedVamp?.facing !== 'N' && btnMoveN) btnMoveN.disabled = !canControlSelected || !canAffordMoveOrPivot;
+				if (selectedVamp?.facing !== 'E' && btnMoveE) btnMoveE.disabled = !canControlSelected || !canAffordMoveOrPivot;
+				if (selectedVamp?.facing !== 'S' && btnMoveS) btnMoveS.disabled = !canControlSelected || !canAffordMoveOrPivot;
+				if (selectedVamp?.facing !== 'W' && btnMoveW) btnMoveW.disabled = !canControlSelected || !canAffordMoveOrPivot;
 
-					const movePivotTitle = `Move/Pivot (${AP_COST.MOVE} AP)`;
-					if (btnMoveN) btnMoveN.title = movePivotTitle;
-					if (btnMoveE) btnMoveE.title = movePivotTitle;
-					if (btnMoveS) btnMoveS.title = movePivotTitle;
-					if (btnMoveW) btnMoveW.title = movePivotTitle;
-				}
+				const movePivotTitle = `Move/Pivot (${AP_COST.MOVE} AP)`;
+				if (btnMoveN) btnMoveN.title = movePivotTitle;
+				if (btnMoveE) btnMoveE.title = movePivotTitle;
+				if (btnMoveS) btnMoveS.title = movePivotTitle;
+				if (btnMoveW) btnMoveW.title = movePivotTitle;
 			}
 		} else {
 			console.warn("Movement bar element not found.");
@@ -3890,87 +3853,23 @@ function resolveContractPayoffChoice(playerIndex, choseYes) {
 
 	/**
 	 * Called when the current player clicks "End Turn".
-	 * Checks for Swift Justice eligibility. If eligible, shows prompt and sets pending state.
-	 * Proceeds to next turn ONLY if SJ prompt is NOT pending.
+	 * Proceeds to the next player's turn.
 	 */
 	function nextTurn() {
 		console.log("--- nextTurn called ---");
 
-		// Prevent ending turn if another action is pending (except waiting for SJ prompt itself)
-		if (currentGameState.actionState?.pendingAction &&
-			currentGameState.actionState.pendingAction !== 'swift-justice-prompt') {
+		// Prevent ending turn if another action is pending
+		if (currentGameState.actionState?.pendingAction) {
 			addToLog("Cannot end turn: Action pending. Cancel or complete.");
 			console.log("nextTurn: Returning because action pending:", currentGameState.actionState.pendingAction);
 			return;
 		}
-		// If already waiting for SJ *move* selection, don't re-trigger end turn logic
-		if (isSwiftJusticeMovePending || currentGameState.actionState?.pendingAction === 'swift-justice-move') {
-			addToLog("Cannot end turn now: Select Swift Justice move direction.");
-			console.log("nextTurn: Returning because waiting for SJ move.");
-			return;
-		}
 
-		const endingPlayerIndex = currentGameState.currentPlayerIndex;
-		const endingPlayer = currentGameState.players[endingPlayerIndex];
-		const potentialSwiftJusticeVampId = currentGameState.lastActionVampId;
-		let shouldOfferSJ = false;
-
-		// Check Swift Justice eligibility
-		console.log("nextTurn: Checking SJ eligibility...");
-		if (endingPlayer?.class === "Sheriff" && !endingPlayer.eliminated && potentialSwiftJusticeVampId) {
-			const lastVamp = findVampireById(potentialSwiftJusticeVampId);
-			if (lastVamp && lastVamp.player === endingPlayerIndex && !lastVamp.cursed) {
-				shouldOfferSJ = true;
-				console.log("nextTurn: SJ Eligibility MET.");
-			} else {
-				console.log("nextTurn: SJ Eligibility NOT MET (Vamp invalid/cursed).");
-			}
-		} else {
-			console.log("nextTurn: SJ Eligibility NOT MET (Not Sheriff / eliminated / no last action).");
-		}
-
-		// --- Action Point: Show Prompt OR Prepare to Proceed ---
-		if (shouldOfferSJ) {
-			console.log("nextTurn: Setting up SJ Prompt...");
-			const sjPopup = popups.swiftJustice;
-			const sjMessage = sjPopup ? sjPopup.querySelector('#swift-justice-message') : null;
-			const lastVamp = findVampireById(potentialSwiftJusticeVampId);
-
-			if (sjPopup && sjMessage && lastVamp) {
-				// Store info, set state, render, show popup
-				swiftJusticeVampId = potentialSwiftJusticeVampId;
-				swiftJusticePlayerIndex = endingPlayerIndex;
-				currentGameState.actionState.pendingAction = 'swift-justice-prompt'; // Set state
-				sjMessage.textContent = `Execute Swift Justice to move 1 space and face that direction?`;
-				renderBoard(currentGameState);
-				updateUI();
-				sjPopup.style.display = 'flex';
-				addToLog("Swift Justice offered. Choose Yes or No.");
-				console.log("nextTurn: SJ prompt shown, pendingAction set to 'swift-justice-prompt'. Function will now end.");
-			} else {
-				// Error showing popup - log it, but allow turn to end normally below
-				console.error("Swift Justice popup elements/vamp ID missing! Cannot offer SJ.");
-				addToLog("Error showing Swift Justice prompt. Ending turn without offer.");
-				// Clear potentially partially set state
-				swiftJusticePlayerIndex = -1;
-				swiftJusticeVampId = null;
-				currentGameState.actionState.pendingAction = null; // Ensure state is clear if prompt failed
-			}
-		} else {
-			console.log("nextTurn: No SJ prompt to offer.");
-			// If not offering SJ, pendingAction should be null or something else already handled
-		}
-
-		// --- Final Check: Proceed ONLY if NOT waiting for SJ prompt ---
-		if (currentGameState.actionState?.pendingAction !== 'swift-justice-prompt') {
-			console.log("nextTurn: NOT waiting for SJ prompt, proceeding normally...");
-			saveStateToHistory(); // Save state *only if* actually proceeding
-			proceedToNextPlayerTurn();
-		} else {
-			console.log("nextTurn: Waiting for SJ prompt response. Turn progression paused.");
-			// Do nothing here, wait for Yes/No click
-		}
-		console.log("--- nextTurn finished ---");
+		// --- No Swift Justice Check - Proceed Normally ---
+		console.log("Proceeding to next turn normally.");
+		saveStateToHistory(); // Save the state of the turn just ended
+		proceedToNextPlayerTurn();
+		console.log("--- nextTurn finished normally ---");
 	}
 
 	/**
@@ -4846,123 +4745,6 @@ function proceedToNextPlayerTurn() {
         }
     }
 
-	// --- Define Named Handlers for SJ Popups ---
-
-const handleSJYesClick = () => {
-    const popup = popups.swiftJustice; // Get popup reference
-    if(popup) popup.style.display = 'none'; // Hide popup immediately
-
-    // Use alert for temporary state check
-    const currentState = currentGameState.actionState?.pendingAction;
-    alert(`Yes Clicked! Current pendingAction: ${currentState}`);
-
-    // Ensure we are in the correct state
-    if (currentState !== 'swift-justice-prompt' || swiftJusticePlayerIndex === -1 || !swiftJusticeVampId) {
-        console.warn("Swift Justice Yes clicked when state was not 'swift-justice-prompt'. State:", currentState);
-        addToLog("Error processing Swift Justice acceptance (unexpected state).");
-        // Reset state defensively
-        isSwiftJusticeMovePending = false;
-        swiftJusticePlayerIndex = -1;
-        swiftJusticeVampId = null;
-        if (currentGameState.actionState) currentGameState.actionState.pendingAction = null;
-        alert("SJ Yes State Mismatch - RETURN"); // Debug Alert
-        return; // Stop processing this click
-    }
-
-    const vampire = findVampireById(swiftJusticeVampId);
-    if (!vampire || vampire.player !== swiftJusticePlayerIndex || vampire.cursed) {
-        console.error(`Swift Justice Yes Error: Vampire ${swiftJusticeVampId} invalid.`);
-        addToLog(`Cannot perform Swift Justice with ${swiftJusticeVampId}.`);
-        // Reset state
-        isSwiftJusticeMovePending = false;
-        swiftJusticePlayerIndex = -1;
-        swiftJusticeVampId = null;
-        if (currentGameState.actionState) currentGameState.actionState.pendingAction = null;
-        saveStateToHistory(); // Save state because turn technically ended
-        proceedToNextPlayerTurn(); // Turn ends if vamp invalid
-        alert("SJ Yes Vamp Invalid - RETURN"); // Debug Alert
-        return;
-    }
-
-    // --- Validate ALL adjacent directions ---
-    const validTargets = [];
-    for (const dir of DIRECTIONS) {
-        const targetCoord = getAdjacentCoord(vampire.coord, dir);
-        if (isValidSwiftJusticeTarget(targetCoord, swiftJusticeVampId)) {
-             validTargets.push({ direction: dir, coord: targetCoord });
-        }
-    }
-
-    if (validTargets.length > 0) {
-        // --- At least one move is VALID ---
-        const validDirections = validTargets.map(t => t.direction);
-        console.log(`Swift Justice accepted for ${swiftJusticeVampId}. Valid move directions: ${validDirections.join(', ')}`);
-        isSwiftJusticeMovePending = true;
-        currentGameState.actionState.pendingAction = 'swift-justice-move';
-        currentGameState.actionState.swiftJusticeValidDirections = validDirections;
-
-        addToLog(`Sheriff ${swiftJusticeVampId} will execute Swift Justice. Select move direction: ${validDirections.join('/')}.`);
-        updateUI(); // Update UI to show D-pad
-
-    } else {
-        // --- NO valid moves available ---
-        console.log(`Swift Justice cancelled for ${swiftJusticeVampId}: No valid adjacent squares.`);
-        addToLog(`Swift Justice move cancelled: No valid adjacent squares.`);
-        // Reset state completely, turn ends here
-        isSwiftJusticeMovePending = false;
-        swiftJusticePlayerIndex = -1;
-        swiftJusticeVampId = null;
-        if (currentGameState.actionState) {
-             currentGameState.actionState.pendingAction = null;
-             currentGameState.actionState.swiftJusticeValidDirections = null;
-        }
-        saveStateToHistory(); // Save state before proceeding
-        proceedToNextPlayerTurn(); // Proceed to next player
-    }
-}; // End handleSJYesClick
-
-const handleSJNoClick = () => {
-    const popup = popups.swiftJustice; // Get popup reference
-    const currentState = currentGameState.actionState?.pendingAction; // Get state FIRST
-    // Keep alert for one more test
-    alert(`No Clicked! Current pendingAction: ${currentState}`);
-
-    if(popup) popup.style.display = 'none'; // Hide popup regardless
-
-    // Check the state we captured at the start
-    if (currentState !== 'swift-justice-prompt') {
-         console.warn("Swift Justice No clicked when state was not 'swift-justice-prompt'. State:", currentState);
-         addToLog("Error processing Swift Justice decline (unexpected state).");
-         // Reset global state vars just in case they were somehow set
-         isSwiftJusticeMovePending = false;
-         swiftJusticePlayerIndex = -1;
-         swiftJusticeVampId = null;
-         // If the state IS wrong, DO NOT proceed. Just stop.
-         return; // *** ENSURE THIS RETURN STOPS EXECUTION ***
-    }
-
-    // --- State was CORRECT ('swift-justice-prompt') when handler started ---
-    // This block should only execute ONCE per intended "No" click.
-    console.log("handleSJNoClick: State OK, processing 'No' decision."); // Add log
-
-    addToLog("Sheriff declined Swift Justice.");
-    // Reset state completely
-    isSwiftJusticeMovePending = false;
-    swiftJusticePlayerIndex = -1;
-    swiftJusticeVampId = null;
-    if (currentGameState.actionState) currentGameState.actionState.pendingAction = null; // Clear pending action state
-
-    // Save history because turn *did* end
-    saveStateToHistory();
-
-    // *** RESTORE this call - only runs if state was correct ***
-    console.log("handleSJNoClick: Calling proceedToNextPlayerTurn after No.");
-    proceedToNextPlayerTurn(); // Proceed to next player
-
-}; // End handleSJNoClick
-
-// --- End Named Handlers ---
-
 	// --- Batch 5 Ends Here ---
 	
 	/**
@@ -5104,21 +4886,6 @@ const handleSJNoClick = () => {
 			btnEndTurn.removeEventListener("click", nextTurn);
 			btnEndTurn.addEventListener("click", nextTurn);
 		}
-
-		// --- ADDED: Manage SJ Popup Listeners Here ---
-		if (btnSwiftJusticeYes) {
-			console.log("Removing old SJ Yes listener...");
-			btnSwiftJusticeYes.removeEventListener("click", handleSJYesClick); // Use named handler
-			console.log("Adding new SJ Yes listener...");
-			btnSwiftJusticeYes.addEventListener("click", handleSJYesClick);    // Use named handler
-		}
-		if (btnSwiftJusticeNo) {
-			console.log("Removing old SJ No listener...");
-			btnSwiftJusticeNo.removeEventListener("click", handleSJNoClick);   // Use named handler
-			console.log("Adding new SJ No listener...");
-			btnSwiftJusticeNo.addEventListener("click", handleSJNoClick);     // Use named handler
-		}
-		// --- END ADDED ---
 
 		// Show the gameplay screen only after everything is set up and rendered
 		showScreen("gameplay");
@@ -5355,9 +5122,6 @@ const handleSJNoClick = () => {
 				selectedClasses = [];
 				currentGameState = {}; // Clear game state
 				gameHistory = []; // Clear history
-				isSwiftJusticeMovePending = false; // Reset SJ state
-				swiftJusticePlayerIndex = -1;
-				swiftJusticeVampId = null;
 				console.log("Returning to setup - game state cleared.");
 				showScreen("playerCount"); // Go back to first screen
 			}
@@ -5532,38 +5296,24 @@ const handleSJNoClick = () => {
 
 	// --- D-Pad Movement Listener ---
 	const handleDirectionButtonClick = (direction) => {
-		// Check for Swift Justice first
-		if (isSwiftJusticeMovePending) {
-			// --- MODIFIED: Check against array of valid directions ---
-			const allowedDirs = currentGameState.actionState?.swiftJusticeValidDirections || [];
-			if (allowedDirs.includes(direction)) {
-				// Direction is one of the pre-validated ones
-				console.log(`Calling executeSwiftJusticeMove for valid direction: ${direction}`);
-				executeSwiftJusticeMove(direction);
-			} else {
-				// Ignore clicks on buttons for invalid/blocked directions
-				addToLog(`Invalid direction for Swift Justice move.`);
-				console.log(`Ignored SJ direction click: ${direction}. Allowed: ${allowedDirs.join(',')}`);
-			}
-			// --- End Modification ---
-			return; // Stop processing for normal move/pivot
-		}
+		// --- REMOVED Swift Justice Check ---
 
-		// Normal Move/Pivot (remains the same)
+		// Normal Move/Pivot
 		const selectedVamp = findVampireById(currentGameState?.selectedVampireId);
 		if (!selectedVamp) {
 			addToLog("Select a Vampire first.");
 			return;
 		}
-		if (direction === selectedVamp.facing) {
+
+		if (direction === selectedVamp.facing) { // Attempt Move Forward
 			const targetCoord = getAdjacentCoord(selectedVamp.coord, direction);
 			if (targetCoord) {
-				executeMove(selectedVamp, targetCoord);
+				executeMove(selectedVamp, targetCoord); // Handles checks & execution
 			} else {
 				addToLog("Cannot move off the board.");
 			}
-		} else {
-			executePivot(selectedVamp, direction);
+		} else { // Attempt Pivot
+			executePivot(selectedVamp, direction); // Handles checks & execution
 		}
 	};
 
