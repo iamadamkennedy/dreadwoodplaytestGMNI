@@ -2493,6 +2493,7 @@ document.addEventListener("DOMContentLoaded", () => { // FIXED: Correct arrow fu
 	 * @param {object} gameState - The current game state object.
 	 */
 	function renderBoard(gameState) {
+		console.log("--- renderBoard called ---"); // ADD LOG
 		// Clear existing pieces but not the grid squares themselves
 		document.querySelectorAll(".piece").forEach((p) => p.remove());
 
@@ -4646,20 +4647,21 @@ function proceedToNextPlayerTurn() {
      * @param {string} hazardType - The type of hazard selected (e.g., "Tombstone").
      */
     function handleHazardSelection(hazardType) {
-        const selectedVamp = findVampireById(currentGameState?.selectedVampireId);
-
-        // Safety check: Ensure a vampire is still selected
-        if (!selectedVamp) {
-            console.error("handleHazardSelection Error: No vampire selected when hazard type was chosen.");
-            addToLog("Error: Vampire selection lost. Please re-select and try throw again.");
-            // Reset throw state
-            if (popups.hazardPicker) popups.hazardPicker.style.display = "none";
-            currentGameState.actionState.pendingAction = null;
-            currentGameState.actionState.selectedHazardType = null;
-            clearHighlights();
-            updateUI();
-            return;
-        }
+		const selectedVamp = findVampireById(currentGameState?.selectedVampireId);
+		// ... safety check ...
+	
+		console.log(`Hazard type selected: ${hazardType}`);
+		currentGameState.actionState.selectedHazardType = hazardType;
+		currentGameState.actionState.pendingAction = "throw-select-target";
+	
+		if (popups.hazardPicker) popups.hazardPicker.style.display = "none";
+	
+		console.log(">>> Calling highlightThrowTargets..."); // ADD LOG
+		highlightThrowTargets(selectedVamp, hazardType);
+		console.log(">>> Returned from highlightThrowTargets."); // ADD LOG
+	
+		addToLog(`Selected ${hazardType}. Click a highlighted square to throw.`);
+	}
 
         console.log(`Hazard type selected: ${hazardType}`);
 
